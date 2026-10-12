@@ -2,6 +2,11 @@
    Servicios Ghost — Lógica de la aplicación (vanilla JS)
    Depende de las constantes definidas en js/data.js:
      WHATSAPP, NOMBRE_NEGOCIO, RESTAURANTES
+
+   Diseño robusto para móvil:
+   - DELEGACIÓN DE EVENTOS: un único listener de clic en el documento
+     interpreta los atributos data-* de lo que se tocó. Así los botones
+     siguen funcionando aunque el HTML se repinte, y nunca quedan "muertos".
    ===================================================================== */
 (function () {
   "use strict";
@@ -9,12 +14,21 @@
   /* ------------------------- Utilidades --------------------------- */
 
   // Formatea pesos colombianos sin decimales: 12000 -> "$12.000"
-  const pesos = new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    maximumFractionDigits: 0,
-  });
-  const money = (n) => pesos.format(n);
+  var pesos;
+  try {
+    pesos = new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      maximumFractionDigits: 0,
+    });
+  } catch (e) {
+    pesos = null;
+  }
+  function money(n) {
+    if (pesos) return pesos.format(n);
+    // Respaldo por si Intl falla: "$12.000"
+    return "$" + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  }
 
   // Escapa texto para evitar inyección de HTML.
   function esc(value) {
@@ -28,11 +42,11 @@
 
   // Iniciales del nombre de un restaurante (máx. 2 letras).
   function iniciales(nombre) {
-    return nombre
+    return String(nombre)
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
-      .map((w) => w[0])
+      .map(function (w) { return w[0]; })
       .join("")
       .toUpperCase();
   }
@@ -40,40 +54,46 @@
   // Estilo de portada: imagen si existe, si no un degradado del color.
   function coverStyle(r) {
     if (r.logo) {
-      return `background-image:url('${esc(r.logo)}')`;
+      return "background-image:url('" + esc(r.logo) + "')";
     }
-    const c = esc(r.color || "#3b82f6");
-    return `background-image:linear-gradient(135deg, ${c}, ${c}99)`;
+    var c = esc(r.color || "#3b82f6");
+    return "background-image:linear-gradient(135deg, " + c + ", " + c + "99)";
   }
 
   // Busca un restaurante por id.
-  const findRest = (id) => RESTAURANTES.find((r) => r.id === id);
+  function findRest(id) {
+    for (var i = 0; i < RESTAURANTES.length; i++) {
+      if (RESTAURANTES[i].id === id) return RESTAURANTES[i];
+    }
+    return null;
+  }
 
   // Busca un plato dentro de un restaurante.
   function findItem(restId, itemId) {
-    const r = findRest(restId);
+    var r = findRest(restId);
     if (!r) return null;
-    for (const sec of r.carta) {
-      const it = sec.items.find((i) => i.id === itemId);
-      if (it) return it;
+    for (var s = 0; s < r.carta.length; s++) {
+      var items = r.carta[s].items;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id === itemId) return items[i];
+      }
     }
     return null;
   }
 
   /* ------------------------- Estado global ------------------------ */
 
-  const LS_KEY = "ghost_cart_v1";
-
-  // Carrito: { "restId::itemId": qty, ... }
-  let cart = loadCart();
-  let filtroCategoria = "Todos";
-  let termino = "";
+  var LS_KEY = "ghost_cart_v1";
+  var cart = loadCart();          // { "restId::itemId": qty }
+  var filtroCategoria = "Todos";
+  var termino = "";
+  var vistaActual = null;         // null = inicio, o id de restaurante
 
   function loadCart() {
     try {
-      const raw = localStorage.getItem(LS_KEY);
+      var raw = localStorage.getItem(LS_KEY);
       if (!raw) return {};
-      const data = JSON.parse(raw);
+      var data = JSON.parse(raw);
       return data && typeof data === "object" ? data : {};
     } catch (e) {
       return {};
@@ -83,37 +103,33 @@
   function saveCart() {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(cart));
-    } catch (e) {
-      /* Si falla (modo privado, cuota, etc.) no rompemos la app. */
-    }
+    } catch (e) { /* modo privado / cuota: no rompemos la app */ }
   }
 
-  const cartKey = (restId, itemId) => `${restId}::${itemId}`;
-  const parseKey = (key) => {
-    const i = key.indexOf("::");
+  function cartKey(restId, itemId) { return restId + "::" + itemId; }
+  function parseKey(key) {
+    var i = key.indexOf("::");
     return { restId: key.slice(0, i), itemId: key.slice(i + 2) };
-  };
-
-  function getQty(restId, itemId) {
-    return cart[cartKey(restId, itemId)] || 0;
   }
-
+  function getQty(restId, itemId) { return cart[cartKey(restId, itemId)] || 0; }
   function setQty(restId, itemId, qty) {
-    const key = cartKey(restId, itemId);
+    var key = cartKey(restId, itemId);
     if (qty <= 0) delete cart[key];
     else cart[key] = qty;
     saveCart();
   }
 
   function totalProductos() {
-    return Object.values(cart).reduce((a, b) => a + b, 0);
+    var t = 0;
+    for (var k in cart) t += cart[k];
+    return t;
   }
 
   function totalPesos() {
-    let total = 0;
-    for (const key in cart) {
-      const { restId, itemId } = parseKey(key);
-      const it = findItem(restId, itemId);
+    var total = 0;
+    for (var key in cart) {
+      var p = parseKey(key);
+      var it = findItem(p.restId, p.itemId);
       if (it) total += it.p * cart[key];
     }
     return total;
@@ -121,19 +137,19 @@
 
   // Agrupa el carrito por restaurante (ignorando entradas huérfanas).
   function groupedCart() {
-    const groups = [];
-    for (const key in cart) {
-      const { restId, itemId } = parseKey(key);
-      const r = findRest(restId);
-      const it = findItem(restId, itemId);
+    var groups = [];
+    for (var key in cart) {
+      var p = parseKey(key);
+      var r = findRest(p.restId);
+      var it = findItem(p.restId, p.itemId);
       if (!r || !it) continue;
-      let g = groups.find((x) => x.rest.id === restId);
-      if (!g) {
-        g = { rest: r, items: [], subtotal: 0 };
-        groups.push(g);
+      var g = null;
+      for (var i = 0; i < groups.length; i++) {
+        if (groups[i].rest.id === p.restId) { g = groups[i]; break; }
       }
-      const qty = cart[key];
-      g.items.push({ item: it, qty });
+      if (!g) { g = { rest: r, items: [], subtotal: 0 }; groups.push(g); }
+      var qty = cart[key];
+      g.items.push({ item: it, qty: qty });
       g.subtotal += it.p * qty;
     }
     return groups;
@@ -141,238 +157,183 @@
 
   /* --------------------------- Referencias ------------------------ */
 
-  const $ = (sel) => document.querySelector(sel);
+  function $(sel) { return document.querySelector(sel); }
 
-  const elChips = $("#chips");
-  const elGrid = $("#gridRestaurantes");
-  const elSinResultados = $("#sinResultados");
-  const elBuscador = $("#buscador");
-  const elVistaInicio = $("#vistaInicio");
-  const elVistaCarta = $("#vistaCarta");
+  var elChips = $("#chips");
+  var elGrid = $("#gridRestaurantes");
+  var elSinResultados = $("#sinResultados");
+  var elBuscador = $("#buscador");
+  var elVistaInicio = $("#vistaInicio");
+  var elVistaCarta = $("#vistaCarta");
 
-  const elCartBar = $("#cartBar");
-  const elCartBarCount = $("#cartBarCount");
-  const elCartBarProductos = $("#cartBarProductos");
-  const elCartBarTotal = $("#cartBarTotal");
+  var elCartBar = $("#cartBar");
+  var elCartBarCount = $("#cartBarCount");
+  var elCartBarProductos = $("#cartBarProductos");
+  var elCartBarTotal = $("#cartBarTotal");
 
-  const elSheet = $("#sheet");
-  const elSheetBody = $("#sheetBody");
-  const elSheetClose = $("#sheetClose");
-  const elSheetBackdrop = $("#sheetBackdrop");
-
-  // Vista actual: null = inicio, o id de restaurante.
-  let vistaActual = null;
+  var elSheet = $("#sheet");
+  var elSheetBody = $("#sheetBody");
 
   /* ---------------------------- Chips ----------------------------- */
 
   function categorias() {
-    const cats = ["Todos"];
-    for (const r of RESTAURANTES) {
-      if (!cats.includes(r.cat)) cats.push(r.cat);
+    var cats = ["Todos"];
+    for (var i = 0; i < RESTAURANTES.length; i++) {
+      if (cats.indexOf(RESTAURANTES[i].cat) === -1) cats.push(RESTAURANTES[i].cat);
     }
     return cats;
   }
 
   function renderChips() {
-    elChips.innerHTML = "";
-    for (const cat of categorias()) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "chip";
-      btn.textContent = cat;
-      btn.setAttribute("aria-pressed", String(cat === filtroCategoria));
-      btn.addEventListener("click", () => {
-        filtroCategoria = cat;
-        renderChips();
-        renderGrid();
-      });
-      elChips.appendChild(btn);
+    var cats = categorias();
+    var html = "";
+    for (var i = 0; i < cats.length; i++) {
+      var activo = cats[i] === filtroCategoria;
+      html +=
+        '<button type="button" class="chip" data-chip="' + esc(cats[i]) +
+        '" aria-pressed="' + (activo ? "true" : "false") + '">' +
+        esc(cats[i]) + "</button>";
     }
+    elChips.innerHTML = html;
   }
 
   /* --------------------- Lista de restaurantes -------------------- */
 
-  // ¿El restaurante coincide con el término de búsqueda?
-  // Busca por nombre del restaurante y por nombre de plato.
   function matchBusqueda(r, q) {
     if (!q) return true;
-    if (r.nombre.toLowerCase().includes(q)) return true;
-    for (const sec of r.carta) {
-      for (const it of sec.items) {
-        if (it.n.toLowerCase().includes(q)) return true;
+    if (r.nombre.toLowerCase().indexOf(q) !== -1) return true;
+    for (var s = 0; s < r.carta.length; s++) {
+      var items = r.carta[s].items;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].n.toLowerCase().indexOf(q) !== -1) return true;
       }
     }
     return false;
   }
 
   function restaurantesFiltrados() {
-    const q = termino.trim().toLowerCase();
-    return RESTAURANTES.filter((r) => {
-      const catOk = filtroCategoria === "Todos" || r.cat === filtroCategoria;
+    var q = termino.trim().toLowerCase();
+    return RESTAURANTES.filter(function (r) {
+      var catOk = filtroCategoria === "Todos" || r.cat === filtroCategoria;
       return catOk && matchBusqueda(r, q);
     });
   }
 
   function estadoHTML(abierto) {
     return abierto
-      ? `<span class="state state--open"><span class="state__dot"></span>Abierto</span>`
-      : `<span class="state state--closed"><span class="state__dot"></span>Cerrado</span>`;
+      ? '<span class="state state--open"><span class="state__dot"></span>Abierto</span>'
+      : '<span class="state state--closed"><span class="state__dot"></span>Cerrado</span>';
   }
 
   function renderGrid() {
-    const lista = restaurantesFiltrados();
-    elGrid.innerHTML = "";
-
+    var lista = restaurantesFiltrados();
     if (lista.length === 0) {
+      elGrid.innerHTML = "";
       elSinResultados.hidden = false;
       return;
     }
     elSinResultados.hidden = true;
 
-    for (const r of lista) {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "card";
-      card.setAttribute("aria-label", `Ver la carta de ${r.nombre}`);
+    var html = "";
+    for (var i = 0; i < lista.length; i++) {
+      var r = lista[i];
+      var cover = r.logo
+        ? '<div class="card__cover" style="' + coverStyle(r) + '"></div>'
+        : '<div class="card__cover" style="' + coverStyle(r) + '">' +
+          '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
-      const cover = r.logo
-        ? `<div class="card__cover" style="${coverStyle(r)}"></div>`
-        : `<div class="card__cover" style="${coverStyle(r)}">
-             <span class="card__initials">${esc(iniciales(r.nombre))}</span>
-           </div>`;
-
-      card.innerHTML = `
-        ${cover}
-        <div class="card__body">
-          <div class="card__name">${esc(r.nombre)}</div>
-          <div class="card__meta">
-            <span>${esc(r.cat)}</span>
-            <span class="dot">·</span>
-            <span>${esc(r.tiempo)}</span>
-          </div>
-          <div class="card__meta">${estadoHTML(r.abierto)}</div>
-        </div>
-      `;
-
-      card.addEventListener("click", () => abrirCarta(r.id));
-      elGrid.appendChild(card);
+      html +=
+        '<button type="button" class="card" data-rest="' + esc(r.id) +
+        '" aria-label="Ver la carta de ' + esc(r.nombre) + '">' +
+          cover +
+          '<div class="card__body">' +
+            '<div class="card__name">' + esc(r.nombre) + "</div>" +
+            '<div class="card__meta"><span>' + esc(r.cat) +
+              '</span><span class="dot">·</span><span>' + esc(r.tiempo) + "</span></div>" +
+            '<div class="card__meta">' + estadoHTML(r.abierto) + "</div>" +
+          "</div>" +
+        "</button>";
     }
+    elGrid.innerHTML = html;
   }
 
   /* ----------------------- Carta del restaurante ------------------ */
 
   function abrirCarta(restId) {
-    const r = findRest(restId);
+    var r = findRest(restId);
     if (!r) return;
     vistaActual = restId;
 
-    const cover = r.logo
-      ? `<div class="rest-head__cover" style="${coverStyle(r)}"></div>`
-      : `<div class="rest-head__cover" style="${coverStyle(r)}">
-           <span class="card__initials">${esc(iniciales(r.nombre))}</span>
-         </div>`;
+    var cover = r.logo
+      ? '<div class="rest-head__cover" style="' + coverStyle(r) + '"></div>'
+      : '<div class="rest-head__cover" style="' + coverStyle(r) + '">' +
+        '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
-    let secciones = "";
-    for (const sec of r.carta) {
-      let platos = "";
-      for (const it of sec.items) {
-        platos += dishHTML(r, it);
+    var secciones = "";
+    for (var s = 0; s < r.carta.length; s++) {
+      var sec = r.carta[s];
+      var platos = "";
+      for (var i = 0; i < sec.items.length; i++) {
+        platos += dishHTML(r, sec.items[i]);
       }
-      secciones += `
-        <div class="section">
-          <h3 class="section__title">${esc(sec.sec)}</h3>
-          ${platos}
-        </div>
-      `;
+      secciones +=
+        '<div class="section"><h3 class="section__title">' + esc(sec.sec) +
+        "</h3>" + platos + "</div>";
     }
 
-    elVistaCarta.innerHTML = `
-      <button type="button" class="back-btn" id="backBtn">← Todos los restaurantes</button>
-      <div class="rest-head">
-        ${cover}
-        <div>
-          <h1 class="rest-head__name">${esc(r.nombre)}</h1>
-          <p class="rest-head__desc">${esc(r.desc)}</p>
-          <div class="rest-head__meta">
-            <span>⏱ ${esc(r.tiempo)}</span>
-            ${estadoHTML(r.abierto)}
-          </div>
-        </div>
-      </div>
-      ${secciones}
-    `;
-
-    $("#backBtn").addEventListener("click", irAInicio);
-
-    // Conecta los controles de cada plato.
-    elVistaCarta.querySelectorAll("[data-dish]").forEach((node) => {
-      conectarPlato(node, r);
-    });
+    elVistaCarta.innerHTML =
+      '<button type="button" class="back-btn" data-back>← Todos los restaurantes</button>' +
+      '<div class="rest-head">' + cover +
+        "<div>" +
+          '<h1 class="rest-head__name">' + esc(r.nombre) + "</h1>" +
+          '<p class="rest-head__desc">' + esc(r.desc) + "</p>" +
+          '<div class="rest-head__meta"><span>⏱ ' + esc(r.tiempo) + "</span>" +
+            estadoHTML(r.abierto) + "</div>" +
+        "</div>" +
+      "</div>" + secciones;
 
     elVistaInicio.hidden = true;
     elVistaCarta.hidden = false;
-    window.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo(0, 0);
   }
 
-  // HTML del control de un plato (botón Agregar o stepper).
   function dishHTML(r, it) {
-    const qty = getQty(r.id, it.id);
-    return `
-      <div class="dish" data-dish data-rest="${esc(r.id)}" data-item="${esc(it.id)}">
-        <div class="dish__info">
-          <div class="dish__name">${esc(it.n)}</div>
-          <div class="dish__desc">${esc(it.d)}</div>
-          <div class="dish__price">${esc(money(it.p))}</div>
-        </div>
-        <div class="dish__action" data-action>
-          ${controlHTML(r, it, qty)}
-        </div>
-      </div>
-    `;
+    var qty = getQty(r.id, it.id);
+    return (
+      '<div class="dish" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
+        '<div class="dish__info">' +
+          '<div class="dish__name">' + esc(it.n) + "</div>" +
+          '<div class="dish__desc">' + esc(it.d) + "</div>" +
+          '<div class="dish__price">' + esc(money(it.p)) + "</div>" +
+        "</div>" +
+        '<div class="dish__action">' + controlHTML(r, it, qty) + "</div>" +
+      "</div>"
+    );
   }
 
+  // Los botones llevan data-* con el restaurante y el plato, para que la
+  // delegación de eventos sepa a qué actuar sin necesidad de re-enganchar.
   function controlHTML(r, it, qty) {
     if (!r.abierto) {
-      return `<button type="button" class="add-btn" disabled>Agregar</button>`;
+      return '<button type="button" class="add-btn" disabled>Agregar</button>';
     }
     if (qty <= 0) {
-      return `<button type="button" class="add-btn" data-add aria-label="Agregar ${esc(it.n)}">Agregar</button>`;
+      return '<button type="button" class="add-btn" data-add data-rest="' + esc(r.id) +
+             '" data-item="' + esc(it.id) + '" aria-label="Agregar ' + esc(it.n) + '">Agregar</button>';
     }
-    return stepperHTML(it, qty);
+    return stepperHTML(r.id, it, qty);
   }
 
-  function stepperHTML(it, qty) {
-    return `
-      <div class="stepper">
-        <button type="button" class="stepper__btn" data-dec aria-label="Quitar uno de ${esc(it.n)}">−</button>
-        <span class="stepper__qty" data-qty>${qty}</span>
-        <button type="button" class="stepper__btn" data-inc aria-label="Agregar uno de ${esc(it.n)}">+</button>
-      </div>
-    `;
-  }
-
-  // Conecta eventos de un plato en la carta y repinta solo su control.
-  function conectarPlato(node, r) {
-    const itemId = node.getAttribute("data-item");
-    const it = findItem(r.id, itemId);
-    if (!it) return;
-
-    function repintar() {
-      const slot = node.querySelector("[data-action]");
-      slot.innerHTML = controlHTML(r, it, getQty(r.id, itemId));
-      enlazar(slot);
-    }
-
-    function enlazar(slot) {
-      const add = slot.querySelector("[data-add]");
-      const inc = slot.querySelector("[data-inc]");
-      const dec = slot.querySelector("[data-dec]");
-      if (add) add.addEventListener("click", () => { setQty(r.id, itemId, 1); repintar(); refreshCart(); });
-      if (inc) inc.addEventListener("click", () => { setQty(r.id, itemId, getQty(r.id, itemId) + 1); repintar(); refreshCart(); });
-      if (dec) dec.addEventListener("click", () => { setQty(r.id, itemId, getQty(r.id, itemId) - 1); repintar(); refreshCart(); });
-    }
-
-    enlazar(node.querySelector("[data-action]"));
+  function stepperHTML(restId, it, qty) {
+    return (
+      '<div class="stepper">' +
+        '<button type="button" class="stepper__btn" data-dec data-rest="' + esc(restId) +
+          '" data-item="' + esc(it.id) + '" aria-label="Quitar uno de ' + esc(it.n) + '">−</button>' +
+        '<span class="stepper__qty">' + qty + "</span>" +
+        '<button type="button" class="stepper__btn" data-inc data-rest="' + esc(restId) +
+          '" data-item="' + esc(it.id) + '" aria-label="Agregar uno de ' + esc(it.n) + '">+</button>' +
+      "</div>"
+    );
   }
 
   function irAInicio() {
@@ -380,284 +341,285 @@
     elVistaCarta.hidden = true;
     elVistaCarta.innerHTML = "";
     elVistaInicio.hidden = false;
-    window.scrollTo({ top: 0, behavior: "auto" });
+    window.scrollTo(0, 0);
   }
 
   /* --------------------------- Barra carrito ---------------------- */
 
   function refreshCart() {
-    const n = totalProductos();
+    var n = totalProductos();
     if (n <= 0) {
       elCartBar.hidden = true;
     } else {
       elCartBar.hidden = false;
       elCartBarCount.textContent = String(n);
-      elCartBarProductos.textContent = n === 1 ? "1 producto" : `${n} productos`;
+      elCartBarProductos.textContent = n === 1 ? "1 producto" : n + " productos";
       elCartBarTotal.textContent = money(totalPesos());
     }
-    // Si la hoja está abierta, repintarla para reflejar cambios.
     if (!elSheet.hidden) renderSheet();
+  }
+
+  // Tras cambiar una cantidad, repinta SOLO el control del plato afectado,
+  // tanto en la carta como en la lista del carrito. Como usamos delegación,
+  // no hay que re-enganchar eventos: basta con cambiar el HTML.
+  function repintarPlato(restId, itemId) {
+    var r = findRest(restId);
+    var it = findItem(restId, itemId);
+    if (!r || !it) return;
+    var qty = getQty(restId, itemId);
+
+    // En la carta
+    var nodo = elVistaCarta.querySelector('[data-dish][data-item="' + cssId(itemId) + '"]');
+    if (nodo) {
+      var slot = nodo.querySelector(".dish__action");
+      if (slot) slot.innerHTML = controlHTML(r, it, qty);
+    }
+  }
+
+  // Escapa un id para usarlo dentro de un selector CSS (sin depender de CSS.escape).
+  function cssId(id) {
+    return String(id).replace(/["\\]/g, "\\$&");
   }
 
   /* ----------------------- Hoja inferior (sheet) ------------------ */
 
   function openSheet() {
     if (totalProductos() <= 0) return;
-    try {
-      renderSheet();
-    } catch (err) {
-      // Si algo falla al pintar el carrito, no bloqueamos la app:
-      // mostramos un mensaje y permitimos cerrar igualmente.
+    try { renderSheet(); } catch (e) {
       elSheetBody.innerHTML =
-        '<p class="cart-empty">Hubo un problema al mostrar el pedido. Toca la X para cerrar e inténtalo de nuevo.</p>';
+        '<p class="cart-empty">Hubo un problema al mostrar el pedido. Toca la X para cerrar.</p>';
     }
     elSheet.hidden = false;
-    document.body.style.overflow = "hidden";
-    try { elSheetClose.focus(); } catch (e) {}
+    document.body.classList.add("no-scroll");
   }
 
   function closeSheet() {
     elSheet.hidden = true;
-    // Siempre restauramos el scroll del fondo, pase lo que pase.
-    document.body.style.overflow = "";
+    document.body.classList.remove("no-scroll");
   }
 
   function renderSheet() {
-    const groups = groupedCart();
+    var groups = groupedCart();
 
     if (groups.length === 0) {
-      elSheetBody.innerHTML = `<p class="cart-empty">Tu pedido está vacío.</p>`;
+      elSheetBody.innerHTML = '<p class="cart-empty">Tu pedido está vacío.</p>';
       return;
     }
 
-    let gruposHTML = "";
-    for (const g of groups) {
-      let lineas = "";
-      for (const { item, qty } of g.items) {
-        lineas += `
-          <div class="cart-line" data-line data-rest="${esc(g.rest.id)}" data-item="${esc(item.id)}">
-            <div class="cart-line__info">
-              <div class="cart-line__name">${esc(item.n)}</div>
-              <div class="cart-line__price">${esc(money(item.p))} c/u</div>
-            </div>
-            <div class="cart-line__right">
-              ${stepperHTML(item, qty)}
-              <span class="cart-line__sub">${esc(money(item.p * qty))}</span>
-            </div>
-          </div>
-        `;
+    var gruposHTML = "";
+    for (var gi = 0; gi < groups.length; gi++) {
+      var g = groups[gi];
+      var lineas = "";
+      for (var i = 0; i < g.items.length; i++) {
+        var item = g.items[i].item;
+        var qty = g.items[i].qty;
+        lineas +=
+          '<div class="cart-line">' +
+            '<div class="cart-line__info">' +
+              '<div class="cart-line__name">' + esc(item.n) + "</div>" +
+              '<div class="cart-line__price">' + esc(money(item.p)) + " c/u</div>" +
+            "</div>" +
+            '<div class="cart-line__right">' +
+              stepperHTML(g.rest.id, item, qty) +
+              '<span class="cart-line__sub">' + esc(money(item.p * qty)) + "</span>" +
+            "</div>" +
+          "</div>";
       }
-      gruposHTML += `
-        <div class="cart-group">
-          <div class="cart-group__name">${esc(g.rest.nombre)}</div>
-          ${lineas}
-        </div>
-      `;
+      gruposHTML +=
+        '<div class="cart-group"><div class="cart-group__name">' +
+        esc(g.rest.nombre) + "</div>" + lineas + "</div>";
     }
 
-    elSheetBody.innerHTML = `
-      ${gruposHTML}
-      <div class="cart-total">
-        <span>Total productos</span>
-        <span>${esc(money(totalPesos()))}</span>
-      </div>
-      <p class="cart-note">Domicilio: se confirma por WhatsApp.</p>
+    elSheetBody.innerHTML =
+      gruposHTML +
+      '<div class="cart-total"><span>Total productos</span><span>' +
+        esc(money(totalPesos())) + "</span></div>" +
+      '<p class="cart-note">Domicilio: se confirma por WhatsApp.</p>' +
+      '<form class="form" id="pedidoForm" novalidate>' +
+        '<div class="field">' +
+          '<label class="field__label" for="fNombre">Nombre</label>' +
+          '<input class="field__input" id="fNombre" name="nombre" type="text" placeholder="¿A nombre de quién?" autocomplete="name" required />' +
+        "</div>" +
+        '<div class="field">' +
+          '<label class="field__label" for="fDireccion">Dirección de entrega</label>' +
+          '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Dirección, barrio y referencias" autocomplete="street-address" required />' +
+        "</div>" +
+        '<div class="field">' +
+          '<span class="field__label">Forma de pago</span>' +
+          '<div class="pay">' +
+            '<label class="pay__option"><input type="radio" name="pago" value="Efectivo" checked /> 💵 Efectivo</label>' +
+            '<label class="pay__option"><input type="radio" name="pago" value="Transferencia" /> 📲 Transferencia</label>' +
+          "</div>" +
+        "</div>" +
+        '<div class="field">' +
+          '<label class="field__label" for="fNotas">Notas (opcional)</label>' +
+          '<textarea class="field__textarea" id="fNotas" name="notas" placeholder="Ej: sin cebolla, timbre dañado, etc."></textarea>' +
+        "</div>" +
+        '<div class="actions">' +
+          '<button type="submit" class="btn-whatsapp" id="btnWhatsapp" disabled><span aria-hidden="true">🟢</span> Enviar pedido por WhatsApp</button>' +
+          '<button type="button" class="btn-copy" data-copy>Copiar el pedido</button>' +
+          '<p class="copy-msg" id="copyMsg" role="status" aria-live="polite"></p>' +
+        "</div>" +
+      "</form>";
 
-      <form class="form" id="pedidoForm" novalidate>
-        <div class="field">
-          <label class="field__label" for="fNombre">Nombre</label>
-          <input class="field__input" id="fNombre" name="nombre" type="text"
-                 placeholder="¿A nombre de quién?" autocomplete="name" required />
-        </div>
-        <div class="field">
-          <label class="field__label" for="fDireccion">Dirección de entrega</label>
-          <input class="field__input" id="fDireccion" name="direccion" type="text"
-                 placeholder="Dirección, barrio y referencias" autocomplete="street-address" required />
-        </div>
-        <div class="field">
-          <span class="field__label">Forma de pago</span>
-          <div class="pay">
-            <label class="pay__option">
-              <input type="radio" name="pago" value="Efectivo" checked /> 💵 Efectivo
-            </label>
-            <label class="pay__option">
-              <input type="radio" name="pago" value="Transferencia" /> 📲 Transferencia
-            </label>
-          </div>
-        </div>
-        <div class="field">
-          <label class="field__label" for="fNotas">Notas (opcional)</label>
-          <textarea class="field__textarea" id="fNotas" name="notas"
-                    placeholder="Ej: sin cebolla, timbre dañado, etc."></textarea>
-        </div>
-
-        <div class="actions">
-          <button type="submit" class="btn-whatsapp" id="btnWhatsapp" disabled>
-            <span aria-hidden="true">🟢</span> Enviar pedido por WhatsApp
-          </button>
-          <button type="button" class="btn-copy" id="btnCopiar">Copiar el pedido</button>
-          <p class="copy-msg" id="copyMsg" role="status" aria-live="polite"></p>
-        </div>
-      </form>
-    `;
-
-    conectarSheet();
+    enlazarFormulario();
   }
 
-  function conectarSheet() {
-   try {
-    // Steppers dentro del carrito.
-    elSheetBody.querySelectorAll("[data-line]").forEach((line) => {
-      const restId = line.getAttribute("data-rest");
-      const itemId = line.getAttribute("data-item");
-      const inc = line.querySelector("[data-inc]");
-      const dec = line.querySelector("[data-dec]");
-      if (inc) inc.addEventListener("click", () => {
-        setQty(restId, itemId, getQty(restId, itemId) + 1);
-        refreshCart();
-        sincronizarCarta(restId, itemId);
-      });
-      if (dec) dec.addEventListener("click", () => {
-        setQty(restId, itemId, getQty(restId, itemId) - 1);
-        refreshCart();
-        sincronizarCarta(restId, itemId);
-      });
-    });
-
-    // Validación del formulario.
-    const form = $("#pedidoForm");
-    const btnWa = $("#btnWhatsapp");
-    const btnCopiar = $("#btnCopiar");
-    const copyMsg = $("#copyMsg");
-    const fNombre = $("#fNombre");
-    const fDireccion = $("#fDireccion");
-
-    // Si por algún motivo no existe el formulario, no seguimos (evita errores
-    // que podrían congelar la app en algunos navegadores).
+  // El formulario sí necesita listeners propios (input/submit), pero están
+  // protegidos y se vuelven a crear limpiamente en cada render del sheet.
+  function enlazarFormulario() {
+    var form = $("#pedidoForm");
+    var btnWa = $("#btnWhatsapp");
+    var fNombre = $("#fNombre");
+    var fDireccion = $("#fDireccion");
     if (!form || !btnWa || !fNombre || !fDireccion) return;
 
     function validar() {
-      const ok = fNombre.value.trim() !== "" && fDireccion.value.trim() !== "";
-      btnWa.disabled = !ok;
+      btnWa.disabled = !(fNombre.value.trim() && fDireccion.value.trim());
     }
     fNombre.addEventListener("input", validar);
     fDireccion.addEventListener("input", validar);
     validar();
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (btnWa.disabled) return;
-      const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(construirMensaje(form))}`;
-      // En móvil, abrir una pestaña nueva programáticamente puede ser bloqueado
-      // por el navegador. Navegar directamente a wa.me es lo más fiable y
-      // igualmente abre la app de WhatsApp.
+      var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(construirMensaje(form));
+      // Navegar directo es lo más fiable en móvil (evita el bloqueo de pop-ups).
       try {
-        const win = window.open(url, "_blank");
+        var win = window.open(url, "_blank");
         if (!win) window.location.href = url;
       } catch (err) {
         window.location.href = url;
       }
     });
-
-    btnCopiar.addEventListener("click", async () => {
-      const texto = construirMensaje(form);
-      try {
-        await navigator.clipboard.writeText(texto);
-        copyMsg.textContent = "¡Pedido copiado! 📋";
-        copyMsg.classList.remove("copy-msg--error");
-      } catch (err) {
-        copyMsg.textContent = "No se pudo copiar. Selecciona y copia manualmente.";
-        copyMsg.classList.add("copy-msg--error");
-      }
-    });
-   } catch (err) {
-     /* Nunca dejamos que un error aquí bloquee la app; la X siempre cierra. */
-   }
-  }
-
-  // Si la carta del restaurante editado está abierta, refréscala.
-  function sincronizarCarta(restId, itemId) {
-    if (vistaActual !== restId) return;
-    const node = elVistaCarta.querySelector(
-      `[data-dish][data-item="${CSS.escape(itemId)}"]`
-    );
-    if (!node) return;
-    const r = findRest(restId);
-    const it = findItem(restId, itemId);
-    const slot = node.querySelector("[data-action]");
-    slot.innerHTML = controlHTML(r, it, getQty(restId, itemId));
-    conectarPlato(node, r);
   }
 
   /* ----------------------- Mensaje de WhatsApp -------------------- */
 
   function construirMensaje(form) {
-    const data = new FormData(form);
-    const nombre = (data.get("nombre") || "").toString().trim();
-    const direccion = (data.get("direccion") || "").toString().trim();
-    const pago = (data.get("pago") || "Efectivo").toString();
-    const notas = (data.get("notas") || "").toString().trim();
+    var data = new FormData(form);
+    var nombre = (data.get("nombre") || "").toString().trim();
+    var direccion = (data.get("direccion") || "").toString().trim();
+    var pago = (data.get("pago") || "Efectivo").toString();
+    var notas = (data.get("notas") || "").toString().trim();
 
-    const groups = groupedCart();
-    const lines = [];
-    lines.push(`Hola ${NOMBRE_NEGOCIO}, quiero hacer un pedido:`);
+    var groups = groupedCart();
+    var lines = [];
+    lines.push("Hola " + NOMBRE_NEGOCIO + ", quiero hacer un pedido:");
     lines.push("");
 
-    for (const g of groups) {
-      lines.push(`*Restaurante: ${g.rest.nombre}*`);
-      for (const { item, qty } of g.items) {
-        lines.push(`- ${qty} x ${item.n} (${money(item.p)})`);
+    for (var gi = 0; gi < groups.length; gi++) {
+      var g = groups[gi];
+      lines.push("*Restaurante: " + g.rest.nombre + "*");
+      for (var i = 0; i < g.items.length; i++) {
+        var item = g.items[i].item;
+        var qty = g.items[i].qty;
+        lines.push("- " + qty + " x " + item.n + " (" + money(item.p) + ")");
       }
-      lines.push(`Subtotal: ${money(g.subtotal)}`);
+      lines.push("Subtotal: " + money(g.subtotal));
       lines.push("");
     }
 
-    lines.push(`*Total productos:* ${money(totalPesos())} (domicilio aparte)`);
-    lines.push(`*Nombre:* ${nombre}`);
-    lines.push(`*Dirección:* ${direccion}`);
-    lines.push(`*Pago:* ${pago}`);
-    if (notas) lines.push(`*Nota:* ${notas}`);
+    lines.push("*Total productos:* " + money(totalPesos()) + " (domicilio aparte)");
+    lines.push("*Nombre:* " + nombre);
+    lines.push("*Dirección:* " + direccion);
+    lines.push("*Pago:* " + pago);
+    if (notas) lines.push("*Nota:* " + notas);
 
     return lines.join("\n");
   }
 
-  /* ---------------------------- Eventos --------------------------- */
+  async function copiarPedido() {
+    var form = $("#pedidoForm");
+    var copyMsg = $("#copyMsg");
+    if (!form) return;
+    var texto = construirMensaje(form);
+    try {
+      await navigator.clipboard.writeText(texto);
+      if (copyMsg) {
+        copyMsg.textContent = "¡Pedido copiado! 📋";
+        copyMsg.classList.remove("copy-msg--error");
+      }
+    } catch (err) {
+      if (copyMsg) {
+        copyMsg.textContent = "No se pudo copiar. Selecciona el texto y cópialo manualmente.";
+        copyMsg.classList.add("copy-msg--error");
+      }
+    }
+  }
 
-  elBuscador.addEventListener("input", (e) => {
+  /* ==================================================================
+     DELEGACIÓN DE EVENTOS
+     Un único manejador de clic en todo el documento. Mira qué se tocó
+     (vía closest + data-*) y actúa. Esto es lo que hace la página
+     robusta en móvil: los botones nunca quedan "muertos" tras repintar.
+     ================================================================== */
+
+  function onClick(e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+
+    // --- Cerrar la hoja (X o fondo oscuro) ---
+    if (t.closest("[data-sheet-close]")) { e.preventDefault(); closeSheet(); return; }
+    if (t.hasAttribute && t.hasAttribute("data-sheet-backdrop")) { e.preventDefault(); closeSheet(); return; }
+
+    // --- Abrir la hoja ---
+    if (t.closest("#cartBar")) { openSheet(); return; }
+
+    // --- Logo: volver al inicio ---
+    if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); irAInicio(); return; }
+
+    // --- Chips de categoría ---
+    var chip = t.closest("[data-chip]");
+    if (chip) {
+      filtroCategoria = chip.getAttribute("data-chip");
+      renderChips();
+      renderGrid();
+      return;
+    }
+
+    // --- Volver desde la carta ---
+    if (t.closest("[data-back]")) { irAInicio(); return; }
+
+    // --- Copiar pedido ---
+    if (t.closest("[data-copy]")) { copiarPedido(); return; }
+
+    // --- Agregar / sumar / restar ---
+    var btn = t.closest("[data-add],[data-inc],[data-dec]");
+    if (btn) {
+      var restId = btn.getAttribute("data-rest");
+      var itemId = btn.getAttribute("data-item");
+      if (!restId || !itemId) return;
+      var actual = getQty(restId, itemId);
+      if (btn.hasAttribute("data-add")) setQty(restId, itemId, 1);
+      else if (btn.hasAttribute("data-inc")) setQty(restId, itemId, actual + 1);
+      else if (btn.hasAttribute("data-dec")) setQty(restId, itemId, actual - 1);
+      repintarPlato(restId, itemId);
+      refreshCart();
+      return;
+    }
+
+    // --- Abrir carta tocando una tarjeta ---
+    var card = t.closest("[data-rest]");
+    if (card && card.classList.contains("card")) {
+      abrirCarta(card.getAttribute("data-rest"));
+      return;
+    }
+  }
+
+  // Un solo listener para toda la app (incluye lo que se repinta).
+  document.addEventListener("click", onClick);
+
+  // Buscador
+  elBuscador.addEventListener("input", function (e) {
     termino = e.target.value;
     if (vistaActual) irAInicio();
     renderGrid();
   });
 
-  $("#logoHome").addEventListener("click", (e) => {
-    e.preventDefault();
-    irAInicio();
-  });
-
-  elCartBar.addEventListener("click", openSheet);
-
-  // Cerrar: respondemos tanto a click como a touchend (algunos navegadores
-  // móviles no disparan bien "click" sobre overlays). Usamos una sola función
-  // protegida y evitamos el doble disparo con preventDefault.
-  function cerrarHandler(e) {
-    if (e) e.preventDefault();
-    closeSheet();
-  }
-  elSheetClose.addEventListener("click", cerrarHandler);
-  elSheetClose.addEventListener("touchend", cerrarHandler, { passive: false });
-
-  // Tocar el fondo oscuro cierra. Comprobamos que el toque sea exactamente
-  // sobre el backdrop (no sobre el panel) para no cerrar por error.
-  function fondoHandler(e) {
-    if (e.target === elSheetBackdrop) {
-      if (e.cancelable) e.preventDefault();
-      closeSheet();
-    }
-  }
-  elSheetBackdrop.addEventListener("click", fondoHandler);
-  elSheetBackdrop.addEventListener("touchend", fondoHandler, { passive: false });
-
-  document.addEventListener("keydown", (e) => {
+  // Cerrar con Escape (teclado)
+  document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !elSheet.hidden) closeSheet();
   });
 

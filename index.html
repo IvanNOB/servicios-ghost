@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/style.css?v=3" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
 </head>
 <body>
   <!-- ============================ CABECERA ============================ -->
@@ -74,18 +74,18 @@
 
   <!-- ===================== HOJA INFERIOR (CARRITO) =================== -->
   <div class="sheet" id="sheet" hidden>
-    <div class="sheet__backdrop" id="sheetBackdrop"></div>
+    <div class="sheet__backdrop" data-sheet-backdrop></div>
     <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
       <div class="sheet__head">
         <h2 class="sheet__title" id="sheetTitle">Tu pedido</h2>
-        <button type="button" class="icon-btn" id="sheetClose" aria-label="Cerrar el pedido">✕</button>
+        <button type="button" class="icon-btn" data-sheet-close aria-label="Cerrar el pedido">✕</button>
       </div>
 
       <div class="sheet__body" id="sheetBody"><!-- contenido dinámico --></div>
     </div>
   </div>
 
-  <script src="js/data.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/data.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>

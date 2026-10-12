@@ -67,6 +67,9 @@ body {
   padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Bloquea el scroll del fondo cuando la hoja del pedido está abierta */
+body.no-scroll { overflow: hidden; }
+
 h1, h2, h3 {
   font-family: var(--font-title);
   line-height: 1.15;
