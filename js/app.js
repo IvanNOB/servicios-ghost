@@ -403,15 +403,22 @@
 
   function openSheet() {
     if (totalProductos() <= 0) return;
-    renderSheet();
+    try {
+      renderSheet();
+    } catch (err) {
+      // Si algo falla al pintar el carrito, no bloqueamos la app:
+      // mostramos un mensaje y permitimos cerrar igualmente.
+      elSheetBody.innerHTML =
+        '<p class="cart-empty">Hubo un problema al mostrar el pedido. Toca la X para cerrar e inténtalo de nuevo.</p>';
+    }
     elSheet.hidden = false;
     document.body.style.overflow = "hidden";
-    // Enfoca el botón de cerrar para accesibilidad.
-    elSheetClose.focus();
+    try { elSheetClose.focus(); } catch (e) {}
   }
 
   function closeSheet() {
     elSheet.hidden = true;
+    // Siempre restauramos el scroll del fondo, pase lo que pase.
     document.body.style.overflow = "";
   }
 
@@ -498,6 +505,7 @@
   }
 
   function conectarSheet() {
+   try {
     // Steppers dentro del carrito.
     elSheetBody.querySelectorAll("[data-line]").forEach((line) => {
       const restId = line.getAttribute("data-rest");
@@ -524,6 +532,10 @@
     const fNombre = $("#fNombre");
     const fDireccion = $("#fDireccion");
 
+    // Si por algún motivo no existe el formulario, no seguimos (evita errores
+    // que podrían congelar la app en algunos navegadores).
+    if (!form || !btnWa || !fNombre || !fDireccion) return;
+
     function validar() {
       const ok = fNombre.value.trim() !== "" && fDireccion.value.trim() !== "";
       btnWa.disabled = !ok;
@@ -536,7 +548,15 @@
       e.preventDefault();
       if (btnWa.disabled) return;
       const url = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(construirMensaje(form))}`;
-      window.open(url, "_blank", "noopener");
+      // En móvil, abrir una pestaña nueva programáticamente puede ser bloqueado
+      // por el navegador. Navegar directamente a wa.me es lo más fiable y
+      // igualmente abre la app de WhatsApp.
+      try {
+        const win = window.open(url, "_blank");
+        if (!win) window.location.href = url;
+      } catch (err) {
+        window.location.href = url;
+      }
     });
 
     btnCopiar.addEventListener("click", async () => {
@@ -550,6 +570,9 @@
         copyMsg.classList.add("copy-msg--error");
       }
     });
+   } catch (err) {
+     /* Nunca dejamos que un error aquí bloquee la app; la X siempre cierra. */
+   }
   }
 
   // Si la carta del restaurante editado está abierta, refréscala.
@@ -612,8 +635,27 @@
   });
 
   elCartBar.addEventListener("click", openSheet);
-  elSheetClose.addEventListener("click", closeSheet);
-  elSheetBackdrop.addEventListener("click", closeSheet);
+
+  // Cerrar: respondemos tanto a click como a touchend (algunos navegadores
+  // móviles no disparan bien "click" sobre overlays). Usamos una sola función
+  // protegida y evitamos el doble disparo con preventDefault.
+  function cerrarHandler(e) {
+    if (e) e.preventDefault();
+    closeSheet();
+  }
+  elSheetClose.addEventListener("click", cerrarHandler);
+  elSheetClose.addEventListener("touchend", cerrarHandler, { passive: false });
+
+  // Tocar el fondo oscuro cierra. Comprobamos que el toque sea exactamente
+  // sobre el backdrop (no sobre el panel) para no cerrar por error.
+  function fondoHandler(e) {
+    if (e.target === elSheetBackdrop) {
+      if (e.cancelable) e.preventDefault();
+      closeSheet();
+    }
+  }
+  elSheetBackdrop.addEventListener("click", fondoHandler);
+  elSheetBackdrop.addEventListener("touchend", fondoHandler, { passive: false });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !elSheet.hidden) closeSheet();
