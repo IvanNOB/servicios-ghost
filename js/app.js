@@ -625,6 +625,9 @@
 
   /* --------------------------- Arranque --------------------------- */
 
+  // Seguridad: aseguramos que la hoja empiece SIEMPRE cerrada al cargar.
+  closeSheet();
+
   renderChips();
   renderGrid();
   refreshCart();
