@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Servicios Ghost — agencia de domicilios en Colombia. Pide en tus restaurantes favoritos y confirma por WhatsApp." />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Servicios Ghost · Domicilios</title>
+
+  <!-- Google Fonts: Bricolage Grotesque (títulos) y DM Sans (texto) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css?v=11" />
+</head>
+<body>
+  <!-- ============================ CABECERA ============================ -->
+  <header class="header" role="banner">
+    <div class="header__inner">
+      <div class="header__top">
+        <a class="logo" href="index.html" aria-label="Servicios Ghost, inicio">
+          <span class="logo__ghost" aria-hidden="true">👻</span>
+          <span class="logo__text">Servicios <span class="logo__accent">Ghost</span></span>
+          <span class="logo__tag">Domicilios</span>
+        </a>
+        <a class="back-home" href="index.html" aria-label="Volver al inicio">← Inicio</a>
+      </div>
+
+      <div class="search">
+        <span class="search__icon" aria-hidden="true">🔍</span>
+        <input
+          type="search"
+          id="buscador"
+          class="search__input"
+          placeholder="Busca un restaurante o un plato"
+          aria-label="Busca un restaurante o un plato"
+          autocomplete="off"
+        />
+      </div>
+
+      <nav class="chips" id="chips" aria-label="Categorías"></nav>
+    </div>
+  </header>
+
+  <!-- ============================ CONTENIDO ============================ -->
+  <main class="main" id="main">
+    <!-- Vista: lista de restaurantes -->
+    <section id="vistaInicio" class="vista">
+      <div class="hero">
+        <h1 class="hero__title">Pide en tus restaurantes favoritos</h1>
+        <p class="hero__sub">
+          Arma tu pedido y lo enviamos por WhatsApp a Servicios Ghost. Sin pagos en la web.
+        </p>
+      </div>
+
+      <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
+
+      <p class="empty" id="sinResultados" hidden>
+        No encontramos nada con esa búsqueda. Prueba con otro nombre 🙂
+      </p>
+    </section>
+
+    <!-- Vista: carta de un restaurante -->
+    <section id="vistaCarta" class="vista" hidden></section>
+  </main>
+
+  <!-- ====================== BARRA DEL CARRITO ======================== -->
+  <button type="button" class="cart-bar" id="cartBar" hidden>
+    <span class="cart-bar__left">
+      <span class="cart-bar__badge" id="cartBarCount">0</span>
+      Ver pedido · <span id="cartBarProductos">0 productos</span>
+    </span>
+    <span class="cart-bar__total" id="cartBarTotal"></span>
+  </button>
+
+  <!-- ===================== HOJA INFERIOR (CARRITO) =================== -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__backdrop" data-sheet-backdrop></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="sheetTitle">Tu pedido</h2>
+        <button type="button" class="icon-btn" data-sheet-close aria-label="Cerrar el pedido">✕</button>
+      </div>
+
+      <div class="sheet__body" id="sheetBody"><!-- contenido dinámico --></div>
+    </div>
+  </div>
+
+  <!-- Supabase (opcional): si configuras js/supabase-config.js, los datos
+       vienen de la nube; si no, se usa data.js como respaldo. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/data.js?v=11"></script>
+  <script src="js/supabase-config.js?v=11"></script>
+  <script src="js/store.js?v=11"></script>
+  <script src="js/app.js?v=11"></script>
+</body>
+</html>

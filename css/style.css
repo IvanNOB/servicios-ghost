@@ -109,6 +109,25 @@ a { color: inherit; text-decoration: none; }
   }
 }
 
+/* Barra superior de la tienda: logo + volver al inicio */
+.header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.back-home {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 7px 14px;
+  transition: border-color .15s ease, color .15s ease;
+}
+.back-home:hover { border-color: var(--primary); color: var(--text); }
+
 /* ----------------------------- Cabecera ----------------------------- */
 .header {
   position: sticky;
