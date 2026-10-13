@@ -186,4 +186,81 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "lucarnes",
+    nombre: "Piqueteadero Lucarnes",
+    cat: "Parrilla",
+    tiempo: "35-45 min",
+    abierto: true,
+    color: "#f97316",
+    desc: "Perros, picadas, hamburguesas, dorilocos y más. Comida de piqueteadero para compartir.",
+    logo: "",
+    carta: [
+      {
+        sec: "Delicias",
+        items: [
+          { id: "lu-super-perro", n: "Super Perro", d: "Chorizo brisa, quesillo, maíz tierno, tocineta, huevos de codorniz, cebolla, ripio de papa.", p: 18000 },
+          { id: "lu-perra-caliente", n: "Perra Caliente", d: "Chorizo brisa, quesillo, maíz tierno, tocineta, huevos de codorniz, pollo y carne desmechada, cebolla, ripio de papa.", p: 24000 },
+          { id: "lu-patacon", n: "Patacón con Todo", d: "Quesillo, maíz tierno, tocineta, huevos de codorniz, pollo y carne desmechada, chorizo ahumado.", p: 25000 },
+          { id: "lu-salchiburguer-personal", n: "Salchiburguer Personal", d: "Carne de hamburguesa, chorizo brisa, tocineta, pollo y carne desmechada, salchicha rica, papa frita, quesillo, maíz tierno, huevo de codorniz, ripio de papa, salsas.", p: 30000 },
+          { id: "lu-salchiburguer-duo", n: "Salchiburguer Dúo", d: "Carne de hamburguesa, chorizo brisa, tocineta, pollo y carne desmechada, salchicha rica, papa frita, quesillo, maíz tierno, huevo de codorniz, ripio de papa, salsas.", p: 43000 },
+          { id: "lu-tacos", n: "Tacos Tradicionales", d: "5 tacos. Carne desmechada, pollo desmechado, guacamole, porción de papas.", p: 24000 },
+          { id: "lu-burrito-mixto", n: "Burrito Mixto", d: "Carne desmechada, pollo desmechado, guacamole, porción de papas, maíz tierno, tocineta, quesillo.", p: 23000 },
+          { id: "lu-arepa-mixta", n: "Arepa Mixta", d: "Carne y pollo desmechado, carne ahumada, chorizo, maíz tierno, quesillo.", p: 18000 },
+        ],
+      },
+      {
+        sec: "Especiales",
+        items: [
+          { id: "lu-costilla-bbq", n: "Costilla BBQ", d: "Acompañada de papas a la francesa, croquetas de yuca y ensalada.", p: 35000 },
+          { id: "lu-pechuga-gratinada", n: "Pechuga Gratinada", d: "Acompañada de papas a la francesa, croquetas de yuca y ensalada.", p: 35000 },
+          { id: "lu-pechuga-plancha", n: "Pechuga a la Plancha", d: "Acompañada de papas a la francesa, croquetas de yuca y ensalada.", p: 30000 },
+          { id: "lu-picada-tradicional", n: "Picada Tradicional", d: "Acompañada de papas a la francesa, croquetas de yuca y ensalada.", p: 30000 },
+          { id: "lu-filete-ahumado", n: "Filete Ahumado", d: "Acompañado de papas a la francesa, croquetas de yuca y ensalada.", p: 35000 },
+        ],
+      },
+      {
+        sec: "Dorilocos",
+        items: [
+          { id: "lu-doriloco-mixto", n: "Doriloco Mixto", d: "Carne, huevo de codorniz, maíz tierno, quesillo, tocineta, guacamole.", p: 22000 },
+          { id: "lu-doriloco-duo", n: "Doriloco Dúo", d: "Carne y pollo desmechado, Dorito grande, huevo, maíz, guacamole, tocineta, quesillo.", p: 30000 },
+          { id: "lu-doriloco-huevito", n: "Doriloco Huevito", d: "Carne y pollo desmechado, Dorito pequeño, 6 huevos de codorniz, maíz, tocineta, quesillo, guacamole.", p: 25000 },
+          { id: "lu-papa-loca", n: "Papa Loca", d: "Carne y pollo desmechado, chorizo brisa, huevo de codorniz, papa, maíz, tocineta, quesillo, guacamole.", p: 26000 },
+        ],
+      },
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "lu-ham-tradicional", n: "Tradicional", d: "130 g de carne, lechuga, tomate, quesillo, cebolla, ripio de papa, salsas.", p: 15000 },
+          { id: "lu-ham-ranchera", n: "Ranchera", d: "Huevo frito, maíz tierno, tocineta. Más 130 g de carne, lechuga, tomate, quesillo, cebolla, ripio de papa, salsas.", p: 19000 },
+          { id: "lu-ham-mexicana", n: "Mexicana", d: "Tocineta, jalapeños, salsas mexicanas. Más 130 g de carne, lechuga, tomate, quesillo, cebolla, ripio de papa, salsas.", p: 18000 },
+          { id: "lu-ham-fantasma", n: "Fantasma", d: "Capa de quesillo fundido, tocineta y huevo de codorniz. Más 130 g de carne, lechuga, tomate, quesillo, cebolla, ripio de papa, salsas.", p: 20000 },
+          { id: "lu-ham-de-la-casa", n: "De la Casa", d: "Carne ahumada, chorizo ahumado, maíz tierno, tocineta, papas a la francesa, tajadas de maduro, huevo de codorniz. Más 130 g de carne y salsas.", p: 25000 },
+        ],
+      },
+      {
+        sec: "Adicionales",
+        items: [
+          { id: "lu-ad-croquetas", n: "Croquetas de Yuca", d: "Porción adicional.", p: 7000 },
+          { id: "lu-ad-papas", n: "Papas a la Francesa", d: "Porción adicional.", p: 7000 },
+          { id: "lu-ad-codorniz", n: "Huevos de Codorniz", d: "Porción adicional.", p: 7000 },
+          { id: "lu-ad-quesillo", n: "Quesillo", d: "Porción adicional.", p: 7000 },
+        ],
+      },
+      {
+        sec: "Bebidas",
+        items: [
+          { id: "lu-be-hit-personal", n: "Hit Personal", d: "Jugo Hit personal.", p: 5000 },
+          { id: "lu-be-hit-caja", n: "Hit Caja", d: "Jugo Hit en caja.", p: 8000 },
+          { id: "lu-be-limonada-peq", n: "Jarra Limonada Pequeña", d: "Limonada natural.", p: 6000 },
+          { id: "lu-be-limonada-grande", n: "Jarra Limonada Grande", d: "Limonada natural.", p: 10000 },
+          { id: "lu-be-coca-15", n: "Coca Cola 1.5 L", d: "Para compartir.", p: 9000 },
+          { id: "lu-be-limonada-coco", n: "Limonada de Coco", d: "Jarra de limonada de coco.", p: 15000 },
+          { id: "lu-be-cerezada", n: "Cerezada", d: "Bebida de cereza.", p: 13000 },
+          { id: "lu-be-postobon", n: "Postobón Personal", d: "Varios sabores.", p: 5000 },
+        ],
+      },
+    ],
+  },
 ];
