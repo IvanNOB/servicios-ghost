@@ -33,6 +33,18 @@
 
   var restaurantes = [];   // copia en memoria
   var editando = null;     // restaurante en edición
+  var pedidos = [];        // pedidos en memoria
+
+  // Estados posibles de un pedido y su flujo.
+  var ESTADOS = ["recibido", "preparando", "listo", "en-camino", "entregado"];
+  var ESTADO_LABEL = {
+    "recibido": "Recibido",
+    "preparando": "Preparando",
+    "listo": "Listo",
+    "en-camino": "En camino",
+    "entregado": "Entregado",
+    "cancelado": "Cancelado",
+  };
 
   /* ----------------------------- Toast ---------------------------- */
   function toast(msg, esError) {
@@ -315,6 +327,21 @@
     // Migrar restaurantes de ejemplo (data.js) a la base de datos
     if (t.closest("#btnMigrar")) { migrar(); return; }
 
+    // Pestañas
+    var tab = t.closest("[data-tab]");
+    if (tab) { cambiarTab(tab.getAttribute("data-tab")); return; }
+
+    // Pedidos: refrescar
+    if (t.closest("#btnRefrescarPedidos")) { recargarPedidos(); return; }
+
+    // Pedidos: avanzar estado
+    var av = t.closest("[data-avanzar]");
+    if (av) { avanzarPedido(av.getAttribute("data-avanzar"), av.getAttribute("data-estado")); return; }
+
+    // Pedidos: cancelar
+    var ca = t.closest("[data-cancelar]");
+    if (ca) { cancelarPedido(ca.getAttribute("data-cancelar")); return; }
+
     // Editar / borrar en la lista
     var ed = t.closest("[data-editar]");
     if (ed) {
@@ -362,6 +389,11 @@
 
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !elEditorSheet.hidden) cerrarEditor();
+  });
+
+  // Filtro de pedidos por estado
+  document.addEventListener("change", function (e) {
+    if (e.target && e.target.id === "filtroPedidos") recargarPedidos();
   });
 
   async function guardar() {
@@ -413,6 +445,127 @@
       toast("No se pudo migrar: " + (ex && ex.message ? ex.message : "error"), true);
     } finally {
       if (btn) { btn.disabled = false; btn.textContent = "⬆️ Migrar ejemplos"; }
+    }
+  }
+
+  /* ------------------------- Pestañas ----------------------------- */
+  function cambiarTab(cual) {
+    document.querySelectorAll(".tab").forEach(function (t) {
+      t.classList.toggle("tab--active", t.getAttribute("data-tab") === cual);
+    });
+    var r = document.getElementById("tabRestaurantes");
+    var p = document.getElementById("tabPedidos");
+    if (r) r.hidden = cual !== "restaurantes";
+    if (p) p.hidden = cual !== "pedidos";
+    if (cual === "pedidos") recargarPedidos();
+  }
+
+  /* ------------------------- Pedidos ------------------------------ */
+  function money(n) {
+    try {
+      return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(n);
+    } catch (e) {
+      return "$" + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+  }
+
+  async function recargarPedidos() {
+    var cont = document.getElementById("listaPedidos");
+    if (cont) cont.innerHTML = '<p class="muted">Cargando pedidos…</p>';
+    var filtro = document.getElementById("filtroPedidos");
+    var estado = filtro ? filtro.value : "todos";
+    try {
+      pedidos = await window.Store.listarPedidos(estado);
+      pintarPedidos();
+    } catch (ex) {
+      if (cont) cont.innerHTML = '<p class="muted">No se pudieron cargar los pedidos: ' +
+        esc(ex && ex.message ? ex.message : "error") + "</p>";
+    }
+  }
+
+  function pintarPedidos() {
+    var cont = document.getElementById("listaPedidos");
+    if (!cont) return;
+    if (!pedidos.length) {
+      cont.innerHTML = '<p class="muted">No hay pedidos para mostrar.</p>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < pedidos.length; i++) {
+      html += pedidoHTML(pedidos[i]);
+    }
+    cont.innerHTML = html;
+  }
+
+  function fechaCorta(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleString("es-CO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+    } catch (e) { return ""; }
+  }
+
+  function pedidoHTML(p) {
+    var cliente = p.cliente || {};
+    var items = p.items || [];
+    var lineas = "";
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      lineas += '<li>' + esc(it.cantidad) + " × " + esc(it.plato) +
+        ' <span class="muted">(' + esc(it.restaurante) + ")</span> — " + esc(money(it.subtotal)) + "</li>";
+    }
+
+    // Botones de cambio de estado
+    var acciones = "";
+    if (p.estado !== "entregado" && p.estado !== "cancelado") {
+      var idx = ESTADOS.indexOf(p.estado);
+      if (idx !== -1 && idx < ESTADOS.length - 1) {
+        var sig = ESTADOS[idx + 1];
+        acciones += '<button type="button" class="btn-primary btn-sm" data-avanzar="' + esc(p.id) +
+          '" data-estado="' + esc(sig) + '">Marcar: ' + esc(ESTADO_LABEL[sig]) + "</button>";
+      }
+      acciones += '<button type="button" class="btn-danger btn-sm" data-cancelar="' + esc(p.id) + '">Cancelar</button>';
+    }
+
+    return (
+      '<article class="pedido estado-' + esc(p.estado) + '">' +
+        '<div class="pedido__head">' +
+          '<span class="pedido__codigo">' + esc(p.codigo || p.id.slice(0, 6)) + "</span>" +
+          '<span class="estado-badge estado-badge--' + esc(p.estado) + '">' + esc(ESTADO_LABEL[p.estado] || p.estado) + "</span>" +
+          '<span class="pedido__fecha">' + esc(fechaCorta(p.creado_en)) + "</span>" +
+        "</div>" +
+        '<ul class="pedido__items">' + lineas + "</ul>" +
+        '<div class="pedido__total">Total: <strong>' + esc(money(p.total || 0)) + "</strong> <span class=\"muted\">(domicilio aparte)</span></div>" +
+        '<div class="pedido__cliente">' +
+          "👤 " + esc(cliente.nombre || "—") + " · 📞 " + esc(cliente.telefono || "—") + "<br>" +
+          "📍 " + esc(cliente.direccion || "—") + ", " + esc(cliente.barrio || "—") +
+          " · 💳 " + esc(cliente.pago || "—") +
+          (cliente.notas ? "<br>📝 " + esc(cliente.notas) : "") +
+          (p.incidencia ? '<br><span class="pedido__incidencia">⚠️ ' + esc(p.incidencia) + "</span>" : "") +
+        "</div>" +
+        (acciones ? '<div class="pedido__actions">' + acciones + "</div>" : "") +
+      "</article>"
+    );
+  }
+
+  async function avanzarPedido(id, estado) {
+    try {
+      await window.Store.actualizarEstadoPedido(id, estado);
+      toast("Pedido → " + (ESTADO_LABEL[estado] || estado));
+      await recargarPedidos();
+    } catch (ex) {
+      toast("No se pudo actualizar: " + (ex && ex.message ? ex.message : "error"), true);
+    }
+  }
+
+  async function cancelarPedido(id) {
+    var motivo = prompt("Motivo de la cancelación / incidencia (opcional):", "");
+    if (motivo === null) return; // canceló el prompt
+    try {
+      await window.Store.actualizarEstadoPedido(id, "cancelado", motivo || "");
+      toast("Pedido cancelado");
+      await recargarPedidos();
+    } catch (ex) {
+      toast("No se pudo cancelar: " + (ex && ex.message ? ex.message : "error"), true);
     }
   }
 

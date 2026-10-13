@@ -506,6 +506,11 @@
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (btnWa.disabled) return;
+
+      // Guardar el pedido en Supabase (si está disponible) ANTES de abrir
+      // WhatsApp. No bloqueamos el envío si falla: el pedido igual va por WA.
+      guardarPedidoEnNube(form);
+
       var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(construirMensaje(form));
       // Navegar directo es lo más fiable en móvil (evita el bloqueo de pop-ups).
       try {
@@ -518,6 +523,53 @@
   }
 
   /* ----------------------- Mensaje de WhatsApp -------------------- */
+
+  // Guarda el pedido en Supabase con los precios registrados al momento
+  // de la compra. Silencioso: si falla, no interrumpe el envío por WhatsApp.
+  function guardarPedidoEnNube(form) {
+    if (!window.Store || typeof window.Store.crearPedido !== "function") return;
+    if (!window.Store.supabaseDisponible || !window.Store.supabaseDisponible()) return;
+
+    var data = new FormData(form);
+    var cliente = {
+      nombre: (data.get("nombre") || "").toString().trim(),
+      telefono: (data.get("telefono") || "").toString().trim(),
+      direccion: (data.get("direccion") || "").toString().trim(),
+      barrio: (data.get("barrio") || "").toString().trim(),
+      pago: (data.get("pago") || "Efectivo").toString(),
+      notas: (data.get("notas") || "").toString().trim(),
+    };
+
+    // Items con precio del momento (congelado), agrupados por restaurante.
+    var items = [];
+    var groups = groupedCart();
+    for (var gi = 0; gi < groups.length; gi++) {
+      var g = groups[gi];
+      for (var i = 0; i < g.items.length; i++) {
+        var it = g.items[i].item;
+        var qty = g.items[i].qty;
+        items.push({
+          restaurante_id: g.rest.id,
+          restaurante: g.rest.nombre,
+          plato_id: it.id,
+          plato: it.n,
+          precio_unit: it.p,          // precio registrado al momento de la compra
+          cantidad: qty,
+          subtotal: it.p * qty,
+        });
+      }
+    }
+
+    // Código corto legible basado en la hora (ej. GH-7F3K2).
+    var codigo = "GH-" + Date.now().toString(36).toUpperCase().slice(-5);
+
+    window.Store.crearPedido({
+      codigo: codigo,
+      cliente: cliente,
+      items: items,
+      total: totalPesos(),
+    }).catch(function () { /* el pedido va igual por WhatsApp */ });
+  }
 
   function construirMensaje(form) {
     var data = new FormData(form);

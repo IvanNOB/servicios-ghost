@@ -131,6 +131,47 @@
     return res.data ? res.data.length : 0;
   }
 
+  /* ----------------------------- Pedidos -------------------------- */
+
+  // Crea un pedido en la base de datos. Devuelve el pedido guardado
+  // (con su id/código). Lo puede hacer un cliente sin cuenta.
+  async function crearPedido(pedido) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var fila = {
+      codigo: pedido.codigo || null,
+      estado: "recibido",
+      cliente: pedido.cliente || {},
+      items: pedido.items || [],
+      total: pedido.total || 0,
+    };
+    var res = await sb.from("pedidos").insert(fila).select();
+    if (res.error) throw res.error;
+    return res.data && res.data[0];
+  }
+
+  // Lista los pedidos (solo admin). Opcionalmente filtra por estado.
+  async function listarPedidos(estado) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var q = sb.from("pedidos").select("*").order("creado_en", { ascending: false });
+    if (estado && estado !== "todos") q = q.eq("estado", estado);
+    var res = await q;
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  // Cambia el estado de un pedido (solo admin).
+  async function actualizarEstadoPedido(id, estado, incidencia) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var cambios = { estado: estado, actualizado: new Date().toISOString() };
+    if (typeof incidencia === "string") cambios.incidencia = incidencia;
+    var res = await sb.from("pedidos").update(cambios).eq("id", id).select();
+    if (res.error) throw res.error;
+    return res.data && res.data[0];
+  }
+
   // Sube una foto al bucket y devuelve su URL pública.
   async function subirFoto(file, carpeta) {
     var sb = client();
@@ -180,6 +221,9 @@
     guardar: guardar,
     eliminar: eliminar,
     migrarDesdeData: migrarDesdeData,
+    crearPedido: crearPedido,
+    listarPedidos: listarPedidos,
+    actualizarEstadoPedido: actualizarEstadoPedido,
     subirFoto: subirFoto,
     sesionActual: sesionActual,
     entrar: entrar,

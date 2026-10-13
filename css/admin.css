@@ -207,3 +207,94 @@ code {
   margin-right: 6px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ----------------------------- Pestañas ----------------------------- */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  color: var(--text-2);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.98rem;
+  padding: 10px 14px;
+  cursor: pointer;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); }
+.tab--active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.btn-sm { padding: 7px 12px; font-size: 0.82rem; }
+
+/* ----------------------------- Pedidos ------------------------------ */
+.pedidos-list { display: grid; gap: 14px; }
+
+.pedido {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.pedido.estado-recibido   { border-left-color: #3b82f6; }
+.pedido.estado-preparando { border-left-color: #f59e0b; }
+.pedido.estado-listo      { border-left-color: #a855f7; }
+.pedido.estado-en-camino  { border-left-color: var(--primary); }
+.pedido.estado-entregado  { border-left-color: #22c55e; }
+.pedido.estado-cancelado  { border-left-color: #ef4444; opacity: .7; }
+
+.pedido__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.pedido__codigo { font-weight: 800; font-family: var(--font-title); }
+.pedido__fecha { color: var(--text-2); font-size: 0.82rem; margin-left: auto; }
+
+.estado-badge {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.estado-badge--recibido   { background: rgba(59,130,246,.18);  color: #93c5fd; }
+.estado-badge--preparando { background: rgba(245,158,11,.18);  color: #fcd34d; }
+.estado-badge--listo      { background: rgba(168,85,247,.18);  color: #d8b4fe; }
+.estado-badge--en-camino  { background: rgba(212,175,55,.2);   color: var(--gold-soft); }
+.estado-badge--entregado  { background: rgba(34,197,94,.18);   color: #86efac; }
+.estado-badge--cancelado  { background: rgba(239,68,68,.18);   color: #fca5a5; }
+
+.pedido__items { margin: 0 0 10px; padding-left: 18px; }
+.pedido__items li { font-size: 0.92rem; margin-bottom: 3px; }
+.pedido__total { font-size: 0.95rem; margin-bottom: 10px; }
+.pedido__cliente {
+  background: var(--black-3, #1a1a20);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.pedido__incidencia { color: #fca5a5; }
+.pedido__actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+.field__select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
