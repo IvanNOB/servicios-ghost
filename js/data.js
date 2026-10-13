@@ -46,6 +46,22 @@ const NOMBRE_NEGOCIO = "Servicios Ghost";
                              d  -> descripción corta.
                              p  -> precio en pesos (número, sin puntos).
 --------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+   PROMOCIONES (franja del inicio)
+   ---------------------------------------------------------------------
+   Edita, agrega o quita bloques. Cada promo tiene:
+     titulo -> texto principal corto.
+     texto  -> descripción breve.
+     emoji  -> ícono (opcional).
+   Si dejas el array vacío ([]) no se muestra la franja.
+--------------------------------------------------------------------- */
+const PROMOCIONES = [
+  { emoji: "🔥", titulo: "Combos del día", texto: "Pide tus favoritos y ahorra." },
+  { emoji: "🛵", titulo: "Domicilio rápido", texto: "A tu puerta en Cartagena del Chairá." },
+  { emoji: "💬", titulo: "Pide por WhatsApp", texto: "Confirmamos tu pedido al instante." },
+];
+
 const RESTAURANTES = [
   {
     id: "obleas-y-mas",

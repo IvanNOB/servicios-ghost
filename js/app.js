@@ -439,14 +439,23 @@
       '<div class="cart-total"><span>Total productos</span><span>' +
         esc(money(totalPesos())) + "</span></div>" +
       '<p class="cart-note">Domicilio: se confirma por WhatsApp.</p>' +
+      '<h3 class="form__heading">Tus datos de entrega</h3>' +
       '<form class="form" id="pedidoForm" novalidate>' +
         '<div class="field">' +
-          '<label class="field__label" for="fNombre">Nombre</label>' +
+          '<label class="field__label" for="fNombre">Nombre *</label>' +
           '<input class="field__input" id="fNombre" name="nombre" type="text" placeholder="¿A nombre de quién?" autocomplete="name" required />' +
         "</div>" +
         '<div class="field">' +
-          '<label class="field__label" for="fDireccion">Dirección de entrega</label>' +
-          '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Dirección, barrio y referencias" autocomplete="street-address" required />' +
+          '<label class="field__label" for="fTelefono">Teléfono (WhatsApp) *</label>' +
+          '<input class="field__input" id="fTelefono" name="telefono" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" autocomplete="tel" required />' +
+        "</div>" +
+        '<div class="field">' +
+          '<label class="field__label" for="fDireccion">Dirección de entrega *</label>' +
+          '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" required />' +
+        "</div>" +
+        '<div class="field">' +
+          '<label class="field__label" for="fBarrio">Barrio / zona *</label>' +
+          '<input class="field__input" id="fBarrio" name="barrio" type="text" placeholder="Ej: Centro, El Progreso…" required />' +
         "</div>" +
         '<div class="field">' +
           '<span class="field__label">Forma de pago</span>' +
@@ -459,6 +468,7 @@
           '<label class="field__label" for="fNotas">Notas (opcional)</label>' +
           '<textarea class="field__textarea" id="fNotas" name="notas" placeholder="Ej: sin cebolla, timbre dañado, etc."></textarea>' +
         "</div>" +
+        '<p class="form__hint">El domicilio se confirma por WhatsApp según tu barrio.</p>' +
         '<div class="actions">' +
           '<button type="submit" class="btn-whatsapp" id="btnWhatsapp" disabled><span aria-hidden="true">🟢</span> Enviar pedido por WhatsApp</button>' +
           '<button type="button" class="btn-copy" data-copy>Copiar el pedido</button>' +
@@ -475,14 +485,22 @@
     var form = $("#pedidoForm");
     var btnWa = $("#btnWhatsapp");
     var fNombre = $("#fNombre");
+    var fTelefono = $("#fTelefono");
     var fDireccion = $("#fDireccion");
-    if (!form || !btnWa || !fNombre || !fDireccion) return;
+    var fBarrio = $("#fBarrio");
+    if (!form || !btnWa || !fNombre || !fTelefono || !fDireccion || !fBarrio) return;
 
     function validar() {
-      btnWa.disabled = !(fNombre.value.trim() && fDireccion.value.trim());
+      btnWa.disabled = !(
+        fNombre.value.trim() &&
+        fTelefono.value.trim() &&
+        fDireccion.value.trim() &&
+        fBarrio.value.trim()
+      );
     }
-    fNombre.addEventListener("input", validar);
-    fDireccion.addEventListener("input", validar);
+    [fNombre, fTelefono, fDireccion, fBarrio].forEach(function (campo) {
+      campo.addEventListener("input", validar);
+    });
     validar();
 
     form.addEventListener("submit", function (e) {
@@ -504,32 +522,39 @@
   function construirMensaje(form) {
     var data = new FormData(form);
     var nombre = (data.get("nombre") || "").toString().trim();
+    var telefono = (data.get("telefono") || "").toString().trim();
     var direccion = (data.get("direccion") || "").toString().trim();
+    var barrio = (data.get("barrio") || "").toString().trim();
     var pago = (data.get("pago") || "Efectivo").toString();
     var notas = (data.get("notas") || "").toString().trim();
 
     var groups = groupedCart();
     var lines = [];
-    lines.push("Hola " + NOMBRE_NEGOCIO + ", quiero hacer un pedido:");
+    lines.push("🛵 *NUEVO PEDIDO · " + NOMBRE_NEGOCIO + "*");
     lines.push("");
 
     for (var gi = 0; gi < groups.length; gi++) {
       var g = groups[gi];
-      lines.push("*Restaurante: " + g.rest.nombre + "*");
+      lines.push("🍽️ *" + g.rest.nombre + "*");
       for (var i = 0; i < g.items.length; i++) {
         var item = g.items[i].item;
         var qty = g.items[i].qty;
-        lines.push("- " + qty + " x " + item.n + " (" + money(item.p) + ")");
+        lines.push("• " + qty + " x " + item.n + " — " + money(item.p * qty));
       }
-      lines.push("Subtotal: " + money(g.subtotal));
+      lines.push("_Subtotal: " + money(g.subtotal) + "_");
       lines.push("");
     }
 
-    lines.push("*Total productos:* " + money(totalPesos()) + " (domicilio aparte)");
-    lines.push("*Nombre:* " + nombre);
-    lines.push("*Dirección:* " + direccion);
-    lines.push("*Pago:* " + pago);
-    if (notas) lines.push("*Nota:* " + notas);
+    lines.push("💰 *Total productos:* " + money(totalPesos()));
+    lines.push("_(el domicilio se cobra aparte según el barrio)_");
+    lines.push("");
+    lines.push("👤 *Datos de entrega*");
+    lines.push("• Nombre: " + nombre);
+    lines.push("• Teléfono: " + telefono);
+    lines.push("• Dirección: " + direccion);
+    lines.push("• Barrio: " + barrio);
+    lines.push("• Pago: " + pago);
+    if (notas) lines.push("• Nota: " + notas);
 
     return lines.join("\n");
   }
@@ -627,12 +652,35 @@
     if (e.key === "Escape" && !elSheet.hidden) closeSheet();
   });
 
+  /* -------------------------- Promociones ------------------------- */
+  function renderPromos() {
+    var cont = document.getElementById("promos");
+    if (!cont) return;
+    var lista = (typeof PROMOCIONES !== "undefined" && Array.isArray(PROMOCIONES)) ? PROMOCIONES : [];
+    if (!lista.length) { cont.innerHTML = ""; cont.hidden = true; return; }
+    cont.hidden = false;
+    var html = "";
+    for (var i = 0; i < lista.length; i++) {
+      var p = lista[i];
+      html +=
+        '<div class="promo">' +
+          '<span class="promo__emoji" aria-hidden="true">' + esc(p.emoji || "✨") + "</span>" +
+          '<div class="promo__text">' +
+            '<div class="promo__title">' + esc(p.titulo || "") + "</div>" +
+            '<div class="promo__sub">' + esc(p.texto || "") + "</div>" +
+          "</div>" +
+        "</div>";
+    }
+    cont.innerHTML = html;
+  }
+
   /* --------------------------- Arranque --------------------------- */
 
   // Seguridad: aseguramos que la hoja empiece SIEMPRE cerrada al cargar.
   closeSheet();
 
   // Primer pintado con lo que haya (data.js) para que no se vea vacío.
+  renderPromos();
   renderChips();
   renderGrid();
   refreshCart();
