@@ -5,14 +5,34 @@
 
 /* ------------------------------ Tokens ------------------------------ */
 :root {
-  /* Colores (modo oscuro por defecto) */
-  --bg: #0f1117;
-  --surface: #1a1e2b;
-  --border: #2a2f3d;
-  --text: #e8eaed;
-  --text-2: #9ca3af;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
+  /* =================================================================
+     Paleta de marca — regla 60 / 25 / 10 / 5
+       60% NEGRO     base visual de la marca (fondo y superficies)
+       25% BLANCO    legibilidad y protagonismo de Ghosty (texto)
+       10% DORADO    identidad premium y detalles distintivos (acento)
+        5% PLATEADO  innovación y acabados reflectivos (bordes/detalles)
+     ================================================================= */
+
+  /* 60% — Negro (base) */
+  --bg: #0a0a0a;          /* negro de fondo */
+  --surface: #141414;     /* superficie / tarjetas (negro elevado) */
+  --surface-2: #1c1c1c;   /* segundo nivel de superficie */
+
+  /* 5% — Plateado (bordes y acabados reflectivos) */
+  --border: #3a3a3c;      /* plateado tenue para bordes */
+  --silver: #c8ccd0;      /* plateado para detalles reflectivos */
+  --silver-soft: #8a8f94; /* plateado apagado */
+
+  /* 25% — Blanco (texto) */
+  --text: #ffffff;        /* blanco: protagonismo de Ghosty */
+  --text-2: #b3b6ba;      /* texto secundario (blanco atenuado hacia plata) */
+
+  /* 10% — Dorado (acento premium) */
+  --primary: #d4af37;        /* dorado */
+  --primary-hover: #c19b2c;  /* dorado más intenso al pasar el cursor */
+  --gold-soft: #e8c766;      /* dorado claro para brillos */
+
+  /* Éxito (acción WhatsApp) — se mantiene verde para claridad funcional */
   --success: #22c55e;
   --success-hover: #16a34a;
 
@@ -34,20 +54,8 @@
   color-scheme: dark;
 }
 
-/* Versión clara automática */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f3f5f9;
-    --surface: #ffffff;
-    --border: #e2e6ee;
-    --text: #0f1117;
-    --text-2: #5b6472;
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --shadow: 0 10px 30px rgba(15, 17, 23, 0.12);
-    color-scheme: light;
-  }
-}
+/* La marca es SIEMPRE oscura (60% negro como base), en todos los
+   dispositivos, para no romper la identidad premium negro/dorado. */
 
 /* ------------------------------ Reset ------------------------------ */
 *,
@@ -144,8 +152,8 @@ a { color: inherit; text-decoration: none; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-2);
-  border: 1px solid var(--border);
+  color: var(--silver);                 /* plateado: acabado premium */
+  border: 1px solid var(--silver-soft);
   border-radius: var(--radius-pill);
   padding: 2px 8px;
 }
@@ -213,7 +221,7 @@ a { color: inherit; text-decoration: none; }
 .chip[aria-pressed="true"] {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: #0a0a0a;
 }
 
 /* ----------------------------- Contenido ---------------------------- */
@@ -442,7 +450,7 @@ a { color: inherit; text-decoration: none; }
 /* Botón Agregar y stepper */
 .add-btn {
   background: var(--primary);
-  color: #fff;
+  color: #0a0a0a;
   border: 0;
   border-radius: var(--radius-pill);
   padding: 9px 18px;
@@ -508,7 +516,7 @@ a { color: inherit; text-decoration: none; }
   justify-content: space-between;
   gap: 12px;
   background: var(--primary);
-  color: #fff;
+  color: #0a0a0a;
   border: 0;
   border-radius: var(--radius-pill);
   padding: 14px 20px;
@@ -524,7 +532,7 @@ a { color: inherit; text-decoration: none; }
 .cart-bar__left { display: inline-flex; align-items: center; gap: 8px; }
 
 .cart-bar__badge {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(10, 10, 10, 0.22);
   border-radius: var(--radius-pill);
   min-width: 24px;
   height: 24px;

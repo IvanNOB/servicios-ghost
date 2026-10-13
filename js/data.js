@@ -53,7 +53,7 @@ const RESTAURANTES = [
     cat: "Postres",
     tiempo: "20-30 min",
     abierto: true,
-    color: "#f59e0b",
+    color: "#d4af37",
     desc: "Obleas, helados y antojos dulces para endulzar el día.",
     logo: "",
     carta: [
@@ -88,7 +88,7 @@ const RESTAURANTES = [
     cat: "Parrilla",
     tiempo: "35-45 min",
     abierto: true,
-    color: "#ef4444",
+    color: "#b08d2e",
     desc: "Carnes a la brasa, picadas y acompañamientos generosos.",
     logo: "",
     carta: [
@@ -123,7 +123,7 @@ const RESTAURANTES = [
     cat: "Pizza",
     tiempo: "30-40 min",
     abierto: true,
-    color: "#22c55e",
+    color: "#8a8f94",
     desc: "Pizzas artesanales horneadas al momento.",
     logo: "",
     carta: [
@@ -158,7 +158,7 @@ const RESTAURANTES = [
     cat: "Rápida",
     tiempo: "25-35 min",
     abierto: false,
-    color: "#3b82f6",
+    color: "#c8ccd0",
     desc: "Hamburguesas, perros y papas. Comida rápida clásica.",
     logo: "",
     carta: [
