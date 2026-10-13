@@ -312,6 +312,9 @@
     // Nuevo restaurante
     if (t.closest("#btnNuevo")) { abrirEditor(nuevoRestaurante()); return; }
 
+    // Migrar restaurantes de ejemplo (data.js) a la base de datos
+    if (t.closest("#btnMigrar")) { migrar(); return; }
+
     // Editar / borrar en la lista
     var ed = t.closest("[data-editar]");
     if (ed) {
@@ -394,6 +397,22 @@
       await recargarLista();
     } catch (ex) {
       toast("No se pudo borrar: " + (ex && ex.message ? ex.message : "error"), true);
+    }
+  }
+
+  async function migrar() {
+    if (!confirm("Esto subirá los restaurantes de ejemplo (data.js) a la base de datos. " +
+                 "Si ya existe uno con el mismo id, se actualizará. ¿Continuar?")) return;
+    var btn = document.getElementById("btnMigrar");
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Migrando…'; }
+    try {
+      var n = await window.Store.migrarDesdeData();
+      toast(n + " restaurantes migrados ✓");
+      await recargarLista();
+    } catch (ex) {
+      toast("No se pudo migrar: " + (ex && ex.message ? ex.message : "error"), true);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "⬆️ Migrar ejemplos"; }
     }
   }
 

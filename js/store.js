@@ -105,6 +105,32 @@
     return true;
   }
 
+  // Sube de una vez todos los restaurantes definidos en data.js (RESTAURANTES).
+  // Útil para migrar el contenido inicial a la base de datos.
+  async function migrarDesdeData() {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var base = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []);
+    var filas = base.map(function (r, idx) {
+      return {
+        id: r.id,
+        nombre: r.nombre,
+        cat: r.cat,
+        tiempo: r.tiempo,
+        abierto: !!r.abierto,
+        color: r.color || "#3b82f6",
+        descripcion: r.desc || "",
+        logo: r.logo || "",
+        carta: r.carta || [],
+        orden: typeof r.orden === "number" ? r.orden : idx,
+      };
+    });
+    if (!filas.length) return 0;
+    var res = await sb.from("restaurantes").upsert(filas, { onConflict: "id" }).select();
+    if (res.error) throw res.error;
+    return res.data ? res.data.length : 0;
+  }
+
   // Sube una foto al bucket y devuelve su URL pública.
   async function subirFoto(file, carpeta) {
     var sb = client();
@@ -153,6 +179,7 @@
     listar: listar,
     guardar: guardar,
     eliminar: eliminar,
+    migrarDesdeData: migrarDesdeData,
     subirFoto: subirFoto,
     sesionActual: sesionActual,
     entrar: entrar,
