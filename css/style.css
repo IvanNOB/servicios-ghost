@@ -538,6 +538,11 @@ a { color: inherit; text-decoration: none; }
 .cart-bar__total { font-variant-numeric: tabular-nums; }
 
 /* --------------------------- Hoja inferior -------------------------- */
+/* IMPORTANTE: el atributo [hidden] debe ocultar siempre la hoja. Como .sheet
+   usa display:flex, hay que forzar display:none cuando está oculta, porque
+   si no, flex "gana" y la hoja se queda visible/pegada. */
+.sheet[hidden] { display: none !important; }
+
 .sheet {
   position: fixed;
   inset: 0;
