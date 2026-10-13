@@ -10,13 +10,10 @@ Hecho con **HTML, CSS y JavaScript puro** (sin frameworks ni build).
 ## Estructura
 
 ```
-index.html             Landing page (inicio de la marca)
-tienda.html            Marketplace de restaurantes/pedidos
+index.html             Tienda / marketplace de restaurantes (inicio)
 admin.html             Panel de administración (solo para ti)
-css/landing.css        Estilos de la landing
-css/style.css          Estilos de la tienda
+css/style.css          Estilos de la tienda (Montserrat, premium negro/dorado)
 css/admin.css          Estilos del panel de admin
-js/landing.js          Lógica de la landing (servicios, menú, WhatsApp)
 js/data.js             Datos de respaldo (si Supabase no está configurado)
 js/supabase-config.js  👈 Tus credenciales de Supabase
 js/store.js            Capa de datos (Supabase o respaldo)
@@ -24,11 +21,6 @@ js/app.js              Lógica de la tienda
 js/admin.js            Lógica del panel de admin
 supabase-setup.sql     SQL para preparar Supabase (ejecutar 1 vez)
 ```
-
-> **Flujo:** `index.html` es la landing de la agencia (hero, servicios,
-> cómo funciona, cobertura, para negocios, contacto). Los servicios
-> Mercados / Comidas rápidas / Antojos llevan a `tienda.html`, donde el
-> cliente arma el pedido y lo envía por WhatsApp.
 
 > **¿Cómo funciona?** Si configuras Supabase, los restaurantes viven en la
 > nube y los editas desde `admin.html` (subiendo fotos y todo). Si NO lo

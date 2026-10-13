@@ -3,215 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="Servicios Ghost — Soluciones express y domicilios en Cartagena del Chairá. Mercados, comidas rápidas, antojos, paquetes, consignaciones y respaldo a negocios. Pide por WhatsApp." />
-  <meta name="theme-color" content="#0b0b0d" />
+  <meta name="description" content="Servicios Ghost — agencia de domicilios en Colombia. Pide en tus restaurantes favoritos y confirma por WhatsApp." />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Servicios Ghost · Domicilios</title>
 
-  <meta property="og:title" content="Servicios Ghost · Soluciones Express & Domicilios" />
-  <meta property="og:description" content="Rompemos las barreras del tiempo. Tú lo necesitas, Ghost lo lleva. Domicilios en Cartagena del Chairá y alrededores." />
-  <meta property="og:type" content="website" />
-
-  <title>Servicios Ghost · Soluciones Express & Domicilios</title>
-
+  <!-- Google Fonts: Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/landing.css?v=1" />
+  <link rel="stylesheet" href="css/style.css?v=12" />
 </head>
 <body>
-
-  <!-- ============================ HEADER ============================ -->
-  <header class="nav" id="nav">
-    <div class="container nav__inner">
-      <a class="brand" href="#inicio" aria-label="Servicios Ghost, inicio">
-        <span class="brand__ghost" aria-hidden="true">👻</span>
-        <span class="brand__text">
-          <span class="brand__name">SERVICIOS <span class="brand__accent">GHOST</span></span>
-          <span class="brand__tag">Soluciones Express &amp; Domicilios</span>
+  <!-- ============================ CABECERA ============================ -->
+  <header class="header" role="banner">
+    <div class="header__inner">
+      <a class="logo" href="#" aria-label="Servicios Ghost, inicio" id="logoHome">
+        <span class="logo__ghost" aria-hidden="true">👻</span>
+        <span class="logo__text">
+          <span class="logo__name">SERVICIOS <span class="logo__accent">GHOST</span></span>
+          <span class="logo__tag">Soluciones Express &amp; Domicilios</span>
         </span>
       </a>
 
-      <nav class="nav__links" id="navLinks" aria-label="Navegación principal">
-        <a href="#inicio">Inicio</a>
-        <a href="#servicios">Servicios</a>
-        <a href="#como-funciona">Cómo funciona</a>
-        <a href="#cobertura">Cobertura</a>
-        <a href="#aliados">Aliados</a>
-        <a href="#contacto">Contacto</a>
-        <a class="btn btn--primary nav__cta" href="#" data-wa>
-          <span aria-hidden="true">🟢</span> Pide por WhatsApp
-        </a>
-      </nav>
+      <div class="search">
+        <span class="search__icon" aria-hidden="true">🔍</span>
+        <input
+          type="search"
+          id="buscador"
+          class="search__input"
+          placeholder="Busca un restaurante o un plato"
+          aria-label="Busca un restaurante o un plato"
+          autocomplete="off"
+        />
+      </div>
 
-      <button class="nav__toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
+      <nav class="chips" id="chips" aria-label="Categorías"></nav>
     </div>
   </header>
 
-  <!-- ============================ HERO ============================ -->
-  <section class="hero" id="inicio">
-    <div class="hero__overlay"></div>
-    <div class="container hero__content">
-      <p class="hero__loc">📍 Cartagena del Chairá y alrededores</p>
-      <h1 class="hero__title">
-        ROMPEMOS LAS<br /><span class="gold">BARRERAS DEL TIEMPO</span>
-      </h1>
-      <p class="hero__lead">Tú lo necesitas. Ghost lo lleva.</p>
-      <p class="hero__desc">
-        Domicilios, mercados, antojos, consignaciones, recogida de paquetes
-        y respaldo a negocios.
+  <!-- ============================ CONTENIDO ============================ -->
+  <main class="main" id="main">
+    <!-- Vista: lista de restaurantes -->
+    <section id="vistaInicio" class="vista">
+      <div class="hero">
+        <h1 class="hero__title">Pide en tus restaurantes favoritos</h1>
+        <p class="hero__sub">
+          Arma tu pedido y lo enviamos por WhatsApp a Servicios Ghost. Sin pagos en la web.
+        </p>
+      </div>
+
+      <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
+
+      <p class="empty" id="sinResultados" hidden>
+        No encontramos nada con esa búsqueda. Prueba con otro nombre 🙂
       </p>
-      <div class="hero__actions">
-        <a class="btn btn--primary btn--lg" href="#" data-wa>
-          <span aria-hidden="true">🟢</span> Pide tu domicilio
-        </a>
-        <a class="btn btn--ghost btn--lg" href="#servicios">Ver servicios</a>
+    </section>
+
+    <!-- Vista: carta de un restaurante -->
+    <section id="vistaCarta" class="vista" hidden></section>
+  </main>
+
+  <!-- ====================== BARRA DEL CARRITO ======================== -->
+  <button type="button" class="cart-bar" id="cartBar" hidden>
+    <span class="cart-bar__left">
+      <span class="cart-bar__badge" id="cartBarCount">0</span>
+      Ver pedido · <span id="cartBarProductos">0 productos</span>
+    </span>
+    <span class="cart-bar__total" id="cartBarTotal"></span>
+  </button>
+
+  <!-- ===================== HOJA INFERIOR (CARRITO) =================== -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet__backdrop" data-sheet-backdrop></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="sheetTitle">Tu pedido</h2>
+        <button type="button" class="icon-btn" data-sheet-close aria-label="Cerrar el pedido">✕</button>
       </div>
-      <ul class="hero__features">
-        <li><span class="hero__fico">⚡</span> Rápido y seguro</li>
-        <li><span class="hero__fico">🛡️</span> Confiable siempre</li>
-        <li><span class="hero__fico">📍</span> A tu servicio</li>
-      </ul>
+
+      <div class="sheet__body" id="sheetBody"><!-- contenido dinámico --></div>
     </div>
-  </section>
+  </div>
 
-  <!-- ======================= NUESTROS SERVICIOS ======================= -->
-  <section class="section" id="servicios">
-    <div class="container">
-      <div class="section__head">
-        <div>
-          <h2 class="section__title">Nuestros <span class="gold">Servicios</span></h2>
-          <p class="section__sub">Todo lo que necesitas, en un solo lugar.</p>
-        </div>
-      </div>
-
-      <div class="services" id="servicesGrid"><!-- generado por JS --></div>
-    </div>
-  </section>
-
-  <!-- ======================= CÓMO FUNCIONA ======================= -->
-  <section class="section section--alt" id="como-funciona">
-    <div class="container">
-      <h2 class="section__title">¿Cómo <span class="gold">funciona</span>?</h2>
-      <p class="section__sub">Es muy fácil, en 3 simples pasos.</p>
-
-      <div class="steps">
-        <div class="step">
-          <div class="step__num">1</div>
-          <h3 class="step__title">Solicita</h3>
-          <p class="step__text">Haz tu pedido por WhatsApp o en la web.</p>
-        </div>
-        <div class="step__arrow" aria-hidden="true">→</div>
-        <div class="step">
-          <div class="step__num">2</div>
-          <h3 class="step__title">Confirmamos</h3>
-          <p class="step__text">Te damos el precio y el tiempo de entrega.</p>
-        </div>
-        <div class="step__arrow" aria-hidden="true">→</div>
-        <div class="step">
-          <div class="step__num">3</div>
-          <h3 class="step__title">Recibes</h3>
-          <p class="step__text">Tu pedido llega seguro y a tiempo.</p>
-        </div>
-      </div>
-
-      <div class="center">
-        <a class="btn btn--primary btn--lg" href="#" data-wa>
-          <span aria-hidden="true">🟢</span> Pide ahora
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ======================= COBERTURA ======================= -->
-  <section class="section" id="cobertura">
-    <div class="container cobertura">
-      <div class="cobertura__text">
-        <h2 class="section__title">Cobertura</h2>
-        <p class="section__sub">
-          Estamos en <strong>Cartagena del Chairá</strong> y sus alrededores.
-        </p>
-        <p class="muted">
-          ¿No estás seguro si llegamos hasta tu zona? Escríbenos por WhatsApp y te confirmamos al instante.
-        </p>
-        <a class="btn btn--outline" href="#" data-wa>Consultar cobertura</a>
-      </div>
-      <div class="cobertura__map" aria-hidden="true">
-        <div class="cobertura__pin">📍</div>
-        <span class="cobertura__label">Cartagena del Chairá</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ======================= PARA NEGOCIOS ======================= -->
-  <section class="section" id="aliados">
-    <div class="container negocios">
-      <div class="negocios__content">
-        <h2 class="section__title">Para <span class="gold">negocios</span></h2>
-        <p class="section__sub">Impulsa tu comercio con nosotros.</p>
-        <ul class="checklist">
-          <li>Más ventas</li>
-          <li>Mayor visibilidad</li>
-          <li>Clientes satisfechos</li>
-          <li>Soporte y acompañamiento</li>
-        </ul>
-        <a class="btn btn--primary btn--lg" href="#" data-wa-negocio>Quiero ser aliado</a>
-      </div>
-      <div class="negocios__slogan">
-        Juntos hacemos que<br />tu negocio <span class="gold">llegue más lejos.</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================ FOOTER ============================ -->
-  <footer class="footer" id="contacto">
-    <div class="container footer__grid">
-      <div>
-        <a class="brand brand--footer" href="#inicio">
-          <span class="brand__ghost" aria-hidden="true">👻</span>
-          <span class="brand__text">
-            <span class="brand__name">SERVICIOS <span class="brand__accent">GHOST</span></span>
-            <span class="brand__tag">Soluciones Express &amp; Domicilios</span>
-          </span>
-        </a>
-      </div>
-
-      <div class="footer__col">
-        <h4>Enlaces rápidos</h4>
-        <a href="#inicio">Inicio</a>
-        <a href="#servicios">Servicios</a>
-        <a href="#cobertura">Cobertura</a>
-        <a href="#contacto">Contacto</a>
-      </div>
-
-      <div class="footer__col">
-        <h4>Síguenos</h4>
-        <div class="footer__social">
-          <a href="#" aria-label="Facebook" title="Facebook">📘</a>
-          <a href="#" aria-label="Instagram" title="Instagram">📸</a>
-          <a href="#" aria-label="TikTok" title="TikTok">🎵</a>
-          <a href="#" data-wa aria-label="WhatsApp" title="WhatsApp">🟢</a>
-        </div>
-      </div>
-
-      <div class="footer__col">
-        <h4>Contacto</h4>
-        <a href="tel:+573214286626">📞 321 428 6626</a>
-        <span>📍 Cartagena del Chairá</span>
-        <a href="mailto:serviciosghost@gmail.com">✉️ serviciosghost@gmail.com</a>
-      </div>
-    </div>
-    <div class="footer__bottom container">
-      © <span id="year"></span> Servicios Ghost. Todos los derechos reservados.
-    </div>
-  </footer>
-
-  <!-- Botón flotante de WhatsApp -->
-  <a class="wa-float" href="#" data-wa aria-label="Pedir por WhatsApp">
-    <span aria-hidden="true">🟢</span>
-  </a>
-
-  <script src="js/landing.js?v=1"></script>
+  <!-- Supabase (opcional): si configuras js/supabase-config.js, los datos
+       vienen de la nube; si no, se usa data.js como respaldo. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/data.js?v=12"></script>
+  <script src="js/supabase-config.js?v=12"></script>
+  <script src="js/store.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>
