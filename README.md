@@ -10,11 +10,21 @@ Hecho con **HTML, CSS y JavaScript puro** (sin frameworks ni build).
 ## Estructura
 
 ```
-index.html        Página única
-css/style.css     Estilos (oscuro por defecto, claro automático)
-js/data.js        👈 Configuración y datos (lo que vas a editar)
-js/app.js         Lógica de la app
+index.html             Página del cliente
+admin.html             Panel de administración (solo para ti)
+css/style.css          Estilos de la tienda
+css/admin.css          Estilos del panel de admin
+js/data.js             Datos de respaldo (si Supabase no está configurado)
+js/supabase-config.js  👈 Tus credenciales de Supabase
+js/store.js            Capa de datos (Supabase o respaldo)
+js/app.js              Lógica de la tienda
+js/admin.js            Lógica del panel de admin
+supabase-setup.sql     SQL para preparar Supabase (ejecutar 1 vez)
 ```
+
+> **¿Cómo funciona?** Si configuras Supabase, los restaurantes viven en la
+> nube y los editas desde `admin.html` (subiendo fotos y todo). Si NO lo
+> configuras, la web sigue funcionando con los restaurantes de `data.js`.
 
 ## 1) Cambiar el número de WhatsApp
 
@@ -86,3 +96,59 @@ python3 -m http.server 8000
 # luego abre http://localhost:8000
 ```
 ```
+
+---
+
+## Panel de administración con Supabase (subir fotos y editar en la nube)
+
+Con esto podrás agregar/editar restaurantes y **subir fotos desde tu
+celular o PC**, con login seguro. Los clientes solo pueden ver; solo tú
+(con sesión iniciada) puedes editar.
+
+### Paso 1 — Crear el proyecto en Supabase (gratis)
+1. Entra a **https://supabase.com** y crea una cuenta.
+2. **New Project** → ponle un nombre y una contraseña de base de datos.
+3. Espera a que termine de crearse (~2 min).
+
+### Paso 2 — Preparar la base de datos y el storage
+1. En tu proyecto, ve a **SQL Editor → New query**.
+2. Abre el archivo **`supabase-setup.sql`** de este repo, copia TODO su
+   contenido, pégalo y pulsa **Run**.
+   - Esto crea la tabla `restaurantes`, el bucket `fotos` y las reglas de
+     seguridad (lectura pública, escritura solo para admin).
+
+### Paso 3 — Crear tu usuario admin
+1. Ve a **Authentication → Users → Add user**.
+2. Pon tu **correo** y una **contraseña**. Ese será tu acceso al panel.
+
+### Paso 4 — Conectar la web con tu proyecto
+1. En Supabase ve a **Project Settings → API** y copia:
+   - **Project URL** (ej. `https://xxxx.supabase.co`)
+   - **anon public** key (empieza por `eyJ...`)
+2. Abre **`js/supabase-config.js`** y pégalos:
+   ```js
+   const SUPABASE_URL = "https://xxxx.supabase.co";
+   const SUPABASE_ANON_KEY = "eyJ...";
+   ```
+   > Estos dos datos son **públicos y seguros** de poner ahí. **Nunca**
+   > pongas la clave `service_role` (esa es secreta).
+3. Haz commit y push a `main`. Pages se actualiza solo.
+
+### Paso 5 — Usar el panel
+1. Entra a **`https://ivannob.github.io/servicios-ghost/admin.html`**
+2. Inicia sesión con el correo y contraseña del Paso 3.
+3. Desde ahí puedes:
+   - **+ Nuevo restaurante** → nombre, categoría, tiempo, color, descripción.
+   - **📷 Subir foto** de portada desde tu dispositivo.
+   - Agregar **secciones** (ej. Obleas, Bebidas) y **platos** (nombre,
+     descripción, precio).
+   - **Editar** o **Borrar** restaurantes existentes.
+4. Lo que guardes aparece de inmediato en la tienda para los clientes.
+
+> La URL `admin.html` no está enlazada desde la tienda, así que los
+> clientes no la ven. Además, sin tu correo y contraseña nadie puede
+> editar nada: las reglas de seguridad de Supabase lo impiden.
+
+### ¿Y si no configuro Supabase?
+No pasa nada: la web usa los restaurantes de `js/data.js` como respaldo y
+funciona igual. El panel `admin.html` te avisará que falta configurarlo.

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin · Servicios Ghost</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:opsz,wght@9..40,400..700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/admin.css?v=7" />
+</head>
+<body class="admin">
+  <header class="admin-header">
+    <a class="logo" href="index.html" aria-label="Ir a la tienda">
+      <span class="logo__ghost" aria-hidden="true">👻</span>
+      <span class="logo__text">Servicios <span class="logo__accent">Ghost</span></span>
+      <span class="logo__tag">Admin</span>
+    </a>
+    <div class="admin-header__right" id="headerRight" hidden>
+      <span class="admin-user" id="adminUser"></span>
+      <button type="button" class="btn-copy" id="btnSalir">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <!-- Aviso si Supabase no está configurado -->
+    <section class="panel" id="avisoConfig" hidden>
+      <h2 class="panel__title">Falta configurar Supabase</h2>
+      <p class="muted">
+        Para usar el panel, pega tu <strong>Project URL</strong> y tu
+        <strong>anon public key</strong> en el archivo
+        <code>js/supabase-config.js</code> y vuelve a cargar esta página.
+      </p>
+    </section>
+
+    <!-- Login -->
+    <section class="panel panel--narrow" id="vistaLogin" hidden>
+      <h2 class="panel__title">Entrar al panel</h2>
+      <form id="loginForm" class="form">
+        <div class="field">
+          <label class="field__label" for="loginEmail">Correo</label>
+          <input class="field__input" id="loginEmail" type="email" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label class="field__label" for="loginPass">Contraseña</label>
+          <input class="field__input" id="loginPass" type="password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="btn-primary" id="btnEntrar">Entrar</button>
+        <p class="copy-msg copy-msg--error" id="loginError" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- Panel (lista + editor) -->
+    <section id="vistaPanel" hidden>
+      <div class="panel__row">
+        <h2 class="panel__title">Restaurantes</h2>
+        <button type="button" class="btn-primary" id="btnNuevo">+ Nuevo restaurante</button>
+      </div>
+      <div id="listaRest" class="admin-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <!-- Editor de restaurante (hoja) -->
+  <div class="sheet" id="editorSheet" hidden>
+    <div class="sheet__backdrop" data-editor-close></div>
+    <div class="sheet__panel sheet__panel--wide" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="editorTitle">Restaurante</h2>
+        <button type="button" class="icon-btn" data-editor-close aria-label="Cerrar editor">✕</button>
+      </div>
+      <div class="sheet__body" id="editorBody"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/data.js?v=7"></script>
+  <script src="js/supabase-config.js?v=7"></script>
+  <script src="js/store.js?v=7"></script>
+  <script src="js/admin.js?v=7"></script>
+</body>
+</html>

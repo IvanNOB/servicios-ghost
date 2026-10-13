@@ -62,8 +62,8 @@
 
   // Busca un restaurante por id.
   function findRest(id) {
-    for (var i = 0; i < RESTAURANTES.length; i++) {
-      if (RESTAURANTES[i].id === id) return RESTAURANTES[i];
+    for (var i = 0; i < DATA.length; i++) {
+      if (DATA[i].id === id) return DATA[i];
     }
     return null;
   }
@@ -88,6 +88,10 @@
   var filtroCategoria = "Todos";
   var termino = "";
   var vistaActual = null;         // null = inicio, o id de restaurante
+
+  // Lista de restaurantes en memoria. Se llena desde el Store al arrancar
+  // (Supabase si está configurado, o data.js como respaldo).
+  var DATA = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES.slice() : []);
 
   function loadCart() {
     try {
@@ -178,8 +182,8 @@
 
   function categorias() {
     var cats = ["Todos"];
-    for (var i = 0; i < RESTAURANTES.length; i++) {
-      if (cats.indexOf(RESTAURANTES[i].cat) === -1) cats.push(RESTAURANTES[i].cat);
+    for (var i = 0; i < DATA.length; i++) {
+      if (cats.indexOf(DATA[i].cat) === -1) cats.push(DATA[i].cat);
     }
     return cats;
   }
@@ -213,7 +217,7 @@
 
   function restaurantesFiltrados() {
     var q = termino.trim().toLowerCase();
-    return RESTAURANTES.filter(function (r) {
+    return DATA.filter(function (r) {
       var catOk = filtroCategoria === "Todos" || r.cat === filtroCategoria;
       return catOk && matchBusqueda(r, q);
     });
@@ -628,7 +632,23 @@
   // Seguridad: aseguramos que la hoja empiece SIEMPRE cerrada al cargar.
   closeSheet();
 
+  // Primer pintado con lo que haya (data.js) para que no se vea vacío.
   renderChips();
   renderGrid();
   refreshCart();
+
+  // Luego intentamos traer los datos actualizados desde el Store
+  // (Supabase si está configurado). Al llegar, repintamos.
+  if (window.Store && typeof window.Store.listar === "function") {
+    window.Store.listar()
+      .then(function (lista) {
+        if (Array.isArray(lista) && lista.length) {
+          DATA = lista;
+          renderChips();
+          renderGrid();
+          refreshCart();
+        }
+      })
+      .catch(function () { /* ya mostramos el respaldo */ });
+  }
 })();

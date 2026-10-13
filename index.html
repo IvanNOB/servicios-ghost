@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
   <!-- ============================ CABECERA ============================ -->
@@ -85,7 +85,12 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <!-- Supabase (opcional): si configuras js/supabase-config.js, los datos
+       vienen de la nube; si no, se usa data.js como respaldo. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/data.js?v=7"></script>
+  <script src="js/supabase-config.js?v=7"></script>
+  <script src="js/store.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>
