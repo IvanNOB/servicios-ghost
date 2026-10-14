@@ -450,12 +450,12 @@
           '<input class="field__input" id="fTelefono" name="telefono" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" autocomplete="tel" required />' +
         "</div>" +
         '<div class="field">' +
-          '<label class="field__label" for="fDireccion">Dirección de entrega *</label>' +
-          '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" required />' +
+          '<label class="field__label" for="fDireccion">Dirección de entrega (opcional)</label>' +
+          '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" />' +
         "</div>" +
         '<div class="field">' +
-          '<label class="field__label" for="fBarrio">Barrio / zona *</label>' +
-          '<input class="field__input" id="fBarrio" name="barrio" type="text" placeholder="Ej: Centro, El Progreso…" required />' +
+          '<label class="field__label" for="fBarrio">Barrio / zona (opcional)</label>' +
+          '<input class="field__input" id="fBarrio" name="barrio" type="text" placeholder="Ej: Centro, El Progreso…" />' +
         "</div>" +
         '<div class="field">' +
           '<span class="field__label">Forma de pago</span>' +
@@ -491,11 +491,11 @@
     if (!form || !btnWa || !fNombre || !fTelefono || !fDireccion || !fBarrio) return;
 
     function validar() {
+      // Solo nombre y teléfono son obligatorios.
+      // Dirección y barrio son opcionales (se confirman por WhatsApp).
       btnWa.disabled = !(
         fNombre.value.trim() &&
-        fTelefono.value.trim() &&
-        fDireccion.value.trim() &&
-        fBarrio.value.trim()
+        fTelefono.value.trim()
       );
     }
     [fNombre, fTelefono, fDireccion, fBarrio].forEach(function (campo) {
@@ -603,8 +603,8 @@
     lines.push("👤 *Datos de entrega*");
     lines.push("• Nombre: " + nombre);
     lines.push("• Teléfono: " + telefono);
-    lines.push("• Dirección: " + direccion);
-    lines.push("• Barrio: " + barrio);
+    if (direccion) lines.push("• Dirección: " + direccion);
+    if (barrio) lines.push("• Barrio: " + barrio);
     lines.push("• Pago: " + pago);
     if (notas) lines.push("• Nota: " + notas);
 
