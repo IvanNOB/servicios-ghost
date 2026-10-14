@@ -425,7 +425,7 @@ const RESTAURANTES = [
   {
     id: "la-arepazo",
     nombre: "La Arepazo",
-    cat: "Almuerzos",
+    cat: "Comida casera",
     tiempo: "25-40 min",
     abierto: true,
     color: "#eab308",
