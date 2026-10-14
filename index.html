@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content="Servicios Ghost — agencia de domicilios en Colombia. Pide en tus restaurantes favoritos y confirma por WhatsApp." />
   <meta name="theme-color" content="#0a0a0a" />
+  <!-- Evita que el navegador muestre versiones viejas en caché -->
+  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
   <title>Servicios Ghost · Domicilios</title>
 
   <!-- Google Fonts: Montserrat -->
@@ -12,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/style.css?v=16" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <!-- ============================ CABECERA ============================ -->
@@ -92,9 +94,9 @@
   <!-- Supabase (opcional): si configuras js/supabase-config.js, los datos
        vienen de la nube; si no, se usa data.js como respaldo. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/data.js?v=16"></script>
-  <script src="js/supabase-config.js?v=16"></script>
-  <script src="js/store.js?v=16"></script>
-  <script src="js/app.js?v=16"></script>
+  <script src="js/data.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
