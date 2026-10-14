@@ -421,4 +421,52 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "la-arepazo",
+    nombre: "La Arepazo",
+    cat: "Almuerzos",
+    tiempo: "25-40 min",
+    abierto: true,
+    color: "#eab308",
+    desc: "Sabor, tradición y buena comida. Almuerzos caseros y platos especiales.",
+    logo: "",
+    // Almuerzo del día: la opción "Con sopa / Sin sopa" define el precio.
+    almuerzo: {
+      activo: true,
+      titulo: "Almuerzo del día",
+      desc: "Escoge si lo quieres con sopa o sin sopa, tu plato fuerte y tu principio.",
+      precio: 12000,
+      grupos: [
+        { nombre: "Opción", tipo: "unico", opciones: [
+          { n: "Completo (con sopa)", precio: 12000 },
+          { n: "Sin sopa", precio: 10000 },
+        ] },
+        { nombre: "Sopa", tipo: "unico", opciones: [
+          { n: "Sancocho" }, { n: "Mazamorra" }, { n: "Albóndigas" },
+        ] },
+        { nombre: "Plato fuerte", tipo: "unico", opciones: [
+          { n: "Pollo apanado" }, { n: "Res" }, { n: "Cerdo" }, { n: "Pechuga" },
+          { n: "Molida" }, { n: "Chorizo" }, { n: "Chicharrón" }, { n: "Carne en bistec" },
+        ] },
+        { nombre: "Principio", tipo: "unico", opciones: [
+          { n: "Principio" }, { n: "Fríjol" }, { n: "Garbanzo" },
+        ] },
+      ],
+    },
+    carta: [
+      {
+        sec: "Platos Especiales",
+        items: [
+          { id: "ar-pescado-pulpo", n: "Pescado pulpo", d: "Plato especial de la casa.", p: 30000 },
+          { id: "ar-bandeja-paisa", n: "Bandeja paisa", d: "Plato especial de la casa.", p: 30000 },
+          { id: "ar-lomo-gratinado", n: "Lomo gratinado", d: "Plato especial de la casa.", p: 30000 },
+          { id: "ar-pechuga-gratinada", n: "Pechuga gratinada", d: "Plato especial de la casa.", p: 30000 },
+          { id: "ar-costilla-bbq", n: "Costilla barbecue", d: "Plato especial de la casa.", p: 30000 },
+          { id: "ar-alas-bbq", n: "Alas barbecue", d: "Plato especial de la casa.", p: 30000 },
+          { id: "ar-mojarra-frita", n: "Mojarra frita", d: "Plato especial de la casa.", p: 30000 },
+        ],
+      },
+    ],
+  },
 ];

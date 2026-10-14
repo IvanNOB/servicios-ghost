@@ -223,6 +223,8 @@
           '<div class="alm-op-row" data-alm-op="' + gi + "-" + oi + '">' +
             '<input class="field__input" data-alm-op-n="' + gi + "-" + oi + '" value="' + esc(op.n || "") +
               '" placeholder="Opción (ej. Pollo frito)" />' +
+            '<input class="field__input alm-op-precio" data-alm-op-p="' + gi + "-" + oi + '" type="number" min="0" step="100" value="' +
+              esc(op.precio != null ? op.precio : "") + '" placeholder="Precio (opc.)" title="Precio solo si esta opción cambia el valor del almuerzo" />' +
             '<label class="agotado-check"><input type="checkbox" data-alm-op-ag="' + gi + "-" + oi + '"' +
               (op.agotado ? " checked" : "") + " /> Agotado</label>" +
             '<button type="button" class="btn-danger btn-sm" data-alm-del-op="' + gi + "-" + oi + '">✕</button>' +
@@ -363,9 +365,13 @@
         var key = oEl.getAttribute("data-alm-op");
         var on = oEl.querySelector('[data-alm-op-n="' + key + '"]');
         var oag = oEl.querySelector('[data-alm-op-ag="' + key + '"]');
+        var opp = oEl.querySelector('[data-alm-op-p="' + key + '"]');
         var nombre = on ? on.value.trim() : "";
         if (!nombre) return;
-        opciones.push({ n: nombre, agotado: oag ? oag.checked : false });
+        var opObj = { n: nombre, agotado: oag ? oag.checked : false };
+        var precioOp = opp ? Number(opp.value) : 0;
+        if (precioOp > 0) opObj.precio = precioOp;
+        opciones.push(opObj);
       });
       grupos.push({ nombre: gn ? gn.value.trim() : "Opciones", tipo: "unico", opciones: opciones });
     });

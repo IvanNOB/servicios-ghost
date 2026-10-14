@@ -382,11 +382,13 @@
       for (var oi = 0; oi < ops.length; oi++) {
         var op = ops[oi];
         var agot = !!op.agotado;
+        var etqPrecio = (typeof op.precio === "number" && op.precio > 0)
+          ? ' <span class="alm-op__precio">' + esc(money(op.precio)) + "</span>" : "";
         opsHTML +=
           '<label class="alm-op' + (agot ? " alm-op--agotado" : "") + '">' +
             '<input type="' + (multiple ? "checkbox" : "radio") + '" name="alm-g' + gi + '" ' +
               'value="' + esc(op.n) + '"' + (agot ? " disabled" : "") + ' />' +
-            "<span>" + esc(op.n) + (agot ? " (agotado)" : "") + "</span>" +
+            "<span>" + esc(op.n) + (agot ? " (agotado)" : "") + etqPrecio + "</span>" +
           "</label>";
       }
       gruposHTML +=
@@ -427,19 +429,30 @@
     var grupos = r.almuerzo.grupos || [];
     var elecciones = [];
     var faltan = [];
+    var precioOpcion = null;  // si alguna opción define precio, manda sobre el base
 
     var gruposEl = box.querySelectorAll("[data-alm-grupo]");
     for (var i = 0; i < gruposEl.length; i++) {
       var gEl = gruposEl[i];
       var gi = Number(gEl.getAttribute("data-alm-grupo"));
       var def = grupos[gi] || {};
+      var defOps = Array.isArray(def.opciones) ? def.opciones : [];
       var marcados = gEl.querySelectorAll("input:checked");
       if (marcados.length === 0) {
         // Un grupo es opcional solo si está marcado así; por defecto exige 1.
         if (!def.opcional) { faltan.push(def.nombre || "una opción"); continue; }
       }
       var vals = [];
-      for (var m = 0; m < marcados.length; m++) vals.push(marcados[m].value);
+      for (var m = 0; m < marcados.length; m++) {
+        var val = marcados[m].value;
+        vals.push(val);
+        // Si la opción elegida tiene un precio propio, lo usamos como precio del almuerzo.
+        for (var d = 0; d < defOps.length; d++) {
+          if (defOps[d].n === val && typeof defOps[d].precio === "number" && defOps[d].precio > 0) {
+            precioOpcion = defOps[d].precio;
+          }
+        }
+      }
       if (vals.length) elecciones.push({ grupo: def.nombre, valores: vals });
     }
 
@@ -449,13 +462,16 @@
     }
     if (err) err.textContent = "";
 
+    // Precio final: el de la opción elegida (si existe) o el base del almuerzo.
+    var precioFinal = precioOpcion != null ? precioOpcion : (r.almuerzo.precio || 0);
+
     // Creamos un "plato" dinámico que representa este almuerzo armado.
     var resumen = elecciones.map(function (e) { return e.valores.join(", "); }).join(" · ");
     var almItem = {
       id: "almuerzo-" + Date.now().toString(36),
       n: (r.almuerzo.titulo || "Almuerzo") + " (" + resumen + ")",
       d: "",
-      p: r.almuerzo.precio || 0,
+      p: precioFinal,
       _almuerzo: true,
     };
     // Guardamos este item temporal en un registro para que el carrito lo encuentre.
