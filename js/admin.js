@@ -57,7 +57,7 @@
 
   /* --------------------------- Vistas ----------------------------- */
   function mostrar(cualVista) {
-    if (elAvisoConfig) elAvisoConfig.hidden = cualVista !== "config";
+    elAvisoConfig.hidden = cualVista !== "config";
     elVistaLogin.hidden = cualVista !== "login";
     elVistaPanel.hidden = cualVista !== "panel";
     elHeaderRight.hidden = cualVista !== "panel";
@@ -691,14 +691,11 @@
 
   /* --------------------------- Arranque --------------------------- */
   (async function init() {
-    enlazarLogin();
     if (!window.Store || !window.Store.supabaseDisponible()) {
-      // Supabase aún no está disponible: mostramos el login con un aviso.
-      mostrar("login");
-      var le = document.getElementById("loginError");
-      if (le) le.textContent = "Conectando con el servidor… si no carga, recarga la página.";
+      mostrar("config");
       return;
     }
+    enlazarLogin();
     try {
       await iniciarPanel();
     } catch (ex) {

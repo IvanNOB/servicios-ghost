@@ -27,6 +27,16 @@
   </header>
 
   <main class="admin-main">
+    <!-- Aviso si Supabase no está configurado -->
+    <section class="panel" id="avisoConfig" hidden>
+      <h2 class="panel__title">Falta configurar Supabase</h2>
+      <p class="muted">
+        Para usar el panel, pega tu <strong>Project URL</strong> y tu
+        <strong>anon public key</strong> en el archivo
+        <code>js/supabase-config.js</code> y vuelve a cargar esta página.
+      </p>
+    </section>
+
     <!-- Login -->
     <section class="panel panel--narrow" id="vistaLogin" hidden>
       <h2 class="panel__title">Entrar al panel</h2>
