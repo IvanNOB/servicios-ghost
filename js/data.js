@@ -451,7 +451,7 @@ const RESTAURANTES = [
           { n: "Molida" }, { n: "Chorizo" }, { n: "Chicharrón" }, { n: "Carne en bistec" },
         ] },
         { nombre: "Principio", tipo: "unico", opciones: [
-          { n: "Principio" }, { n: "Fríjol" }, { n: "Garbanzo" },
+          { n: "Fríjol" }, { n: "Garbanzo" },
         ] },
       ],
     },

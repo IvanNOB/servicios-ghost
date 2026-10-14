@@ -131,6 +131,13 @@
     saveCart();
   }
 
+  // Vacía el carrito por completo (tras enviar un pedido).
+  function vaciarCarrito() {
+    cart = {};
+    almuerzosArmados = {};
+    saveCart();
+  }
+
   function totalProductos() {
     var t = 0;
     for (var k in cart) t += cart[k];
@@ -707,6 +714,18 @@
       guardarPedidoEnNube(form);
 
       var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(construirMensaje(form));
+
+      // Vaciar el carrito y cerrar: así, al volver a la página, no queda el
+      // pedido ya enviado. Lo hacemos antes de navegar a WhatsApp.
+      vaciarCarrito();
+      refreshCart();
+      closeSheet();
+      if (vistaActual) {
+        // Repintar la carta para que los controles vuelvan a "Agregar".
+        var rActual = vistaActual;
+        abrirCarta(rActual);
+      }
+
       // Navegar directo es lo más fiable en móvil (evita el bloqueo de pop-ups).
       try {
         var win = window.open(url, "_blank");
@@ -777,31 +796,33 @@
 
     var groups = groupedCart();
     var lines = [];
-    lines.push("🛵 *NUEVO PEDIDO · " + NOMBRE_NEGOCIO + "*");
+    lines.push("NUEVO PEDIDO - " + NOMBRE_NEGOCIO);
+    lines.push("--------------------------------");
     lines.push("");
 
     for (var gi = 0; gi < groups.length; gi++) {
       var g = groups[gi];
-      lines.push("🍽️ *" + g.rest.nombre + "*");
+      lines.push(g.rest.nombre);
       for (var i = 0; i < g.items.length; i++) {
         var item = g.items[i].item;
         var qty = g.items[i].qty;
-        lines.push("• " + qty + " x " + item.n + " — " + money(item.p * qty));
+        lines.push("- " + qty + " x " + item.n + " = " + money(item.p * qty));
       }
-      lines.push("_Subtotal: " + money(g.subtotal) + "_");
+      lines.push("Subtotal: " + money(g.subtotal));
       lines.push("");
     }
 
-    lines.push("💰 *Total productos:* " + money(totalPesos()));
-    lines.push("_(el domicilio se cobra aparte según el barrio)_");
+    lines.push("--------------------------------");
+    lines.push("Total productos: " + money(totalPesos()));
+    lines.push("(el domicilio se cobra aparte segun el barrio)");
     lines.push("");
-    lines.push("👤 *Datos de entrega*");
-    lines.push("• Nombre: " + nombre);
-    lines.push("• Teléfono: " + telefono);
-    if (direccion) lines.push("• Dirección: " + direccion);
-    if (barrio) lines.push("• Barrio: " + barrio);
-    lines.push("• Pago: " + pago);
-    if (notas) lines.push("• Nota: " + notas);
+    lines.push("DATOS DE ENTREGA");
+    lines.push("Nombre: " + nombre);
+    lines.push("Telefono: " + telefono);
+    if (direccion) lines.push("Direccion: " + direccion);
+    if (barrio) lines.push("Barrio: " + barrio);
+    lines.push("Pago: " + pago);
+    if (notas) lines.push("Nota: " + notas);
 
     return lines.join("\n");
   }
