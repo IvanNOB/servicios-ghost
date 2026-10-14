@@ -391,8 +391,19 @@
             "<span>" + esc(op.n) + (agot ? " (agotado)" : "") + etqPrecio + "</span>" +
           "</label>";
       }
+      // Visibilidad condicional: el grupo puede depender de otra elección.
+      var condAttr = "";
+      var ocultoInicial = "";
+      if (g.mostrarSi && g.mostrarSi.grupo && g.mostrarSi.valor) {
+        condAttr =
+          ' data-mostrar-si-grupo="' + esc(g.mostrarSi.grupo) + '"' +
+          ' data-mostrar-si-valor="' + esc(g.mostrarSi.valor) + '"';
+        ocultoInicial = ' hidden'; // oculto hasta que se cumpla la condición
+      }
+
       gruposHTML +=
-        '<div class="alm-grupo" data-alm-grupo="' + gi + '" data-tipo="' + (multiple ? "multiple" : "unico") + '">' +
+        '<div class="alm-grupo" data-alm-grupo="' + gi + '" data-tipo="' + (multiple ? "multiple" : "unico") + '"' +
+          condAttr + ocultoInicial + ">" +
           '<div class="alm-grupo__nombre">' + esc(g.nombre) +
             (multiple ? ' <span class="muted">(elige los que quieras)</span>' : ' <span class="muted">(elige 1)</span>') +
           "</div>" +
@@ -418,6 +429,43 @@
     );
   }
 
+  // Muestra/oculta los grupos condicionales según lo elegido.
+  // Ej: el grupo "Sopa" solo se ve si en "Opción" se eligió "Completo (con sopa)".
+  function actualizarVisibilidadAlmuerzo() {
+    var box = document.getElementById("almuerzoBox");
+    if (!box) return;
+
+    // Mapa: nombre de grupo -> valor(es) elegido(s)
+    var elegidos = {};
+    box.querySelectorAll("[data-alm-grupo]").forEach(function (gEl) {
+      var nombre = (gEl.querySelector(".alm-grupo__nombre") || {}).textContent || "";
+      // Usamos el texto antes del "(elige...)" como clave; mejor: data del grupo.
+    });
+
+    // Más fiable: recorremos los inputs marcados y guardamos por nombre de grupo real.
+    var valoresPorGrupo = {};
+    var grupos = (findRest(vistaActual) || {}).almuerzo;
+    grupos = grupos && grupos.grupos ? grupos.grupos : [];
+    box.querySelectorAll("[data-alm-grupo]").forEach(function (gEl) {
+      var gi = Number(gEl.getAttribute("data-alm-grupo"));
+      var def = grupos[gi] || {};
+      var marcado = gEl.querySelector("input:checked");
+      if (marcado) valoresPorGrupo[def.nombre] = marcado.value;
+    });
+
+    // Aplicar condiciones
+    box.querySelectorAll("[data-mostrar-si-grupo]").forEach(function (gEl) {
+      var grupoCond = gEl.getAttribute("data-mostrar-si-grupo");
+      var valorCond = gEl.getAttribute("data-mostrar-si-valor");
+      var cumple = valoresPorGrupo[grupoCond] === valorCond;
+      gEl.hidden = !cumple;
+      // Si se oculta, desmarcamos sus opciones para no arrastrar elecciones viejas.
+      if (!cumple) {
+        gEl.querySelectorAll("input:checked").forEach(function (c) { c.checked = false; });
+      }
+    });
+  }
+
   // Lee las opciones escogidas y agrega el almuerzo armado al carrito.
   function agregarAlmuerzo() {
     var r = findRest(vistaActual);
@@ -434,6 +482,8 @@
     var gruposEl = box.querySelectorAll("[data-alm-grupo]");
     for (var i = 0; i < gruposEl.length; i++) {
       var gEl = gruposEl[i];
+      // Si el grupo está oculto (condición no cumplida), lo ignoramos.
+      if (gEl.hidden) continue;
       var gi = Number(gEl.getAttribute("data-alm-grupo"));
       var def = grupos[gi] || {};
       var defOps = Array.isArray(def.opciones) ? def.opciones : [];
@@ -839,6 +889,14 @@
 
   // Un solo listener para toda la app (incluye lo que se repinta).
   document.addEventListener("click", onClick);
+
+  // Cuando cambia una opción del almuerzo, actualizamos los grupos condicionales
+  // (ej: mostrar/ocultar "Sopa" según se elija "Completo" o "Sin sopa").
+  document.addEventListener("change", function (e) {
+    if (e.target && e.target.closest && e.target.closest("#almuerzoBox")) {
+      actualizarVisibilidadAlmuerzo();
+    }
+  });
 
   // Buscador
   elBuscador.addEventListener("input", function (e) {

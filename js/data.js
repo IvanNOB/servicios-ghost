@@ -442,7 +442,8 @@ const RESTAURANTES = [
           { n: "Completo (con sopa)", precio: 12000 },
           { n: "Sin sopa", precio: 10000 },
         ] },
-        { nombre: "Sopa", tipo: "unico", opciones: [
+        // "Sopa" solo se muestra si en "Opción" se eligió "Completo (con sopa)".
+        { nombre: "Sopa", tipo: "unico", mostrarSi: { grupo: "Opción", valor: "Completo (con sopa)" }, opciones: [
           { n: "Sancocho" }, { n: "Mazamorra" }, { n: "Albóndigas" },
         ] },
         { nombre: "Plato fuerte", tipo: "unico", opciones: [
