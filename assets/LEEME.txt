@@ -1,0 +1,14 @@
+Carpeta de recursos de Servicios Ghost
+=======================================
+
+Coloca aquí el logo oficial con el nombre EXACTO:
+
+    assets/logo.png
+
+- Debe ser PNG (preferiblemente con fondo transparente).
+- Es el logo del fantasma chef con la campana dorada.
+- Aparece automáticamente en la portada (hero) de index.html.
+
+Si tu logo es .jpg o .webp, puedes:
+  a) Convertirlo a .png y subirlo como logo.png, o
+  b) Avisar para ajustar el código al formato real.

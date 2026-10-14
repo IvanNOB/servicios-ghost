@@ -1113,7 +1113,17 @@ body {
   flex-direction: column;
   gap: 18px;
 }
-.hero__logo { width: 100%; max-width: 320px; margin: 0 auto; height: auto; }
+.hero__logo {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  height: auto;
+  border-radius: 18px;
+  /* Si el logo trae fondo blanco, igual se ve limpio y centrado */
+  background: var(--claro);
+}
+/* Si prefieres el logo sin recuadro (PNG transparente), elimina el
+   "background" de arriba. */
 .hero__demo {
   background: var(--claro);
   color: var(--text-oscuro);
