@@ -1109,20 +1109,68 @@ body {
   background: #000;
   border: 1px solid var(--surface);
   border-radius: 28px;
-  padding: 44px 32px;
+  padding: 22px;
   width: 100%;
   max-width: 420px;
-  text-align: center;
   box-shadow: var(--shadow);
 }
-.hero__card-ico { display: inline-block; margin-bottom: 16px; }
-.hero__card-text {
-  color: var(--silver);
-  font-size: 1.05rem;
-  font-weight: 500;
-  margin: 0;
-  line-height: 1.5;
+.hero__card-head { margin-bottom: 14px; }
+.hero__card-eyebrow {
+  display: block;
+  font-family: var(--font-title);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--text);
 }
+.hero__card-sub { display: block; color: var(--silver-soft); font-size: 0.82rem; }
+
+/* Escaparate de platos */
+.escaparate { display: flex; flex-direction: column; gap: 8px; }
+.esc__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: inherit;
+  font-family: var(--font-body);
+  transition: border-color .15s ease, transform .15s ease;
+  animation: escIn .35s ease;
+}
+.esc__row:hover { border-color: var(--primary); transform: translateX(2px); }
+@keyframes escIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.esc__img {
+  width: 42px; height: 42px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--bg);
+}
+.esc__img--ini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-title);
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+.esc__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.esc__plato {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.esc__rest { color: var(--silver-soft); font-size: 0.78rem; }
+.esc__precio { color: var(--primary); font-weight: 700; font-size: 0.9rem; flex: 0 0 auto; }
 
 /* Logo flotante fijo en una esquina (insignia circular premium) */
 .logo-flotante {
@@ -1391,3 +1439,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   .hero__title { font-size: 32px; }
   .cta { padding: 28px 20px; }
 }
+
+/* ------------------- Confirmación de pedido enviado ----------------- */
+.confirm {
+  text-align: center;
+  padding: 20px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.confirm__ico {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: rgba(16,185,129,.14);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+.confirm__title { font-family: var(--font-title); font-weight: 800; font-size: 1.4rem; }
+.confirm__text { color: var(--text-2); max-width: 36ch; margin: 0 0 10px; }
+.confirm .btn-whatsapp { width: 100%; max-width: 320px; }
+.confirm .btn-copy { width: 100%; max-width: 320px; }

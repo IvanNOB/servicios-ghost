@@ -72,6 +72,9 @@
   // están en la carta fija). Clave = id del item de almuerzo.
   var almuerzosArmados = {};
 
+  // Bandera: la hoja está mostrando la pantalla de "¡Pedido enviado!".
+  var _mostrandoConfirmacion = false;
+
   // Busca un plato dentro de un restaurante (o un almuerzo armado).
   function findItem(restId, itemId) {
     // Primero en los almuerzos armados dinámicamente.
@@ -567,7 +570,8 @@
       elCartBarProductos.textContent = n === 1 ? "1 producto" : n + " productos";
       elCartBarTotal.textContent = money(totalPesos());
     }
-    if (!elSheet.hidden) renderSheet();
+    // No repintar si la hoja está mostrando la confirmación de envío.
+    if (!elSheet.hidden && !_mostrandoConfirmacion) renderSheet();
   }
 
   // Tras cambiar una cantidad, repinta SOLO el control del plato afectado,
@@ -607,6 +611,23 @@
   function closeSheet() {
     elSheet.hidden = true;
     document.body.classList.remove("no-scroll");
+    _mostrandoConfirmacion = false;
+  }
+
+  // Pantalla de confirmación tras enviar el pedido (dentro de la hoja).
+  function mostrarConfirmacion(waUrl) {
+    _mostrandoConfirmacion = true;
+    elSheetBody.innerHTML =
+      '<div class="confirm">' +
+        '<div class="confirm__ico" aria-hidden="true">' +
+          '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>' +
+        "</div>" +
+        '<h3 class="confirm__title">¡Pedido enviado!</h3>' +
+        '<p class="confirm__text">Abrimos WhatsApp para que confirmes tu pedido con nosotros. ' +
+          "Si no se abrió, toca el botón de abajo.</p>" +
+        '<a class="btn-whatsapp" href="' + esc(waUrl) + '" target="_blank" rel="noopener">Abrir WhatsApp</a>' +
+        '<button type="button" class="btn-copy" data-sheet-close>Seguir viendo</button>' +
+      "</div>";
   }
 
   function renderSheet() {
@@ -720,15 +741,16 @@
 
       var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(construirMensaje(form));
 
-      // Vaciar el carrito y cerrar: así, al volver a la página, no queda el
-      // pedido ya enviado. Lo hacemos antes de navegar a WhatsApp.
+      // Mostrar pantalla de confirmación dentro de la hoja.
+      mostrarConfirmacion(url);
+
+      // Vaciar el carrito: así, al volver a la página, no queda el pedido ya
+      // enviado. (La hoja sigue abierta mostrando la confirmación.)
       vaciarCarrito();
       refreshCart();
-      closeSheet();
       if (vistaActual) {
-        // Repintar la carta para que los controles vuelvan a "Agregar".
         var rActual = vistaActual;
-        abrirCarta(rActual);
+        abrirCarta(rActual); // repinta la carta: botones vuelven a "Agregar"
       }
 
       // Navegar directo es lo más fiable en móvil (evita el bloqueo de pop-ups).
@@ -906,6 +928,10 @@
     // --- Agregar almuerzo armado ---
     if (t.closest("[data-alm-add]")) { agregarAlmuerzo(); return; }
 
+    // --- Fila del escaparate: abre la carta de ese restaurante ---
+    var escRow = t.closest(".esc__row");
+    if (escRow) { abrirCarta(escRow.getAttribute("data-rest")); return; }
+
     // --- Abrir carta tocando una tarjeta ---
     var card = t.closest("[data-rest]");
     if (card && card.classList.contains("card")) {
@@ -936,6 +962,90 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !elSheet.hidden) closeSheet();
   });
+
+  /* ---------------- Escaparate de platos al azar ------------------ */
+  // Recoge todos los platos de todos los restaurantes (con su restaurante)
+  // y muestra algunos al azar en el hero, rotándolos cada pocos segundos.
+  function todosLosPlatos() {
+    var out = [];
+    for (var i = 0; i < DATA.length; i++) {
+      var r = DATA[i];
+      var carta = r.carta || [];
+      for (var s = 0; s < carta.length; s++) {
+        var items = carta[s].items || [];
+        for (var j = 0; j < items.length; j++) {
+          var it = items[j];
+          if (it.agotado) continue;           // no mostramos agotados
+          if (typeof it.p !== "number" || it.p <= 0) continue;
+          out.push({ rest: r, item: it });
+        }
+      }
+    }
+    return out;
+  }
+
+  function barajar(arr) {
+    arr = arr.slice();
+    for (var i = arr.length - 1; i > 0; i--) {
+      var k = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[k]; arr[k] = t;
+    }
+    return arr;
+  }
+
+  var _escTimer = null;
+  function renderEscaparate() {
+    var cont = document.getElementById("escaparate");
+    if (!cont) return;
+
+    // Para dar variedad, tomamos como máximo 1 plato al azar por restaurante
+    // y luego barajamos esos; así se ven restaurantes distintos.
+    var porRest = {};
+    var todos = todosLosPlatos();
+    for (var i = 0; i < todos.length; i++) {
+      var rid = todos[i].rest.id;
+      if (!porRest[rid]) porRest[rid] = [];
+      porRest[rid].push(todos[i]);
+    }
+    var unoPorRest = [];
+    for (var k in porRest) {
+      var lista = barajar(porRest[k]);
+      unoPorRest.push(lista[0]);
+    }
+    var platos = barajar(unoPorRest).slice(0, 4);
+    if (!platos.length) { cont.innerHTML = ""; return; }
+
+    var html = "";
+    for (var i = 0; i < platos.length; i++) {
+      var p = platos[i];
+      var inicial = esc(iniciales(p.rest.nombre));
+      var mini = p.rest.logo
+        ? '<span class="esc__img" style="background-image:url(\'' + esc(p.rest.logo) + '\')"></span>'
+        : '<span class="esc__img esc__img--ini">' + inicial + "</span>";
+      html +=
+        '<button type="button" class="esc__row" data-rest="' + esc(p.rest.id) + '" aria-label="Ver ' + esc(p.rest.nombre) + '">' +
+          mini +
+          '<span class="esc__info">' +
+            '<span class="esc__plato">' + esc(p.item.n) + "</span>" +
+            '<span class="esc__rest">' + esc(p.rest.nombre) + "</span>" +
+          "</span>" +
+          '<span class="esc__precio">' + esc(money(p.item.p)) + "</span>" +
+        "</button>";
+    }
+    cont.innerHTML = html;
+  }
+
+  function iniciarEscaparate() {
+    renderEscaparate();
+    if (_escTimer) clearInterval(_escTimer);
+    // Rota los platos cada 4 segundos (respeta reduce-motion: si está activo, no rota)
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce) {
+      _escTimer = setInterval(function () {
+        if (!elVistaInicio.hidden) renderEscaparate();
+      }, 4000);
+    }
+  }
 
   /* -------------------------- Promociones ------------------------- */
   function renderPromos() {
@@ -979,6 +1089,7 @@
   renderPromos();
   renderChips();
   renderGrid();
+  iniciarEscaparate();
   refreshCart();
 
   // Luego intentamos traer los datos actualizados desde el Store
@@ -990,6 +1101,7 @@
           DATA = lista;
           renderChips();
           renderGrid();
+          iniciarEscaparate();
           refreshCart();
         }
       })
