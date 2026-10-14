@@ -3,16 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="Servicios Ghost — agencia de domicilios en Colombia. Pide en tus restaurantes favoritos y confirma por WhatsApp." />
-  <meta name="theme-color" content="#0a0a0a" />
-  <!-- Evita que el navegador muestre versiones viejas en caché -->
-  <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
+  <meta name="description" content="Servicios Ghost — Soluciones express y domicilios en Cartagena del Chairá. Mira las cartas, arma tu pedido y envíalo por WhatsApp." />
+  <meta name="theme-color" content="#0B0B0B" />
   <title>Servicios Ghost · Domicilios</title>
 
-  <!-- Google Fonts: Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
 
   <!-- CSS con anti-caché por tiempo -->
   <script>
@@ -21,52 +18,141 @@
   <noscript><link rel="stylesheet" href="css/style.css" /></noscript>
 </head>
 <body>
-  <!-- ============================ CABECERA ============================ -->
+
+  <!-- ============================ ENCABEZADO ============================ -->
   <header class="header" role="banner">
     <div class="header__inner">
       <a class="logo" href="#" aria-label="Servicios Ghost, inicio" id="logoHome">
-        <span class="logo__ghost" aria-hidden="true">👻</span>
+        <span class="logo__mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="38" height="38" role="img" aria-hidden="true">
+            <!-- gorro de chef -->
+            <path d="M16 15c0-4 3.6-7 8-7s8 3 8 7c2.4 0 4 1.8 4 4s-1.8 3.6-4 3.6H16c-2.2 0-4-1.4-4-3.6s1.6-4 4-4z" fill="#0B0B0B" stroke="#D4AF37" stroke-width="1.6"/>
+            <!-- cuerpo fantasma -->
+            <path d="M15 24c0-5 4-9 9-9s9 4 9 9v12l-3-2.4L27 36l-3-2.4L21 36l-3-2.4L15 36z" fill="#0B0B0B" stroke="#D4AF37" stroke-width="1.6" stroke-linejoin="round"/>
+            <!-- ojos -->
+            <circle cx="21" cy="25.5" r="1.5" fill="#D4AF37"/>
+            <circle cx="27" cy="25.5" r="1.5" fill="#D4AF37"/>
+          </svg>
+        </span>
         <span class="logo__text">
-          <span class="logo__name">SERVICIOS <span class="logo__accent">GHOST</span></span>
+          <span class="logo__name"><span class="logo__accent">SERVICIOS</span> GHOST</span>
           <span class="logo__tag">Soluciones Express &amp; Domicilios</span>
         </span>
       </a>
 
-      <div class="search">
-        <span class="search__icon" aria-hidden="true">🔍</span>
-        <input
-          type="search"
-          id="buscador"
-          class="search__input"
-          placeholder="Busca un restaurante o un plato"
-          aria-label="Busca un restaurante o un plato"
-          autocomplete="off"
-        />
-      </div>
+      <nav class="header__nav" aria-label="Navegación">
+        <a href="#restaurantes">Restaurantes</a>
+        <a href="#almuerzos">Almuerzos</a>
+        <a href="#como-funciona">Cómo funciona</a>
+      </nav>
 
-      <nav class="chips" id="chips" aria-label="Categorías"></nav>
+      <button type="button" class="header__cart" id="cartBtnTop" aria-label="Ver mi pedido">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span class="header__cart-text">Mi pedido</span>
+      </button>
     </div>
   </header>
 
-  <!-- ============================ CONTENIDO ============================ -->
   <main class="main" id="main">
-    <!-- Vista: lista de restaurantes -->
+    <!-- Vista: inicio -->
     <section id="vistaInicio" class="vista">
-      <div class="hero">
-        <h1 class="hero__title">Pide en tus restaurantes favoritos</h1>
-        <p class="hero__sub">
-          Arma tu pedido y lo enviamos por WhatsApp a Servicios Ghost. Sin pagos en la web.
-        </p>
-      </div>
 
-      <!-- Promociones (franja deslizable) -->
+      <!-- ============================ HERO ============================ -->
+      <section class="hero">
+        <div class="hero__text">
+          <span class="hero__badge">Soluciones express y domicilios · Cartagena del Chairá</span>
+          <h1 class="hero__title">Pide en tus restaurantes favoritos.
+            <span class="gold">Nosotros lo llevamos.</span></h1>
+          <p class="hero__lead">
+            Mira las cartas, arma tu pedido y envíalo por WhatsApp.
+            No pagas en la web: todo se coordina contigo.
+          </p>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#restaurantes">Ver restaurantes</a>
+            <a class="btn btn--outline" id="heroWa" href="#" target="_blank" rel="noopener">WhatsApp 321 428 6626</a>
+          </div>
+        </div>
+        <div class="hero__visual">
+          <div class="hero__logo-panel">
+            <img src="assets/logo.png" alt="Logo de Servicios Ghost: fantasma chef con una campana de servicio" class="hero__logo" onerror="this.style.display='none'" />
+            <div class="hero__demo">
+              <div class="hero__demo-title">Tu pedido</div>
+              <div class="hero__demo-rest">La Arepazo</div>
+              <div class="hero__demo-item"><span>1 x Almuerzo del día</span><span class="gold">$12.000</span></div>
+              <div class="hero__demo-states">
+                <span class="state-pill">Recibido</span>
+                <span class="state-pill">Preparando</span>
+                <span class="state-pill">En camino</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== BUSCADOR Y CATEGORÍAS ===================== -->
+      <section class="buscador-panel">
+        <div class="search">
+          <label class="search__label" for="buscador">Buscar restaurante o plato</label>
+          <div class="search__box">
+            <svg class="search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="buscador" class="search__input"
+                   placeholder="Ej: pizza, almuerzo, Lucarnes…"
+                   aria-label="Buscar restaurante o plato" autocomplete="off" />
+          </div>
+        </div>
+        <nav class="chips" id="chips" aria-label="Categorías"></nav>
+      </section>
+
+      <!-- Promociones -->
       <div class="promos" id="promos" aria-label="Promociones"></div>
 
-      <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
+      <!-- ===================== RESTAURANTES ===================== -->
+      <section id="restaurantes" class="bloque">
+        <div class="bloque__head">
+          <h2 class="bloque__title">Restaurantes aliados</h2>
+        </div>
+        <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
+        <p class="empty" id="sinResultados" hidden>
+          No encontramos nada con esa búsqueda. Prueba con otro nombre.
+        </p>
+      </section>
 
-      <p class="empty" id="sinResultados" hidden>
-        No encontramos nada con esa búsqueda. Prueba con otro nombre 🙂
-      </p>
+      <!-- ===================== CÓMO FUNCIONA ===================== -->
+      <section id="como-funciona" class="bloque">
+        <div class="bloque__head">
+          <h2 class="bloque__title">Cómo funciona</h2>
+        </div>
+        <div class="pasos">
+          <article class="paso-card">
+            <span class="paso-card__ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
+            <h3 class="paso-card__title">1. Elige</h3>
+            <p class="paso-card__text">Explora los restaurantes y mira sus cartas.</p>
+          </article>
+          <article class="paso-card">
+            <span class="paso-card__ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </span>
+            <h3 class="paso-card__title">2. Arma tu pedido</h3>
+            <p class="paso-card__text">Agrega tus platos y revisa el total.</p>
+          </article>
+          <article class="paso-card">
+            <span class="paso-card__ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#D4AF37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.38 8.38 0 0 1-4-1L3 21l1.9-5.4a8.38 8.38 0 0 1-1-4A8.5 8.5 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5Z"/></svg>
+            </span>
+            <h3 class="paso-card__title">3. Envía por WhatsApp</h3>
+            <p class="paso-card__text">Confirmamos tu pedido y te lo llevamos.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ===================== LLAMADO FINAL ===================== -->
+      <section class="cta">
+        <h2 class="cta__title">¿Tienes hambre?</h2>
+        <p class="cta__text">Escríbenos y te llevamos tu pedido.</p>
+        <a class="btn btn--dark" id="ctaWa" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+      </section>
     </section>
 
     <!-- Vista: carta de un restaurante -->
@@ -77,7 +163,7 @@
   <button type="button" class="cart-bar" id="cartBar" hidden>
     <span class="cart-bar__left">
       <span class="cart-bar__badge" id="cartBarCount">0</span>
-      Ver pedido · <span id="cartBarProductos">0 productos</span>
+      Ver mi pedido · <span id="cartBarProductos">0 productos</span>
     </span>
     <span class="cart-bar__total" id="cartBarTotal"></span>
   </button>
@@ -88,23 +174,28 @@
     <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
       <div class="sheet__head">
         <h2 class="sheet__title" id="sheetTitle">Tu pedido</h2>
-        <button type="button" class="icon-btn" data-sheet-close aria-label="Cerrar el pedido">✕</button>
+        <button type="button" class="icon-btn" data-sheet-close aria-label="Cerrar el pedido">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
       </div>
-
       <div class="sheet__body" id="sheetBody"><!-- contenido dinámico --></div>
     </div>
   </div>
 
-  <!-- Supabase (opcional): si configuras js/supabase-config.js, los datos
-       vienen de la nube; si no, se usa data.js como respaldo. -->
+  <!-- ============================ PIE ============================ -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <span class="footer__brand"><span class="gold">SERVICIOS</span> GHOST</span>
+      <span class="footer__meta">Cartagena del Chairá · WhatsApp 321 428 6626</span>
+    </div>
+  </footer>
+
+  <!-- Carga anti-caché de los scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Carga anti-caché: añade la hora actual a cada archivo para que el
-       navegador SIEMPRE descargue la última versión, sin importar la caché. -->
   <script>
     (function () {
       var v = "?t=" + Date.now();
-      var archivos = ["js/data.js", "js/supabase-config.js", "js/store.js", "js/app.js"];
-      archivos.forEach(function (src) {
+      ["js/data.js", "js/supabase-config.js", "js/store.js", "js/app.js"].forEach(function (src) {
         document.write('<scr' + 'ipt src="' + src + v + '"></scr' + 'ipt>');
       });
     })();

@@ -267,12 +267,12 @@ code {
   text-transform: uppercase;
   letter-spacing: .03em;
 }
-.estado-badge--recibido   { background: rgba(59,130,246,.18);  color: #93c5fd; }
-.estado-badge--preparando { background: rgba(245,158,11,.18);  color: #fcd34d; }
-.estado-badge--listo      { background: rgba(168,85,247,.18);  color: #d8b4fe; }
-.estado-badge--en-camino  { background: rgba(212,175,55,.2);   color: var(--gold-soft); }
-.estado-badge--entregado  { background: rgba(34,197,94,.18);   color: #86efac; }
-.estado-badge--cancelado  { background: rgba(239,68,68,.18);   color: #fca5a5; }
+.estado-badge--recibido   { background: rgba(212,175,55,.18); color: var(--primary); }
+.estado-badge--preparando { background: rgba(192,192,192,.16); color: var(--silver); }
+.estado-badge--listo      { background: rgba(192,192,192,.16); color: var(--silver); }
+.estado-badge--en-camino  { background: rgba(245,158,11,.18); color: #fcd34d; }
+.estado-badge--entregado  { background: rgba(16,185,129,.18); color: #6ee7b7; }
+.estado-badge--cancelado  { background: rgba(239,68,68,.18);  color: #fca5a5; }
 
 .pedido__items { margin: 0 0 10px; padding-left: 18px; }
 .pedido__items li { font-size: 0.92rem; margin-bottom: 3px; }

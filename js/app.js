@@ -265,9 +265,13 @@
     for (var i = 0; i < lista.length; i++) {
       var r = lista[i];
       var cover = r.logo
-        ? '<div class="card__cover" style="' + coverStyle(r) + '"></div>'
-        : '<div class="card__cover" style="' + coverStyle(r) + '">' +
+        ? '<div class="card__cover" style="background-image:url(\'' + esc(r.logo) + '\')"></div>'
+        : '<div class="card__cover">' +
           '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
+
+      // Enlace de acción: La Arepazo (con almuerzo) invita a armar almuerzo.
+      var tieneAlmuerzo = r.almuerzo && r.almuerzo.activo;
+      var enlace = tieneAlmuerzo ? "Armar almuerzo →" : "Ver carta →";
 
       html +=
         '<button type="button" class="card" data-rest="' + esc(r.id) +
@@ -278,6 +282,7 @@
             '<div class="card__meta"><span>' + esc(r.cat) +
               '</span><span class="dot">·</span><span>' + esc(r.tiempo) + "</span></div>" +
             '<div class="card__meta">' + estadoHTML(r.abierto) + "</div>" +
+            '<span class="card__link">' + enlace + "</span>" +
           "</div>" +
         "</button>";
     }
@@ -863,6 +868,7 @@
 
     // --- Abrir la hoja ---
     if (t.closest("#cartBar")) { openSheet(); return; }
+    if (t.closest("#cartBtnTop")) { openSheet(); return; }
 
     // --- Logo: volver al inicio ---
     if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); irAInicio(); return; }
@@ -953,12 +959,23 @@
     cont.innerHTML = html;
   }
 
+  // Enlaces de WhatsApp del hero y el llamado final (si existen).
+  function conectarEnlacesWa() {
+    var url = "https://wa.me/" + WHATSAPP + "?text=" +
+      encodeURIComponent("Hola " + NOMBRE_NEGOCIO + ", quiero hacer un pedido.");
+    ["heroWa", "ctaWa"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.setAttribute("href", url);
+    });
+  }
+
   /* --------------------------- Arranque --------------------------- */
 
   // Seguridad: aseguramos que la hoja empiece SIEMPRE cerrada al cargar.
   closeSheet();
 
   // Primer pintado con lo que haya (data.js) para que no se vea vacío.
+  conectarEnlacesWa();
   renderPromos();
   renderChips();
   renderGrid();
