@@ -1104,31 +1104,40 @@ body {
 }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
 
-.hero__logo-panel {
-  background: #000;
-  border: 1px solid var(--surface);
-  border-radius: 32px;
-  padding: 26px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.hero__logo {
-  width: 100%;
-  max-width: 320px;
-  margin: 0 auto;
-  height: auto;
-  border-radius: 18px;
-  /* Si el logo trae fondo blanco, igual se ve limpio y centrado */
-  background: var(--claro);
-}
-/* Si prefieres el logo sin recuadro (PNG transparente), elimina el
-   "background" de arriba. */
+.hero__visual { display: flex; align-items: center; justify-content: center; }
 .hero__demo {
   background: var(--claro);
   color: var(--text-oscuro);
   border-radius: 18px;
-  padding: 16px 18px;
+  padding: 18px 20px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow);
+}
+
+/* Logo flotante fijo en una esquina (insignia circular premium) */
+.logo-flotante {
+  position: fixed;
+  bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  left: 14px;
+  z-index: 45;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #f2f2f2;
+  border: 2px solid var(--primary);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform .15s ease;
+}
+.logo-flotante:hover { transform: scale(1.06); }
+.logo-flotante img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .hero__demo-title { font-weight: 700; font-family: var(--font-title); margin-bottom: 6px; }
 .hero__demo-rest { font-weight: 700; font-size: 0.95rem; }
