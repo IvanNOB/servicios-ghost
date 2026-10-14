@@ -54,12 +54,14 @@
   }
 
   // Lee todos los restaurantes. Devuelve una promesa con el array.
+  // IMPORTANTE: combina Supabase + data.js. Muestra lo de la nube y AÑADE
+  // los restaurantes de data.js cuyo id aún no exista en Supabase. Así, lo
+  // que se agrega en el código se ve de inmediato sin tener que migrar.
   async function listar() {
+    var base = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []).slice();
     var sb = client();
-    if (!sb) {
-      // Respaldo: data.js
-      return (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []).slice();
-    }
+    if (!sb) return base; // sin Supabase: solo data.js
+
     try {
       var res = await sb
         .from("restaurantes")
@@ -67,10 +69,16 @@
         .order("orden", { ascending: true })
         .order("nombre", { ascending: true });
       if (res.error) throw res.error;
-      return (res.data || []).map(filaARestaurante);
+      var nube = (res.data || []).map(filaARestaurante);
+
+      // Combinar: la nube manda; añadimos los de data.js que no estén en la nube.
+      var idsNube = {};
+      for (var i = 0; i < nube.length; i++) idsNube[nube[i].id] = true;
+      var faltantes = base.filter(function (r) { return !idsNube[r.id]; });
+      return nube.concat(faltantes);
     } catch (e) {
       console.warn("Supabase no respondió, uso data.js:", e && e.message);
-      return (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []).slice();
+      return base;
     }
   }
 
