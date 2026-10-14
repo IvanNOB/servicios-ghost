@@ -63,4 +63,8 @@ create policy "actualizar pedidos admin"
 alter table public.restaurantes
   add column if not exists horario jsonb default '{}'::jsonb;
 
+-- Columna para la configuración del "almuerzo del día".
+alter table public.restaurantes
+  add column if not exists almuerzo jsonb default null;
+
 -- LISTO. La web ya puede guardar pedidos y el panel podrá verlos.

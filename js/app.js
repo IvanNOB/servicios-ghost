@@ -68,8 +68,16 @@
     return null;
   }
 
-  // Busca un plato dentro de un restaurante.
+  // Registro de almuerzos armados por el cliente (items dinámicos que no
+  // están en la carta fija). Clave = id del item de almuerzo.
+  var almuerzosArmados = {};
+
+  // Busca un plato dentro de un restaurante (o un almuerzo armado).
   function findItem(restId, itemId) {
+    // Primero en los almuerzos armados dinámicamente.
+    if (almuerzosArmados[itemId] && almuerzosArmados[itemId].restId === restId) {
+      return almuerzosArmados[itemId].item;
+    }
     var r = findRest(restId);
     if (!r) return null;
     for (var s = 0; s < r.carta.length; s++) {
@@ -182,6 +190,9 @@
 
   function categorias() {
     var cats = ["Todos"];
+    // Si algún restaurante ofrece almuerzo, añadimos la categoría especial.
+    var hayAlmuerzo = DATA.some(function (r) { return r.almuerzo && r.almuerzo.activo; });
+    if (hayAlmuerzo) cats.push("🍽️ Almuerzos");
     for (var i = 0; i < DATA.length; i++) {
       if (cats.indexOf(DATA[i].cat) === -1) cats.push(DATA[i].cat);
     }
@@ -218,7 +229,12 @@
   function restaurantesFiltrados() {
     var q = termino.trim().toLowerCase();
     return DATA.filter(function (r) {
-      var catOk = filtroCategoria === "Todos" || r.cat === filtroCategoria;
+      var catOk;
+      if (filtroCategoria === "🍽️ Almuerzos") {
+        catOk = !!(r.almuerzo && r.almuerzo.activo);
+      } else {
+        catOk = filtroCategoria === "Todos" || r.cat === filtroCategoria;
+      }
       return catOk && matchBusqueda(r, q);
     });
   }
@@ -273,6 +289,9 @@
       : '<div class="rest-head__cover" style="' + coverStyle(r) + '">' +
         '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
+    // Bloque del almuerzo del día (si el restaurante lo tiene activo)
+    var almuerzoBloque = almuerzoHTML(r);
+
     var secciones = "";
     for (var s = 0; s < r.carta.length; s++) {
       var sec = r.carta[s];
@@ -294,7 +313,7 @@
           '<div class="rest-head__meta"><span>⏱ ' + esc(r.tiempo) + "</span>" +
             estadoHTML(r.abierto) + "</div>" +
         "</div>" +
-      "</div>" + secciones;
+      "</div>" + almuerzoBloque + secciones;
 
     elVistaInicio.hidden = true;
     elVistaCarta.hidden = false;
@@ -303,10 +322,12 @@
 
   function dishHTML(r, it) {
     var qty = getQty(r.id, it.id);
+    var agotadoClase = it.agotado ? " dish--agotado" : "";
+    var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
     return (
-      '<div class="dish" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
+      '<div class="dish' + agotadoClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
         '<div class="dish__info">' +
-          '<div class="dish__name">' + esc(it.n) + "</div>" +
+          '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
           '<div class="dish__desc">' + esc(it.d) + "</div>" +
           '<div class="dish__price">' + esc(money(it.p)) + "</div>" +
         "</div>" +
@@ -320,6 +341,9 @@
   function controlHTML(r, it, qty) {
     if (!r.abierto) {
       return '<button type="button" class="add-btn" disabled>Agregar</button>';
+    }
+    if (it.agotado) {
+      return '<button type="button" class="add-btn" disabled>Agotado</button>';
     }
     if (qty <= 0) {
       return '<button type="button" class="add-btn" data-add data-rest="' + esc(r.id) +
@@ -338,6 +362,111 @@
           '" data-item="' + esc(it.id) + '" aria-label="Agregar uno de ' + esc(it.n) + '">+</button>' +
       "</div>"
     );
+  }
+
+  /* ----------------------- Almuerzo del día ----------------------- */
+
+  // Devuelve el HTML del armador de almuerzo, o "" si el restaurante no lo tiene.
+  function almuerzoHTML(r) {
+    var a = r.almuerzo;
+    if (!a || !a.activo) return "";
+    var grupos = Array.isArray(a.grupos) ? a.grupos : [];
+    if (!grupos.length) return "";
+
+    var gruposHTML = "";
+    for (var gi = 0; gi < grupos.length; gi++) {
+      var g = grupos[gi];
+      var ops = Array.isArray(g.opciones) ? g.opciones : [];
+      var multiple = g.tipo === "multiple";
+      var opsHTML = "";
+      for (var oi = 0; oi < ops.length; oi++) {
+        var op = ops[oi];
+        var agot = !!op.agotado;
+        opsHTML +=
+          '<label class="alm-op' + (agot ? " alm-op--agotado" : "") + '">' +
+            '<input type="' + (multiple ? "checkbox" : "radio") + '" name="alm-g' + gi + '" ' +
+              'value="' + esc(op.n) + '"' + (agot ? " disabled" : "") + ' />' +
+            "<span>" + esc(op.n) + (agot ? " (agotado)" : "") + "</span>" +
+          "</label>";
+      }
+      gruposHTML +=
+        '<div class="alm-grupo" data-alm-grupo="' + gi + '" data-tipo="' + (multiple ? "multiple" : "unico") + '">' +
+          '<div class="alm-grupo__nombre">' + esc(g.nombre) +
+            (multiple ? ' <span class="muted">(elige los que quieras)</span>' : ' <span class="muted">(elige 1)</span>') +
+          "</div>" +
+          '<div class="alm-ops">' + opsHTML + "</div>" +
+        "</div>";
+    }
+
+    var precio = a.precio ? money(a.precio) : "";
+    return (
+      '<div class="almuerzo" id="almuerzoBox" data-rest="' + esc(r.id) + '">' +
+        '<div class="almuerzo__head">' +
+          '<h3 class="section__title">🍽️ ' + esc(a.titulo || "Almuerzo del día") + "</h3>" +
+          (precio ? '<span class="almuerzo__precio">' + esc(precio) + "</span>" : "") +
+        "</div>" +
+        (a.desc ? '<p class="almuerzo__desc">' + esc(a.desc) + "</p>" : "") +
+        gruposHTML +
+        '<button type="button" class="add-btn almuerzo__btn" data-alm-add' +
+          (r.abierto ? "" : " disabled") + '>' +
+          (r.abierto ? "Agregar almuerzo" : "Cerrado") +
+        "</button>" +
+        '<p class="almuerzo__error" id="almError" role="alert"></p>' +
+      "</div>"
+    );
+  }
+
+  // Lee las opciones escogidas y agrega el almuerzo armado al carrito.
+  function agregarAlmuerzo() {
+    var r = findRest(vistaActual);
+    if (!r || !r.almuerzo || !r.almuerzo.activo) return;
+    var box = document.getElementById("almuerzoBox");
+    var err = document.getElementById("almError");
+    if (!box) return;
+
+    var grupos = r.almuerzo.grupos || [];
+    var elecciones = [];
+    var faltan = [];
+
+    var gruposEl = box.querySelectorAll("[data-alm-grupo]");
+    for (var i = 0; i < gruposEl.length; i++) {
+      var gEl = gruposEl[i];
+      var gi = Number(gEl.getAttribute("data-alm-grupo"));
+      var def = grupos[gi] || {};
+      var marcados = gEl.querySelectorAll("input:checked");
+      if (marcados.length === 0) {
+        // Un grupo es opcional solo si está marcado así; por defecto exige 1.
+        if (!def.opcional) { faltan.push(def.nombre || "una opción"); continue; }
+      }
+      var vals = [];
+      for (var m = 0; m < marcados.length; m++) vals.push(marcados[m].value);
+      if (vals.length) elecciones.push({ grupo: def.nombre, valores: vals });
+    }
+
+    if (faltan.length) {
+      if (err) err.textContent = "Falta escoger: " + faltan.join(", ") + ".";
+      return;
+    }
+    if (err) err.textContent = "";
+
+    // Creamos un "plato" dinámico que representa este almuerzo armado.
+    var resumen = elecciones.map(function (e) { return e.valores.join(", "); }).join(" · ");
+    var almItem = {
+      id: "almuerzo-" + Date.now().toString(36),
+      n: (r.almuerzo.titulo || "Almuerzo") + " (" + resumen + ")",
+      d: "",
+      p: r.almuerzo.precio || 0,
+      _almuerzo: true,
+    };
+    // Guardamos este item temporal en un registro para que el carrito lo encuentre.
+    almuerzosArmados[almItem.id] = { restId: r.id, item: almItem };
+    setQty(r.id, almItem.id, 1);
+    refreshCart();
+
+    // Feedback
+    if (err) { err.textContent = "¡Almuerzo agregado! ✓"; err.classList.add("almuerzo__error--ok"); }
+    // Limpiar selección
+    box.querySelectorAll("input:checked").forEach(function (c) { c.checked = false; });
   }
 
   function irAInicio() {
@@ -680,6 +809,9 @@
       refreshCart();
       return;
     }
+
+    // --- Agregar almuerzo armado ---
+    if (t.closest("[data-alm-add]")) { agregarAlmuerzo(); return; }
 
     // --- Abrir carta tocando una tarjeta ---
     var card = t.closest("[data-rest]");

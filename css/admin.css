@@ -298,3 +298,38 @@ code {
   font-family: inherit;
   font-size: 0.9rem;
 }
+
+/* -------------------- Editor de almuerzo / agotados ----------------- */
+.agotado-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.agotado-check input { accent-color: var(--primary); }
+
+.alm-grupo-edit {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+.alm-grupo-edit__head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.alm-grupo-edit__head .field__input { flex: 1; }
+
+.alm-op-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.alm-op-row .field__input { flex: 1; }

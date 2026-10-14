@@ -48,6 +48,7 @@
       logo: row.logo || "",
       // "carta" se guarda como JSON en la base de datos.
       carta: Array.isArray(row.carta) ? row.carta : [],
+      almuerzo: row.almuerzo || null,
       orden: typeof row.orden === "number" ? row.orden : 0,
     };
   }
@@ -90,6 +91,7 @@
       descripcion: rest.desc || "",
       logo: rest.logo || "",
       carta: rest.carta || [],
+      almuerzo: rest.almuerzo || null,
       orden: typeof rest.orden === "number" ? rest.orden : 0,
     };
     var res = await sb.from("restaurantes").upsert(fila, { onConflict: "id" }).select();
@@ -122,6 +124,7 @@
         descripcion: r.desc || "",
         logo: r.logo || "",
         carta: r.carta || [],
+        almuerzo: r.almuerzo || null,
         orden: typeof r.orden === "number" ? r.orden : idx,
       };
     });

@@ -107,6 +107,25 @@ const RESTAURANTES = [
     color: "#b08d2e",
     desc: "Carnes a la brasa, picadas y acompañamientos generosos.",
     logo: "",
+    // Almuerzo del día: el cliente arma su almuerzo escogiendo opciones.
+    almuerzo: {
+      activo: true,
+      titulo: "Almuerzo del día",
+      desc: "Incluye sopa, principio, proteína y bebida.",
+      precio: 15000,
+      grupos: [
+        { nombre: "Principio", tipo: "unico", opciones: [
+          { n: "Fríjoles" }, { n: "Garbanzo" }, { n: "Lentejas", agotado: true },
+        ] },
+        { nombre: "Proteína", tipo: "unico", opciones: [
+          { n: "Carne sudada" }, { n: "Pollo sudado" }, { n: "Pollo frito" },
+          { n: "Cerdo" }, { n: "Chicharrón" }, { n: "Albóndigas" },
+        ] },
+        { nombre: "Bebida", tipo: "unico", opciones: [
+          { n: "Jugo de mango" }, { n: "Lulo" }, { n: "Maracumango" },
+        ] },
+      ],
+    },
     carta: [
       {
         sec: "Carnes",
