@@ -1105,14 +1105,23 @@ body {
 .hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
 
 .hero__visual { display: flex; align-items: center; justify-content: center; }
-.hero__demo {
-  background: var(--claro);
-  color: var(--text-oscuro);
-  border-radius: 18px;
-  padding: 18px 20px;
+.hero__card {
+  background: #000;
+  border: 1px solid var(--surface);
+  border-radius: 28px;
+  padding: 44px 32px;
   width: 100%;
   max-width: 420px;
+  text-align: center;
   box-shadow: var(--shadow);
+}
+.hero__card-ico { display: inline-block; margin-bottom: 16px; }
+.hero__card-text {
+  color: var(--silver);
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.5;
 }
 
 /* Logo flotante fijo en una esquina (insignia circular premium) */
