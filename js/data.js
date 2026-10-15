@@ -1587,4 +1587,113 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "doble-capricho",
+    nombre: "Doble Capricho Antojos y Más",
+    cat: "Comida rápida y postres",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#c026d3",
+    desc: "Antojos mexicanos y más: birria, quesabirrias, sushi, enchiladas, postres, granizados y bebidas.",
+    logo: "",
+    carta: [
+      {
+        sec: "Birriamen",
+        items: [
+          { id: "dc-bi-birriamen", n: "Birriamen", d: "Ramen sumergido en consomé de birria, servido con carne deshebrada, cebolla, cilantro fresco y rodaja de limón.", p: 22000 },
+        ],
+      },
+      {
+        sec: "Quesabirrias",
+        items: [
+          { id: "dc-qb-x3", n: "Quesabirrias x3", d: "Incluye 3 quesabirrias, consomé de birria y salsa.", p: 24000 },
+          { id: "dc-qb-familiar", n: "Quesabirrias combo familiar", d: "Incluye 7 quesabirrias, consomé de birria y salsa.", p: 50000 },
+        ],
+      },
+      {
+        sec: "Sushi",
+        items: [
+          { id: "dc-su-crunchy-chicken", n: "Crunchy chicken roll", d: "Rollo crocante con pollo en panko, queso crema y aguacate.", p: 32000 },
+          { id: "dc-su-camaron-crispy", n: "Roll camarón crispy", d: "Rollo de camarón tempura, queso crema y aguacate.", p: 34000 },
+        ],
+      },
+      {
+        sec: "Enchiladas",
+        items: [
+          { id: "dc-en-pollo", n: "Enchiladas de pollo", d: "3 enchiladas rellenas de pollo, bañadas en salsa roja, queso mozzarella, acompañadas de pico de gallo, salsa agria y aguacate.", p: 24000 },
+        ],
+      },
+      {
+        sec: "Totopos",
+        items: [
+          { id: "dc-to-doble-capricho", n: "Totopos Doble Capricho", d: "Totopos con carne de birria, pollo deshebrado en salsa roja, quesillo, maicitos, pico de gallo, salsa agria y aguacate.", p: 26000 },
+        ],
+      },
+      {
+        sec: "Tenders",
+        items: [
+          { id: "dc-te-pollo", n: "Tenders de pollo", d: "Cinco tenders de pechuga de pollo en panko con papas a la francesa, 2 salsas y un vaso personal de Coca-Cola.", p: 26000 },
+        ],
+      },
+      {
+        sec: "Copa merengonera",
+        items: [
+          { id: "dc-cm-copa", n: "Copa merengonera", d: "2 frutas, 2 toppings, 1 salsa (mango, fresa, banano, kiwi, lulo, Oreo, quesillo, brownie, almendras, Chocorramo, chips de chocolate, gomitas).", p: 14000 },
+        ],
+      },
+      {
+        sec: "Paletas preparadas",
+        items: [
+          { id: "dc-pa-mango-biche", n: "Paleta de mango biche", d: "Con chamoy, tajín y porción de gomas enchiladas.", p: 8000 },
+        ],
+      },
+      {
+        sec: "Jugos naturales",
+        items: [
+          { id: "dc-ju-agua", n: "Jugos en agua", d: "Frutos rojos, guanábana, maracuyá-lulo, maracuyá-mango, naranja-piña o mango.", p: 7000 },
+          { id: "dc-ju-leche", n: "Jugos en leche", d: "Frutos rojos, guanábana, maracuyá-lulo, maracuyá-mango, naranja-piña o mango.", p: 8000 },
+        ],
+      },
+      {
+        sec: "Sodas saborizadas",
+        items: [
+          { id: "dc-so-saborizadas", n: "Sodas saborizadas", d: "Sandía lychee, cereza, lulo, sandía, maracuyá o mango biche.", p: 12000 },
+        ],
+      },
+      {
+        sec: "Piña colada",
+        items: [
+          { id: "dc-pc-pina-colada", n: "Piña colada", d: "Cóctel tropical clásico y cremoso con ron blanco.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Mangonada y fresada",
+        items: [
+          { id: "dc-mf-mangonada", n: "Mangonada", d: "Granizado de mango con chamoy, tajín y fruta picada.", p: 15000 },
+          { id: "dc-mf-fresada", n: "Fresada", d: "Granizado de fresa con chamoy, tajín y fruta picada.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Limonadas",
+        items: [
+          { id: "dc-li-coco", n: "Limonada de coco", d: "", p: 12000 },
+          { id: "dc-li-cereza", n: "Limonada de cereza", d: "", p: 12000 },
+          { id: "dc-li-sandia", n: "Limonada de sandía", d: "", p: 12000 },
+          { id: "dc-li-hierbabuena", n: "Limonada de hierbabuena", d: "", p: 12000 },
+          { id: "dc-li-natural-vaso", n: "Limonada casera natural (vaso personal)", d: "", p: 4000 },
+          { id: "dc-li-natural-jarra", n: "Limonada casera natural (jarra)", d: "", p: 10000 },
+        ],
+      },
+      {
+        sec: "Otras bebidas",
+        items: [
+          { id: "dc-ot-agua-mini", n: "Botella mini de agua", d: "", p: 2000 },
+          { id: "dc-ot-cocacola-15", n: "Coca-Cola 1.5 L", d: "", p: 9000 },
+          { id: "dc-ot-cocacola-vaso", n: "Vaso de Coca-Cola", d: "", p: 3000 },
+          { id: "dc-ot-soda-botella", n: "Soda botella", d: "", p: 4000 },
+        ],
+      },
+    ],
+  },
 ];
