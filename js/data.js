@@ -1696,4 +1696,55 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "que-chingon",
+    nombre: "Qué Chingón",
+    cat: "Comida mexicana y granizados",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#16a34a",
+    desc: "Antojos mexicanos: frutas enchiladas, dorilocos, granizados con chamoy, cantaritos y tacos.",
+    logo: "",
+    carta: [
+      {
+        sec: "Frutas enchiladas",
+        items: [
+          { id: "qc-fe-pequeno", n: "Pequeño", d: "", p: 12000 },
+          { id: "qc-fe-grande", n: "Grande", d: "", p: 25000 },
+        ],
+      },
+      {
+        sec: "Dorilocos",
+        items: [
+          { id: "qc-do-pequeno", n: "Pequeño", d: "Clásico, Especial o Bien Chingón.", p: 12000 },
+          { id: "qc-do-mediano", n: "Mediano", d: "Clásico, Especial o Bien Chingón.", p: 16000 },
+          { id: "qc-do-grande", n: "Grande", d: "Clásico, Especial o Bien Chingón.", p: 23000 },
+        ],
+      },
+      {
+        sec: "Granizados",
+        items: [
+          { id: "qc-gr-pequeno", n: "Pequeño 9 oz", d: "Más chamoy, más sabor.", p: 8000 },
+          { id: "qc-gr-mediano", n: "Mediano 12 oz", d: "Más chamoy, más sabor.", p: 12000 },
+          { id: "qc-gr-grande", n: "Grande 16 oz", d: "Más chamoy, más sabor.", p: 16000 },
+        ],
+      },
+      {
+        sec: "Cantaritos",
+        items: [
+          { id: "qc-ca-tradicional", n: "Tradicional", d: "Tamaño personal o dúo.", p: 16000 },
+          { id: "qc-ca-mango", n: "Mango", d: "Tamaño personal o dúo.", p: 40000 },
+          { id: "qc-ca-maracuya", n: "Maracuyá", d: "Tamaño personal o dúo.", p: 40000 },
+        ],
+      },
+      {
+        sec: "Tacos chingones",
+        items: [
+          { id: "qc-ta-x3", n: "Tacos x3", d: "Birria, pollo o mixtos.", p: 15000 },
+          { id: "qc-ta-x5", n: "Tacos x5", d: "Birria, pollo o mixtos.", p: 25000 },
+        ],
+      },
+    ],
+  },
 ];
