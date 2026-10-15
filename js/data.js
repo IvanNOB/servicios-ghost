@@ -859,4 +859,191 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "dulcessa",
+    nombre: "Dulcessa Cafetería y Repostería",
+    cat: "Cafetería",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#db2777",
+    desc: "Cafetería y repostería: hamburguesas, sándwiches, obleas, helados, bebidas frías y calientes.",
+    logo: "",
+    carta: [
+      {
+        sec: "Hamburguesa de pan doble carne",
+        items: [
+          { id: "du-ham-casa", n: "De la casa", d: "Res, lechuga, tomate, cebolla, doble queso, jamón, pepinillos, salsa, papas.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Sándwich",
+        items: [
+          { id: "du-sa-sencillo", n: "Sencillo", d: "Pan, queso, jamón, salsa piña, salsa dulce.", p: 5000 },
+          { id: "du-sa-emparedado", n: "Emparedado", d: "Pan, queso, jamón, lechuga, tomate verde, salsa maíz y piña.", p: 8000 },
+          { id: "du-sa-gratinado", n: "Gratinado de tres pisos", d: "Pan, queso, jamón, salsa dulce.", p: 11000 },
+          { id: "du-sa-pollo", n: "Pollo", d: "Pan, pollo desmechado, queso, jamón, lechuga, tomate verde, salsa maíz.", p: 13000 },
+        ],
+      },
+      {
+        sec: "Perros calientes",
+        items: [
+          { id: "du-pe-sencillo", n: "Sencillo", d: "Salchicha, cebolla caramelizada, ripio, queso, salsa piña y maíz.", p: 12000 },
+          { id: "du-pe-mixto", n: "Mixto", d: "Salchicha, pollo desmechado, carne res desmechada, ripio, queso, salsas.", p: 16000 },
+        ],
+      },
+      {
+        sec: "Burritos",
+        items: [
+          { id: "du-bu-mini-wraps", n: "Mini wraps", d: "Tortilla, queso, jamón, lechuga, tomate verde, salsa dulce.", p: 7000 },
+          { id: "du-bu-pollo", n: "Pollo", d: "Pollo desmechado, queso, jamón, lechuga, tomate, salsa de la casa.", p: 18000 },
+          { id: "du-bu-mixto", n: "Mixto", d: "Pollo y res desmechada, queso, jamón, lechuga, tomate, salsa de la casa.", p: 20000 },
+          { id: "du-bu-carne", n: "Carne", d: "Carne de res desmechada, queso, jamón, lechuga, tomate, salsa de la casa.", p: 18000 },
+          { id: "du-bu-ranchero", n: "Ranchero", d: "Lomo de res con verduras, chorizo, jamón, queso, maicitos, pico de gallo.", p: 25000 },
+        ],
+      },
+      {
+        sec: "Bebidas frías",
+        items: [
+          { id: "du-bf-maracuya-agua", n: "Maracuyá", d: "Jugo en agua.", p: 6000 },
+          { id: "du-bf-mango-agua", n: "Mango", d: "Jugo en agua.", p: 6000 },
+          { id: "du-bf-lulo-mora-agua", n: "Lulo / Mora", d: "Jugo en agua.", p: 6000 },
+          { id: "du-bf-guanabana-agua", n: "Guanábana", d: "Jugo en agua.", p: 6000 },
+          { id: "du-bf-fresa-agua", n: "Fresa", d: "Jugo en agua.", p: 6000 },
+          { id: "du-bf-fresa-leche", n: "Fresa", d: "Jugo en leche.", p: 7000 },
+          { id: "du-bf-mora-leche", n: "Mora", d: "Jugo en leche.", p: 7000 },
+          { id: "du-bf-mango-leche", n: "Mango", d: "Jugo en leche.", p: 7000 },
+          { id: "du-bf-guanabana-leche", n: "Guanábana", d: "Jugo en leche.", p: 7000 },
+        ],
+      },
+      {
+        sec: "Micheladas",
+        items: [
+          { id: "du-mi-frutos-rojos", n: "Frutos rojos", d: "Soda o Ginger.", p: 13000 },
+          { id: "du-mi-cereza", n: "Cereza", d: "Soda o Ginger.", p: 13000 },
+          { id: "du-mi-maracuya", n: "Maracuyá", d: "Soda o Ginger.", p: 13000 },
+          { id: "du-mi-mango-viche", n: "Mango viche", d: "Soda o Ginger.", p: 13000 },
+          { id: "du-mi-maracumango", n: "Maracumango", d: "Soda o Ginger.", p: 13000 },
+          { id: "du-mi-lulo", n: "Lulo", d: "Soda o Ginger.", p: 13000 },
+        ],
+      },
+      {
+        sec: "Sodas italianas",
+        items: [
+          { id: "du-si-frutos-rojos", n: "Frutos rojos", d: "", p: 13000 },
+          { id: "du-si-maracuya", n: "Maracuyá", d: "", p: 13000 },
+          { id: "du-si-lulo", n: "Lulo", d: "", p: 13000 },
+        ],
+      },
+      {
+        sec: "Limonadas",
+        items: [
+          { id: "du-li-citrica", n: "Cítrica", d: "", p: 7000 },
+          { id: "du-li-sandia", n: "Sandía", d: "", p: 7000 },
+          { id: "du-li-cereza", n: "Cereza", d: "", p: 7000 },
+          { id: "du-li-mango", n: "Mango", d: "", p: 7000 },
+          { id: "du-li-coco", n: "Coco", d: "", p: 12000 },
+        ],
+      },
+      {
+        sec: "Otras bebidas",
+        items: [
+          { id: "du-ot-soda-escarchada", n: "Soda escarchada", d: "", p: 5000 },
+          { id: "du-ot-ginger", n: "Ginger", d: "", p: 5000 },
+          { id: "du-ot-cerveza-escarchada", n: "Cerveza escarchada", d: "", p: 7000 },
+          { id: "du-ot-milo-frio", n: "Milo frío", d: "", p: 7000 },
+        ],
+      },
+      {
+        sec: "Granizados",
+        items: [
+          { id: "du-gr-naranja", n: "Naranja", d: "", p: 10000 },
+          { id: "du-gr-mandarina", n: "Mandarina", d: "", p: 10000 },
+          { id: "du-gr-mango", n: "Mango", d: "", p: 10000 },
+          { id: "du-gr-maracumango", n: "Maracumango", d: "", p: 10000 },
+          { id: "du-gr-guanabana", n: "Guanábana", d: "", p: 10000 },
+          { id: "du-gr-sandia", n: "Sandía", d: "", p: 10000 },
+          { id: "du-gr-fresa", n: "Fresa", d: "", p: 10000 },
+          { id: "du-gr-maracuya", n: "Maracuyá", d: "", p: 10000 },
+          { id: "du-gr-lulo", n: "Lulo", d: "", p: 10000 },
+        ],
+      },
+      {
+        sec: "Nevados",
+        items: [
+          { id: "du-ne-milo", n: "Milo", d: "", p: 13000 },
+          { id: "du-ne-cafe", n: "Café", d: "", p: 13000 },
+          { id: "du-ne-caramelo", n: "Caramelo", d: "", p: 13000 },
+          { id: "du-ne-choco-frappe", n: "Choco frappe", d: "", p: 16000 },
+        ],
+      },
+      {
+        sec: "Bebidas calientes",
+        items: [
+          { id: "du-bc-milo", n: "Milo", d: "", p: 5000 },
+          { id: "du-bc-cafe-negro", n: "Café negro", d: "", p: 1500 },
+          { id: "du-bc-cafe-leche", n: "Café con leche", d: "", p: 2000 },
+          { id: "du-bc-chocolate", n: "Chocolate caliente", d: "", p: 5000 },
+          { id: "du-bc-capuchino", n: "Capuchino", d: "", p: 6000 },
+          { id: "du-bc-americano", n: "Café americano", d: "", p: 5000 },
+        ],
+      },
+      {
+        sec: "Aromáticas frutales",
+        items: [
+          { id: "du-af-frutos-rojos", n: "Frutos rojos", d: "", p: 6000 },
+          { id: "du-af-frutos-verdes", n: "Frutos verdes", d: "", p: 6000 },
+          { id: "du-af-frutos-bosque", n: "Frutos del bosque", d: "", p: 6000 },
+        ],
+      },
+      {
+        sec: "Aromática tradicional",
+        items: [
+          { id: "du-at-toronjil", n: "Toronjil", d: "", p: 1500 },
+          { id: "du-at-manzanilla", n: "Manzanilla", d: "", p: 1500 },
+          { id: "du-at-hierbabuena", n: "Hierbabuena", d: "", p: 1500 },
+          { id: "du-at-limoncillo", n: "Limoncillo", d: "", p: 1500 },
+        ],
+      },
+      {
+        sec: "Obleas",
+        items: [
+          { id: "du-ob-tradicional", n: "Tradicional", d: "Con arequipe.", p: 4000 },
+          { id: "du-ob-noviazgo", n: "Noviazgo", d: "Con arequipe y queso.", p: 7000 },
+          { id: "du-ob-frutal", n: "Obleas frutal", d: "Arequipe, queso, mango, fresa, chantilly.", p: 12000 },
+          { id: "du-ob-choco", n: "Choco oblea", d: "Arequipe, queso, fresa, chantilly, chocolate.", p: 12000 },
+          { id: "du-ob-amor-libre", n: "Amor libre", d: "Arequipe, queso, crema chantilly.", p: 9000 },
+          { id: "du-ob-ensueno", n: "Ensueño", d: "Arequipe, queso, crema chantilly, mermelada de fresa.", p: 10000 },
+        ],
+      },
+      {
+        sec: "Helados",
+        items: [
+          { id: "du-he-atraccion", n: "Copa Atracción", d: "2 bolas de helado, fresa, Oreo, chantilly, chocolate.", p: 12000 },
+          { id: "du-he-frutal", n: "Copa Frutal", d: "1 bola de helado, fresa, kiwi, mango, manzana, cereza, chantilly, galleta.", p: 15000 },
+          { id: "du-he-ratoncito", n: "Ratoncito", d: "2 bolas de helado, Oreo, sprinkles.", p: 10000 },
+          { id: "du-he-gusanito", n: "Gusanito", d: "3 bolas de helado, gomitas, barquillo, sprinkles.", p: 10000 },
+          { id: "du-he-brownie", n: "Brownie con helado", d: "Brownie, helado, fresas, crema chantilly, chocolate.", p: 10000 },
+          { id: "du-he-bola", n: "Bola de helado", d: "", p: 2000 },
+        ],
+      },
+      {
+        sec: "Bebidas embotelladas",
+        items: [
+          { id: "du-em-agua-300", n: "Agua Cristal 300 ml", d: "", p: 1000 },
+          { id: "du-em-agua-600", n: "Agua Cristal 600 ml", d: "", p: 1500 },
+          { id: "du-em-agua-1000", n: "Agua Cristal 1 L", d: "", p: 2500 },
+          { id: "du-em-ginger-400", n: "Ginger 400 ml", d: "", p: 3000 },
+          { id: "du-em-ginger-15", n: "Ginger 1.5 L", d: "", p: 5000 },
+          { id: "du-em-postobon-15", n: "Gaseosa Postobón 1.5 L", d: "", p: 5000 },
+          { id: "du-em-cocacola-500", n: "Coca-Cola 500 ml", d: "", p: 3500 },
+          { id: "du-em-cocacola-15", n: "Coca-Cola 1.5 L", d: "", p: 7500 },
+          { id: "du-em-pony", n: "Pony personal", d: "", p: 3000 },
+          { id: "du-em-bretania", n: "Bretaña", d: "", p: 3000 },
+          { id: "du-em-aguila", n: "Águila lata", d: "", p: 4700 },
+          { id: "du-em-coronita", n: "Coronita", d: "", p: 4500 },
+        ],
+      },
+    ],
+  },
 ];
