@@ -600,4 +600,163 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "donatello",
+    nombre: "Donatello",
+    cat: "Pizza",
+    tiempo: "35-50 min",
+    abierto: true,
+    color: "#7c3aed",
+    desc: "Pizzas, hamburguesas, perros, platos especiales y mucho más.",
+    logo: "",
+    carta: [
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "do-ha-clasica", n: "Clásica", d: "150g de carne de res, queso, jamón, vegetales, ripio.", p: 16000 },
+          { id: "do-ha-doble", n: "Doble carne", d: "150g de carne de res o pechuga, queso, jamón, vegetales, ripio.", p: 21000 },
+          { id: "do-ha-criolla", n: "Criolla", d: "150g de carne de res, huevo frito, jamón, queso, vegetales, ripio.", p: 20000 },
+          { id: "do-ha-especial", n: "Especial", d: "150g de carne de res, chorizo, tocineta, jamón, queso, vegetales, ripio.", p: 21000 },
+          { id: "do-ha-mexicana", n: "Mexicana", d: "150g de carne de res, ají, jalapeños, jamón, queso, vegetales, ripio.", p: 17000 },
+          { id: "do-ha-hawaiana", n: "Hawaiana", d: "150g de carne de res, piña, jamón, queso, vegetales, ripio.", p: 17000 },
+          { id: "do-ha-marinera", n: "Marinera", d: "150g de carne de res, tocineta, camarones, queso, jamón, vegetales, ripio.", p: 32000 },
+        ],
+      },
+      {
+        sec: "Super Combos",
+        items: [
+          { id: "do-co-pizza-infantil", n: "Combo de pizza infantil", d: "Pizza mini-hit mini-nucita.", p: 13000 },
+          { id: "do-co-hamburguesa-infantil", n: "Combo hamburguesa infantil", d: "Hamburguesa mini-hit mini-nucita.", p: 13000 },
+          { id: "do-co-mini-hamburguesas", n: "Combo mini hamburguesas", d: "6 mini hamburguesas.", p: 55000 },
+          { id: "do-co-mini-mixto", n: "Combo mini mixto", d: "3 hamburguesas mini, 3 perros mini.", p: 55000 },
+        ],
+      },
+      {
+        sec: "Perros Calientes",
+        items: [
+          { id: "do-pe-americano", n: "Americano", d: "Pan artesanal, salchicha americana, cebolla caramelizada, ripio, queso.", p: 14000 },
+          { id: "do-pe-especial", n: "Especial", d: "Pan artesanal, salchicha americana, tocineta, cebolla caramelizada, ripio, queso.", p: 16000 },
+          { id: "do-pe-hawaiano", n: "Hawaiano", d: "Pan artesanal, salchicha americana, piña, cebolla caramelizada, ripio, queso.", p: 16000 },
+          { id: "do-pe-infiel", n: "Infiel", d: "Carne al barril en trozos, costilla ahumada, salchicha ranchera, pechuga, queso, cebolla caramelizada, ripio.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Mazorcadas",
+        items: [
+          { id: "do-ma-pollo", n: "Pollo", d: "Pollo desmechado, maíz tierno, ripio, papa a la francesa, chorizo brisa, queso.", p: 25000 },
+          { id: "do-ma-de-la-casa", n: "De la casa", d: "Carne al barril, costilla ahumada, pechuga, chorizo brisa, maíz tierno, papa a la francesa, ripio, queso.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Alitas BBQ",
+        items: [
+          { id: "do-al-3", n: "3 alitas", d: "Acompañadas de papa a la francesa.", p: 20000 },
+          { id: "do-al-6", n: "6 alitas", d: "Acompañadas de papa a la francesa.", p: 30000 },
+          { id: "do-al-10", n: "10 alitas", d: "Acompañadas de papa a la francesa.", p: 45000 },
+        ],
+      },
+      {
+        sec: "Burritos",
+        items: [
+          { id: "do-bu-pollo", n: "Pollo", d: "Pollo desmechado, maíz tierno, tocineta, cebolla caramelizada, ripio, queso.", p: 22000 },
+          { id: "do-bu-mixto", n: "Mixto", d: "Pollo desmechado, carne, maíz tierno, cebolla caramelizada, queso, ripio, tocineta.", p: 22000 },
+          { id: "do-bu-donatello", n: "Donatello", d: "Carne al barril en trozos, costilla ahumada, pechuga, salchicha ranchera, cebolla caramelizada, ripio, tocineta.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Salchipapas",
+        items: [
+          { id: "do-sa-sencilla", n: "Sencilla", d: "Papa a la francesa, salchicha ranchera, queso.", p: 15000 },
+          { id: "do-sa-especial", n: "Especial", d: "Papa a la francesa, salchicha ranchera, tocineta, queso.", p: 18000 },
+          { id: "do-sa-salchiduo", n: "Salchidúo", d: "Papa a la francesa, salchicha ranchera, lechuga, ripio, carne de cerdo al barril, pollo en trozos, costilla ahumada, pollo desmechado, queso, maíz tierno.", p: 44000 },
+          { id: "do-sa-salchicucharable", n: "Salchi-cucharable", d: "A base de papa criolla, salchicha caramelizada, queso, huevo codorniz.", p: 13000 },
+        ],
+      },
+      {
+        sec: "Choripapas",
+        items: [
+          { id: "do-chp-sencilla", n: "Sencilla", d: "Papa a la francesa, chorizo brisa, queso.", p: 15000 },
+          { id: "do-chp-especial", n: "Especial", d: "Papa a la francesa, chorizo brisa, tocineta, queso.", p: 18000 },
+        ],
+      },
+      {
+        sec: "Pizzas Personales (porción en triángulo)",
+        items: [
+          { id: "do-pzp-donatello", n: "Donatello", d: "Trozos de costilla ahumada, res, pollo, queso.", p: 13000 },
+          { id: "do-pzp-hawaiana", n: "Hawaiana", d: "Piña, jamón, queso.", p: 11000 },
+          { id: "do-pzp-criolla", n: "Criolla", d: "Res, pollo, maíz tierno, queso.", p: 13000 },
+          { id: "do-pzp-mexicana", n: "Mexicana", d: "Res, pollo, ají, jalapeño, picadillo, queso.", p: 13000 },
+          { id: "do-pzp-pollo-champ", n: "Pollo con champiñones", d: "Pollo, champiñones, queso.", p: 13000 },
+          { id: "do-pzp-tres-carnes", n: "Tres carnes", d: "Res, pollo, chorizo brisa, queso.", p: 13000 },
+          { id: "do-pzp-ranchera", n: "Ranchera", d: "Res, pollo, salchicha ranchera, queso.", p: 13000 },
+          { id: "do-pzp-cevichera", n: "Cevichera", d: "Pollo, res, camarones, picadillo, queso.", p: 19000 },
+          { id: "do-pzp-campesina", n: "Campesina", d: "Res, pollo, maíz tierno, maduritos, queso.", p: 13000 },
+          { id: "do-pzp-especial", n: "Especial", d: "Pollo, tocineta y queso.", p: 13000 },
+          { id: "do-pzp-hawaiana2", n: "Hawaiana (4 porciones 20x20cm)", d: "4 porciones 20x20cm.", p: 13000 },
+          { id: "do-pzp-mixta", n: "Mixta (4 porciones 20x20cm)", d: "Mitad hawaiana, mitad carne.", p: 13000 },
+        ],
+      },
+      {
+        sec: "Pizzas Familiares",
+        items: [
+          { id: "do-pzf-hawaiana6", n: "Hawaiana 6 porciones 30x30cm", d: "Pizza familiar.", p: 35000 },
+          { id: "do-pzf-mixta6", n: "Mixta 6 porciones 30x30cm", d: "Mitad hawaiana, mitad carne.", p: 40000 },
+          { id: "do-pzf-hawaiana8", n: "Hawaiana 8 porciones 40x40cm", d: "Pizza familiar.", p: 50000 },
+          { id: "do-pzf-mixta8", n: "Mixta 8 porciones 40x40cm", d: "Mitad hawaiana, mitad carne.", p: 55000 },
+        ],
+      },
+      {
+        sec: "Platos Especiales",
+        items: [
+          { id: "do-pe-pechuga-plancha", n: "Pechuga a la plancha", d: "Papa a la francesa, lechuga, tomate.", p: 30000 },
+          { id: "do-pe-pechuga-gratinada", n: "Pechuga gratinada", d: "Papa a la francesa, lechuga, tomate.", p: 35000 },
+          { id: "do-pe-pechuga-hawaiana", n: "Pechuga hawaiana", d: "Piña, jamón, queso, papa a la francesa, lechuga, tomate.", p: 35000 },
+          { id: "do-pe-pechuga-marinera", n: "Pechuga marinera", d: "Papa a la francesa, lechuga, tomate, camarones.", p: 45000 },
+          { id: "do-pe-costilla-ahumada", n: "Costilla ahumada", d: "Papa a la francesa, lechuga, tomate.", p: 35000 },
+          { id: "do-pe-lomo-cerdo", n: "Lomo de cerdo al barril", d: "Papa a la francesa, lechuga, tomate.", p: 35000 },
+          { id: "do-pe-picadas", n: "Picadas carne asada al barril", d: "Carne de cerdo al barril, pechuga, costilla ahumada, chorizo brisa, papa a la francesa, platanitos.", p: 35000 },
+          { id: "do-pe-patacon-mixto", n: "Patacón mixto", d: "Carne de cerdo, pechuga, chorizo brisa, costilla ahumada, lechuga, maíz tierno, queso.", p: 30000 },
+          { id: "do-pe-patacon-pollo", n: "Patacón con pollo", d: "Pollo desmechado, maíz tierno, ripio, lechuga, queso.", p: 25000 },
+          { id: "do-pe-chorizo-brisa", n: "Chorizo brisa", d: "Papa a la francesa gratinada con maíz tierno, lechuga, tomate.", p: 16000 },
+          { id: "do-pe-ceviche-camaron", n: "Ceviche de camarón", d: "Acompañado de platanitos.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Lasañas de Pasta",
+        items: [
+          { id: "do-la-ranchera", n: "Ranchera", d: "Res, pollo, salchicha ranchera, queso.", p: 25000 },
+          { id: "do-la-marinera", n: "Marinera", d: "Res, pollo, camarones, queso.", p: 35000 },
+          { id: "do-la-pollo-champ", n: "Pollo con champiñones", d: "Pollo, champiñones, queso.", p: 25000 },
+          { id: "do-la-mixta", n: "Mixta", d: "Res, pollo, queso.", p: 25000 },
+        ],
+      },
+      {
+        sec: "Arepas Rellenas",
+        items: [
+          { id: "do-ar-mixta", n: "Mixta", d: "Carne de res y pollo desmechado, jamón, queso, chicharrón, huevo de codorniz.", p: 14000 },
+          { id: "do-ar-ranchera", n: "Ranchera", d: "Carne de res y pollo desmechado, jamón, queso, chicharrón, huevo de codorniz, salchicha ranchera.", p: 16000 },
+          { id: "do-ar-al-barril", n: "Al barril", d: "Carne de cerdo al barril, costilla ahumada, pechuga, salchicha ranchera, pollo, jamón, queso, huevo de codorniz.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Bebidas",
+        items: [
+          { id: "do-be-michelada", n: "Michelada con ginger", d: "Mango biche, maracuyá, cereza, maracumango, tropical.", p: 14000 },
+          { id: "do-be-limonada-casa", n: "Limonada de la casa", d: "Jarra. Vaso $4.000 / jarra 1lt $7.000 / jarra 2lt $10.000.", p: 5000 },
+          { id: "do-be-cerezada", n: "Cerezada", d: "Bebida de cereza.", p: 13000 },
+          { id: "do-be-coco", n: "Coco", d: "Bebida de coco.", p: 13000 },
+          { id: "do-be-hierbabuena", n: "Hierbabuena", d: "Bebida de hierbabuena.", p: 13000 },
+          { id: "do-be-citrica", n: "Cítrica", d: "Bebida cítrica.", p: 7000 },
+          { id: "do-be-granizado-agua", n: "Granizado / Jugo en agua", d: "Café, fresa, mango, maracuyá, mora, guanábana, lulo.", p: 12000 },
+          { id: "do-be-milo-frio", n: "Milo frío", d: "Vaso de Milo frío.", p: 11000 },
+          { id: "do-be-coca-personal", n: "Coca Cola personal", d: "Gaseosa personal.", p: 5000 },
+          { id: "do-be-coca-15", n: "Coca Cola 1.5", d: "Para compartir.", p: 10000 },
+          { id: "do-be-hit", n: "Jugo Hit", d: "Jugo Hit.", p: 3000 },
+          { id: "do-be-bretania", n: "Bretaña", d: "Bebida Bretaña.", p: 5000 },
+          { id: "do-be-agua", n: "Agua personal", d: "Botella de agua.", p: 3000 },
+        ],
+      },
+    ],
+  },
 ];
