@@ -81,6 +81,30 @@ const MIGUE_MICHELADA = [
   ] },
 ];
 
+// Tamaños de los arroces de El Fénix. Precio base = personal ($25.000);
+// cada opción suma la diferencia hasta su precio real.
+const FENIX_TAMANOS = [
+  { nombre: "Tamaño", opciones: [
+    { n: "Personal" },                     // 25.000 (base)
+    { n: "Mediano", precio: 5000 },        // 30.000
+    { n: "Grande", precio: 15000 },        // 40.000
+    { n: "Familiar", precio: 25000 },      // 50.000
+  ] },
+];
+
+// Combo de arroz chino: elige proteína (sin costo) y tamaño. Base = $33.000.
+const FENIX_COMBO_TAMANOS = [
+  { nombre: "Proteína", opciones: [
+    { n: "Costilla" },
+    { n: "Pollo" },
+  ] },
+  { nombre: "Tamaño", opciones: [
+    { n: "Personal" },                     // 33.000 (base)
+    { n: "Mediano", precio: 11000 },       // 44.000
+    { n: "Grande", precio: 21000 },        // 54.000
+  ] },
+];
+
 const RESTAURANTES = [
   {
     id: "lucarnes",
@@ -2155,6 +2179,35 @@ const RESTAURANTES = [
           { id: "fd-be-gran-capuchino", n: "Granizado de capuchino", d: "", p: 12000 },
           { id: "fd-be-citrica", n: "Cítrica", d: "", p: 12000 },
           { id: "fd-be-salpicon", n: "Salpicón", d: "", p: 1000 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: "chino-el-fenix",
+    nombre: "Restaurante Chino El Fénix",
+    cat: "Comida china",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#dc2626",
+    desc: "Comida china: arroces paisa, ranchero, mixto, valenciano y chino, con tamaños a elegir, y combos.",
+    logo: "",
+    carta: [
+      {
+        sec: "Arroces",
+        items: [
+          { id: "fx-ar-paisa", n: "Arroz paisa", d: "Carne de cerdo, pollo, tocineta, costilla, plátano maduro, maíz, cebolla y verduras. Elige el tamaño.", p: 25000, opciones: FENIX_TAMANOS },
+          { id: "fx-ar-ranchero", n: "Arroz ranchero", d: "Carne de cerdo, costilla, chorizo, salchicha, cebolla y verduras. Elige el tamaño.", p: 25000, opciones: FENIX_TAMANOS },
+          { id: "fx-ar-mixto", n: "Arroz mixto", d: "Cerdo, pollo, camarón, costilla, maíz, cebolla, verduras y raíz china. Elige el tamaño.", p: 25000, opciones: FENIX_TAMANOS },
+          { id: "fx-ar-valenciana", n: "Arroz a la valenciana", d: "Salchicha, cerdo, pollo frito, cebolla, verduras y raíz china. Elige el tamaño.", p: 25000, opciones: FENIX_TAMANOS },
+          { id: "fx-ar-chino", n: "Arroz chino", d: "Camarón, pollo desmechado, cebolla, raíz china y verduras.", p: 17000 },
+        ],
+      },
+      {
+        sec: "Combos",
+        items: [
+          { id: "fx-co-arroz-chino", n: "Combo arroz chino", d: "Arroz chino con camarón, pollo desmechado, cebolla, verdura, raíz china, elección entre costilla o pollo y papas a la francesa. Elige el tamaño.", p: 33000, opciones: FENIX_COMBO_TAMANOS },
         ],
       },
     ],

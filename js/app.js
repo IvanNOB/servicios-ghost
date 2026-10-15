@@ -360,12 +360,15 @@
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
     // Plato con opciones a elegir (ej. salsa de las alitas).
     if (tieneOpciones(it) && !it.agotado && r.abierto) {
+      // "desde $X" si algún grupo cambia el precio (hay tamaños/variantes).
+      var variaPrecio = it.opciones.some(grupoTienePrecios);
+      var precioTxt = (variaPrecio ? "desde " : "") + money(it.p);
       return (
         '<div class="dish dish--opciones" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
           '<div class="dish__info">' +
             '<div class="dish__name">' + esc(it.n) + "</div>" +
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
-            '<div class="dish__price">' + esc(money(it.p)) + "</div>" +
+            '<div class="dish__price">' + esc(precioTxt) + "</div>" +
           "</div>" +
           opcionesPlatoHTML(r, it) +
         "</div>"
@@ -388,19 +391,27 @@
     return Array.isArray(it.opciones) && it.opciones.length > 0;
   }
 
-  // Selector de opciones + botón "Agregar" para un plato (ej. elegir salsa).
+  // ¿Alguna opción de este grupo cambia el precio del plato?
+  function grupoTienePrecios(g) {
+    return (g.opciones || []).some(function (op) { return Number(op.precio) > 0; });
+  }
+
+  // Selector de opciones + botón "Agregar" para un plato (ej. salsa o tamaño).
   function opcionesPlatoHTML(r, it) {
     var html = '<div class="dish-opc" data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">';
     for (var gi = 0; gi < it.opciones.length; gi++) {
       var g = it.opciones[gi];
       var ops = Array.isArray(g.opciones) ? g.opciones : [];
+      // Si el grupo cambia el precio, mostramos el PRECIO TOTAL de cada opción
+      // (base + extra); si no, solo el nombre (ej. salsa, proteína).
+      var conPrecio = grupoTienePrecios(g);
       html += '<label class="dish-opc__label">' + esc(g.nombre || "Opción") + "</label>" +
               '<select class="dish-opc__select" data-opc="' + gi + '">';
       for (var oi = 0; oi < ops.length; oi++) {
         var op = ops[oi];
         if (op.agotado) continue;
-        html += '<option value="' + esc(op.n) + '">' + esc(op.n) +
-          (op.precio ? " (+" + money(op.precio) + ")" : "") + "</option>";
+        var etq = conPrecio ? " — " + money(it.p + (Number(op.precio) || 0)) : "";
+        html += '<option value="' + esc(op.n) + '">' + esc(op.n) + etq + "</option>";
       }
       html += "</select>";
     }
