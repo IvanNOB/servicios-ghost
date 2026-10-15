@@ -1275,4 +1275,80 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "chino-doradito-la-pista",
+    nombre: "Restaurante Chino El Doradito La Pista",
+    cat: "Comida china",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#dc2626",
+    desc: "Comida china: arroz chino, arroz a la valenciana y combos de pernil, costillitas y alitas BBQ.",
+    logo: "",
+    carta: [
+      {
+        sec: "Arroz chino",
+        items: [
+          { id: "ch-ac-1", n: "Arroz chino (personal)", d: "Pollo desmechado, camarones, verduras, raíces chinas, lechuga.", p: 17000 },
+          { id: "ch-ac-2", n: "Arroz chino (mediano)", d: "Pollo desmechado, camarones, verduras, raíces chinas, lechuga.", p: 22000 },
+          { id: "ch-ac-3", n: "Arroz chino (grande)", d: "Pollo desmechado, camarones, verduras, raíces chinas, lechuga.", p: 27000 },
+          { id: "ch-ac-4", n: "Arroz chino (familiar)", d: "Pollo desmechado, camarones, verduras, raíces chinas, lechuga.", p: 32000 },
+          { id: "ch-ac-5", n: "Arroz chino (gigante)", d: "Pollo desmechado, camarones, verduras, raíces chinas, lechuga.", p: 37000 },
+        ],
+      },
+      {
+        sec: "Combo pernil chino",
+        items: [
+          { id: "ch-cp-1", n: "Arroz chino, papas y 1 presa de pernil", d: "Pierna pernil.", p: 24000 },
+          { id: "ch-cp-15", n: "Arroz chino, papas y 1 presa y media de pernil", d: "Pierna pernil.", p: 30000 },
+          { id: "ch-cp-2", n: "Arroz chino, papas y 2 presas de pernil", d: "Pierna pernil.", p: 34000 },
+          { id: "ch-cp-2g", n: "Arroz chino, papas y 2 presas de pernil (porción grande)", d: "Pierna pernil.", p: 48000 },
+          { id: "ch-cp-3", n: "Arroz chino, papas y 3 presas de pernil", d: "Pierna pernil.", p: 60000 },
+          { id: "ch-cp-4", n: "Arroz chino, papas y 4 presas de pernil", d: "Pierna pernil.", p: 68000 },
+        ],
+      },
+      {
+        sec: "Combo chino BBQ",
+        items: [
+          { id: "ch-cb-4", n: "Arroz chino, papas y 4 costillitas", d: "Costillitas BBQ.", p: 24000 },
+          { id: "ch-cb-5", n: "Arroz chino, papas y 5 costillitas", d: "Costillitas BBQ.", p: 30000 },
+          { id: "ch-cb-6", n: "Arroz chino, papas y 6 costillitas", d: "Costillitas BBQ.", p: 34000 },
+          { id: "ch-cb-8", n: "Arroz chino, papas y 8 costillitas", d: "Costillitas BBQ.", p: 48000 },
+          { id: "ch-cb-10", n: "Arroz chino, papas y 10 costillitas", d: "Costillitas BBQ.", p: 60000 },
+          { id: "ch-cb-12", n: "Arroz chino, papas y 12 costillitas", d: "Costillitas BBQ.", p: 68000 },
+        ],
+      },
+      {
+        sec: "Combo alitas BBQ",
+        items: [
+          { id: "ch-ca-2", n: "Arroz chino, papas y 2 alitas BBQ", d: "Alitas BBQ.", p: 24000 },
+          { id: "ch-ca-3", n: "Arroz chino, papas y 3 alitas BBQ", d: "Alitas BBQ.", p: 30000 },
+          { id: "ch-ca-3g", n: "Arroz chino, papas y 3 alitas BBQ (porción grande)", d: "Alitas BBQ.", p: 34000 },
+          { id: "ch-ca-4", n: "Arroz chino, papas y 4 alitas BBQ", d: "Alitas BBQ.", p: 48000 },
+          { id: "ch-ca-6", n: "Arroz chino, papas y 6 alitas BBQ", d: "Alitas BBQ.", p: 60000 },
+          { id: "ch-ca-8", n: "Arroz chino, papas y 8 alitas BBQ", d: "Alitas BBQ.", p: 68000 },
+        ],
+      },
+      {
+        sec: "Arroz a la valenciana",
+        items: [
+          { id: "ch-av-1", n: "Arroz a la valenciana (personal)", d: "Carne de cerdo, salchicha, verduras, lechuga, raíces chinas, pollo dorado (según porción).", p: 17000 },
+          { id: "ch-av-2", n: "Arroz a la valenciana (mediano)", d: "Carne de cerdo, salchicha, verduras, lechuga, raíces chinas, pollo dorado (según porción).", p: 22000 },
+          { id: "ch-av-3", n: "Arroz a la valenciana (grande)", d: "Carne de cerdo, salchicha, verduras, lechuga, raíces chinas, pollo dorado (según porción).", p: 27000 },
+          { id: "ch-av-4", n: "Arroz a la valenciana (familiar)", d: "Carne de cerdo, salchicha, verduras, lechuga, raíces chinas, pollo dorado (según porción).", p: 32000 },
+          { id: "ch-av-5", n: "Arroz a la valenciana (gigante)", d: "Carne de cerdo, salchicha, verduras, lechuga, raíces chinas, pollo dorado (según porción).", p: 37000 },
+        ],
+      },
+      {
+        sec: "Adicionales",
+        items: [
+          { id: "ch-ad-camarones", n: "Camarones", d: "", p: 10000 },
+          { id: "ch-ad-papas", n: "Papitas a la francesa", d: "", p: 7000 },
+          { id: "ch-ad-costillitas", n: "Costillitas BBQ x4", d: "", p: 15000 },
+          { id: "ch-ad-alitas", n: "Alitas BBQ x3", d: "", p: 15000 },
+          { id: "ch-ad-presa", n: "Presa de pollo pierna pernil", d: "", p: 12000 },
+        ],
+      },
+    ],
+  },
 ];
