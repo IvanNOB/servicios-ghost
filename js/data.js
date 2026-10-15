@@ -1476,4 +1476,115 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "kaitse-coffee",
+    nombre: "Kaitse Coffee",
+    cat: "Café y Repostería",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#9a3412",
+    desc: "Café de especialidad y repostería: lattes, brunch, ramen, sándwiches, hamburguesas gourmet, cuchareables y tortas.",
+    logo: "",
+    carta: [
+      {
+        sec: "Bebidas frías",
+        items: [
+          { id: "ka-bf-latte", n: "Latte", d: "Caramel, canela, vainilla, coconut o mocca.", p: 14000 },
+          { id: "ka-bf-latte-tradicional", n: "Latte tradicional", d: "", p: 12000 },
+          { id: "ka-bf-chai", n: "Chai Latte", d: "Aromas dulces de canela, vainilla y clavos.", p: 14000 },
+          { id: "ka-bf-taro", n: "Taro Latte", d: "", p: 14000 },
+          { id: "ka-bf-matcha", n: "Matcha Latte", d: "", p: 13000 },
+          { id: "ka-bf-oreo", n: "Oreo Latte", d: "", p: 14000 },
+          { id: "ka-bf-strawberry-matcha", n: "Strawberry Matcha", d: "", p: 13000 },
+          { id: "ka-bf-tiramisu", n: "Tiramisú Latte", d: "Notas de cacao y café inspirado en el postre clásico.", p: 14000 },
+          { id: "ka-bf-granizado-cafe", n: "Granizado de café", d: "", p: 10000 },
+          { id: "ka-bf-granizado-milo", n: "Granizado de Milo", d: "", p: 10000 },
+          { id: "ka-bf-limonada-coco", n: "Limonada de coco", d: "", p: 13000 },
+          { id: "ka-bf-copacabana", n: "Copacabana", d: "Limonada cremosa y un toque cítrico refrescante.", p: 13000 },
+          { id: "ka-bf-limonada", n: "Limonada", d: "Maracuyá, lulo, fresa o sandía.", p: 8000 },
+          { id: "ka-bf-amazonica", n: "Limonada Amazónica", d: "Maracuyá y lulo en soda.", p: 13000 },
+          { id: "ka-bf-silvestre", n: "Limonada Silvestre", d: "Fresa y sandía en soda.", p: 13000 },
+        ],
+      },
+      {
+        sec: "Brunch",
+        items: [
+          { id: "ka-br-aguacate", n: "Tostada de Aguacate", d: "Crema de aguacate, pollo mechado, maicitos, cilantro fresco.", p: 13000 },
+          { id: "ka-br-campestre", n: "Tostada Campestre", d: "Pollo mechado, champiñones acompañado de una salsa con queso doble crema.", p: 13000 },
+          { id: "ka-br-frutos-rojos", n: "Tostada Frutos Rojos", d: "Queso crema, frutos rojos.", p: 15000 },
+          { id: "ka-br-ranch", n: "Tostada Ranch", d: "Huevos fritos al punto, doble queso, salchicha ranchera, tomates cherry.", p: 15000 },
+          { id: "ka-br-banano", n: "Tostada de Banano", d: "Crema de maní, banano fresco, trocitos de almendra, salsa de chocolate.", p: 15000 },
+          { id: "ka-br-croissants", n: "Mini Croissants", d: "Mini croissants tostados, huevos cremosos con jamón.", p: 14000 },
+        ],
+      },
+      {
+        sec: "Ramen",
+        items: [
+          { id: "ka-ra-huevo", n: "Ramen con Huevo", d: "Huevos cocidos al punto, suave tocineta y cilantro fresco.", p: 12000 },
+          { id: "ka-ra-carne", n: "Ramen con Carne", d: "Base de carne molida con delicados fideos de harina acompañado de queso fundido.", p: 18000 },
+          { id: "ka-ra-pollo", n: "Ramen con Pollo", d: "Fideos de harina, pollo mechado con queso doble crema fundido.", p: 18000 },
+        ],
+      },
+      {
+        sec: "Galletas",
+        items: [
+          { id: "ka-ga-pistacho", n: "Pistacho", d: "", p: 5000 },
+          { id: "ka-ga-leche-klim", n: "Leche Klim", d: "", p: 5000 },
+          { id: "ka-ga-cafe", n: "Café", d: "", p: 5000 },
+          { id: "ka-ga-chocolate", n: "Chocolate", d: "", p: 5000 },
+        ],
+      },
+      {
+        sec: "Sándwiches",
+        items: [
+          { id: "ka-sa-miel", n: "Sándwich Miel", d: "Triple queso con miel mostaza.", p: 8000 },
+          { id: "ka-sa-jamon", n: "Sándwich Jamón", d: "Queso doble crema fresco, jamón y salsa dulce.", p: 12000 },
+          { id: "ka-sa-pollo", n: "Sándwich de Pollo", d: "Pollo mechado, triple queso, jamón de pavo, lechuga fresca.", p: 16000 },
+        ],
+      },
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "ka-ha-mestiza", n: "Hamburguesa Mestiza", d: "Carne al punto, queso fresco, chorizo santarrosano con pimentón en salsa BBQ, puré de aguacate.", p: 17000 },
+          { id: "ka-ha-casa", n: "De la Casa", d: "Carne al punto, doble queso, jamón, huevo frito, puré de aguacate acompañado de suave tocineta.", p: 21000 },
+          { id: "ka-ha-campestre", n: "Campestre", d: "Carne al punto, champiñones, pollo en salsa de queso, lechuga fresca.", p: 24000 },
+          { id: "ka-ha-marinera", n: "Marinera", d: "Carne al punto, camarones, mix de mariscos en salsa de queso con salsa de la casa, almejas.", p: 26000 },
+        ],
+      },
+      {
+        sec: "Bebidas calientes",
+        items: [
+          { id: "ka-bc-americano", n: "Café Americano", d: "", p: 3000 },
+          { id: "ka-bc-latte", n: "Latte", d: "Caramel, canela, vainilla, coconut o mocca.", p: 8000 },
+          { id: "ka-bc-latte-tradicional", n: "Latte tradicional", d: "", p: 7000 },
+          { id: "ka-bc-chocolate", n: "Chocolate con malvaviscos", d: "", p: 10000 },
+          { id: "ka-bc-milo", n: "Milo", d: "", p: 10000 },
+        ],
+      },
+      {
+        sec: "Cuchareables",
+        items: [
+          { id: "ka-cu-frutos-rojos", n: "Frutos Rojos", d: "", p: 9000 },
+          { id: "ka-cu-tiramisu", n: "Tiramisú", d: "", p: 10000 },
+          { id: "ka-cu-milo", n: "Milo", d: "Cremosas y delicadas capas de galletas bañadas en café con un toque de cacao.", p: 9000 },
+          { id: "ka-cu-leche-klim", n: "Leche Klim", d: "", p: 9000 },
+        ],
+      },
+      {
+        sec: "Tortas",
+        items: [
+          { id: "ka-to-temporada", n: "De Temporada", d: "Tortas artesanales con sabores que cambian cada semana, hechas para sorprenderte en cada visita.", p: 8000 },
+        ],
+      },
+      {
+        sec: "Adiciones",
+        items: [
+          { id: "ka-ad-tapioca", n: "Tapioca", d: "", p: 1000 },
+          { id: "ka-ad-chantilly", n: "Chantilly", d: "", p: 3000 },
+          { id: "ka-ad-nota-sabor", n: "Nota de sabor", d: "Caramel, canela, vainilla, coconut o mocca.", p: 1000 },
+        ],
+      },
+    ],
+  },
 ];
