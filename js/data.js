@@ -2338,4 +2338,52 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "atemporal",
+    nombre: "Atemporal",
+    cat: "Bebidas y Postres",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#7c5a3c",
+    desc: "Granizados, frappés y smoothies, postres caseros y detalles para regalar.",
+    logo: "",
+    carta: [
+      {
+        sec: "Bebidas",
+        items: [
+          { id: "at-be-fresa-smoothie", n: "Instante de fresa smoothie sin chantilly", d: "Bebida granizada de fresa a base de leche, 354 ml.", p: 14000 },
+          { id: "at-be-mora-smoothie", n: "Instante de mora smoothie sin chantilly", d: "Bebida granizada de mora a base de leche, 354 ml.", p: 14000 },
+          { id: "at-be-uva-smoothie-354", n: "Eternidad uva smoothie sin chantilly", d: "Bebida granizada de uva a base de leche, 354 ml.", p: 13000 },
+          { id: "at-be-uva-smoothie-473", n: "Momento uva smoothie", d: "Bebida granizada de uva a base de leche, 473 ml.", p: 17000 },
+          { id: "at-be-coco-granizado", n: "Eternidad coco granizado", d: "Bebida granizada de coco a base de leche, 354 ml.", p: 16000 },
+          { id: "at-be-chocolate-granizado", n: "Momento de chocolate granizado", d: "Bebida granizada de chocolate a base de leche, 473 ml, crema chantilly.", p: 26000 },
+          { id: "at-be-cafe-frappe-16oz", n: "Momento de café frappé", d: "Bebida de café granizado y productos lácteos, crema chantilly, 16 oz.", p: 19000 },
+          { id: "at-be-cafe-frappe-sin", n: "Café frappé sin chantilly", d: "Bebida granizada de café y productos lácteos, 12 oz.", p: 16000 },
+          { id: "at-be-milo-frappe", n: "Instante de milo frappé", d: "Bebida granizada de café y productos lácteos, 12 oz.", p: 20000 },
+          { id: "at-be-milo-frappe-sin", n: "Instante de milo frappé sin chantilly", d: "Bebida granizada de milo y café, a base de leche, 354 ml.", p: 16000 },
+          { id: "at-be-caramelo-frappe-sin", n: "Instante de caramelo frappé sin chantilly", d: "Bebida granizada de caramelo, vainilla y café, a base de leche, crema chantilly.", p: 15000 },
+          { id: "at-be-limon-granizado", n: "El limón granizado", d: "Bebida granizada de limón a base de agua, 600 ml.", p: 12000 },
+          { id: "at-be-iced-soda", n: "El iced soda sal/limón", d: "Bebida crujiente con limón, sal y cubos de hielo, 600 ml.", p: 13000 },
+          { id: "at-be-hit-500", n: "Jugo Hit x 500 ml", d: "", p: 4500 },
+        ],
+      },
+      {
+        sec: "Postres",
+        items: [
+          { id: "at-po-piazza", n: "Postre de Piazza", d: "Postre en tres leches casero con barquillos Piazza y arequipe, crema chantilly.", p: 19000 },
+          { id: "at-po-achiras", n: "Postre de achiras", d: "Postre de achiras casero, achiras huilenses, bizcochos de maíz y arequipe, crema chantilly.", p: 19000 },
+        ],
+      },
+      {
+        sec: "Accesorios y regalos",
+        items: [
+          { id: "at-ac-termo-beige", n: "Termo Atemporal light goma plus 750 ml beige", d: "Termo de 750 ml, la combinación perfecta entre practicidad y elegancia.", p: 95000 },
+          { id: "at-ac-mono-marron", n: "Moño de tela marrón", d: "Moño de tela con clip sujetador, hecho a mano.", p: 3000 },
+          { id: "at-ac-mono-vinotinto", n: "Moño de tela vinotinto", d: "Moño de tela hecho a mano.", p: 3000 },
+          { id: "at-ac-tarjeta-gato", n: "Tarjeta amigo secreto / gato rebelde", d: "Tarjeta de papel glossy waterproof con ilustración de amigo secreto, gato rebelde.", p: 1000 },
+        ],
+      },
+    ],
+  },
 ];
