@@ -26,9 +26,15 @@ create table if not exists public.restaurantes (
   descripcion text default '',
   logo        text default '',
   carta       jsonb not null default '[]'::jsonb,
+  almuerzo    jsonb default null,
   orden       int default 0,
   creado_en   timestamptz default now()
 );
+
+-- Si la tabla ya existía desde antes (creada sin la columna "almuerzo"),
+-- esta línea la añade sin borrar nada. Es seguro ejecutarla varias veces.
+alter table public.restaurantes
+  add column if not exists almuerzo jsonb default null;
 
 -- 2) Activar Row Level Security ---------------------------------------
 alter table public.restaurantes enable row level security;
