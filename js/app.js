@@ -358,6 +358,19 @@
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
+    // Plato con opciones a elegir (ej. salsa de las alitas).
+    if (tieneOpciones(it) && !it.agotado && r.abierto) {
+      return (
+        '<div class="dish dish--opciones" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
+          '<div class="dish__info">' +
+            '<div class="dish__name">' + esc(it.n) + "</div>" +
+            (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
+            '<div class="dish__price">' + esc(money(it.p)) + "</div>" +
+          "</div>" +
+          opcionesPlatoHTML(r, it) +
+        "</div>"
+      );
+    }
     return (
       '<div class="dish' + agotadoClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
         '<div class="dish__info">' +
@@ -368,6 +381,82 @@
         '<div class="dish__action">' + controlHTML(r, it, qty) + "</div>" +
       "</div>"
     );
+  }
+
+  // ¿El plato ofrece opciones a elegir (grupos tipo salsa)?
+  function tieneOpciones(it) {
+    return Array.isArray(it.opciones) && it.opciones.length > 0;
+  }
+
+  // Selector de opciones + botón "Agregar" para un plato (ej. elegir salsa).
+  function opcionesPlatoHTML(r, it) {
+    var html = '<div class="dish-opc" data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">';
+    for (var gi = 0; gi < it.opciones.length; gi++) {
+      var g = it.opciones[gi];
+      var ops = Array.isArray(g.opciones) ? g.opciones : [];
+      html += '<label class="dish-opc__label">' + esc(g.nombre || "Opción") + "</label>" +
+              '<select class="dish-opc__select" data-opc="' + gi + '">';
+      for (var oi = 0; oi < ops.length; oi++) {
+        var op = ops[oi];
+        if (op.agotado) continue;
+        html += '<option value="' + esc(op.n) + '">' + esc(op.n) +
+          (op.precio ? " (+" + money(op.precio) + ")" : "") + "</option>";
+      }
+      html += "</select>";
+    }
+    html += '<button type="button" class="add-btn dish-opc__add" data-opc-add ' +
+      'data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">Agregar</button>';
+    return html + "</div>";
+  }
+
+  // Lee las opciones elegidas de un plato y lo agrega al carrito como línea única.
+  function agregarPlatoConOpciones(restId, itemId) {
+    var r = findRest(restId);
+    var it = r ? findItem(restId, itemId) : null;
+    if (!r || !it || !tieneOpciones(it)) return;
+    var cont = elVistaCarta.querySelector('.dish-opc[data-item="' + cssId(itemId) + '"]');
+    if (!cont) return;
+
+    var elecciones = [], extra = 0;
+    cont.querySelectorAll("[data-opc]").forEach(function (sel) {
+      var gi = Number(sel.getAttribute("data-opc"));
+      var g = it.opciones[gi] || {};
+      var val = sel.value;
+      elecciones.push(val);
+      (g.opciones || []).forEach(function (op) {
+        if (op.n === val && op.precio) extra += Number(op.precio) || 0;
+      });
+    });
+
+    var sufijo = elecciones.join(", ");
+    // id único por combinación: así "4 alitas BBQ" y "4 alitas Maracuyá" no se mezclan.
+    var comboId = it.id + "--" + slug(sufijo);
+    var combo = {
+      id: comboId,
+      n: it.n + (sufijo ? " (" + sufijo + ")" : ""),
+      d: it.d || "",
+      p: it.p + extra,
+      _combo: true,
+    };
+    almuerzosArmados[comboId] = { restId: r.id, item: combo };
+    setQty(r.id, comboId, getQty(r.id, comboId) + 1);
+    refreshCart();
+    repintarPlato(r.id, it.id);
+
+    // Feedback breve en el botón.
+    var btn = cont.querySelector("[data-opc-add]");
+    if (btn) {
+      var antes = btn.textContent;
+      btn.textContent = "¡Agregado! ✓";
+      btn.classList.add("add-btn--ok");
+      setTimeout(function () { btn.textContent = antes; btn.classList.remove("add-btn--ok"); }, 1200);
+    }
+  }
+
+  // slug sencillo para construir ids de combinación.
+  function slug(txt) {
+    return String(txt).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "x";
   }
 
   // Los botones llevan data-* con el restaurante y el plato, para que la
@@ -607,6 +696,7 @@
     if (nodo) {
       var slot = nodo.querySelector(".dish__action");
       if (slot) slot.innerHTML = controlHTML(r, it, qty);
+      // Platos con opciones no tienen stepper propio; su selector no se toca.
     }
   }
 
@@ -941,6 +1031,13 @@
       else if (btn.hasAttribute("data-dec")) setQty(restId, itemId, actual - 1);
       repintarPlato(restId, itemId);
       refreshCart();
+      return;
+    }
+
+    // --- Agregar plato con opciones (ej. alitas + salsa) ---
+    var opcAdd = t.closest("[data-opc-add]");
+    if (opcAdd) {
+      agregarPlatoConOpciones(opcAdd.getAttribute("data-rest"), opcAdd.getAttribute("data-item"));
       return;
     }
 

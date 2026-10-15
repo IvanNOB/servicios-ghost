@@ -92,7 +92,7 @@
       return {
         sec: (sec && sec.sec ? String(sec.sec) : "Sección"),
         items: Array.isArray(sec && sec.items) ? sec.items.map(function (it) {
-          return {
+          var plato = {
             id: it.id || (String(it.n || "plato").toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" +
                  Math.random().toString(36).slice(2, 6)),
             n: String(it.n || ""),
@@ -100,6 +100,20 @@
             p: Number(it.p) || 0,
             agotado: !!it.agotado,
           };
+          // Opciones a elegir (ej. salsa). Se conservan tal cual si existen.
+          if (Array.isArray(it.opciones) && it.opciones.length) {
+            plato.opciones = it.opciones.map(function (g) {
+              return {
+                nombre: g && g.nombre ? String(g.nombre) : "Opción",
+                opciones: Array.isArray(g && g.opciones) ? g.opciones.map(function (op) {
+                  var o = { n: String(op.n || ""), agotado: !!op.agotado };
+                  if (Number(op.precio) > 0) o.precio = Number(op.precio);
+                  return o;
+                }) : [],
+              };
+            });
+          }
+          return plato;
         }) : [],
       };
     });

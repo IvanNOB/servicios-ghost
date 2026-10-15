@@ -1489,3 +1489,28 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   gap: 10px; margin-top: auto; padding-top: 6px;
 }
 .alm-card__foot .add-btn { white-space: nowrap; flex: 0 0 auto; }
+
+/* ------------------- Plato con opciones (ej. salsa) ------------------- */
+.dish--opciones { flex-wrap: wrap; }
+.dish-opc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+.dish-opc__label { color: var(--text-2); font-size: 0.85rem; }
+.dish-opc__select {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border-fuerte);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.9rem;
+  flex: 1 1 120px;
+  min-width: 110px;
+}
+.dish-opc__add { flex: 0 0 auto; }
+.add-btn--ok { background: var(--success); color: #fff; border-color: var(--success); }

@@ -62,6 +62,15 @@ const PROMOCIONES = [
   { emoji: "💬", titulo: "Pide por WhatsApp", texto: "Confirmamos tu pedido al instante." },
 ];
 
+// Salsas a elegir para las alitas de ZZ Chicken Wings (sin costo extra).
+const ZZ_SALSAS = [
+  { nombre: "Salsa", opciones: [
+    { n: "BBQ picante" },
+    { n: "Miel mostaza" },
+    { n: "Maracuyá" },
+  ] },
+];
+
 const RESTAURANTES = [
   {
     id: "lucarnes",
@@ -1251,25 +1260,17 @@ const RESTAURANTES = [
       {
         sec: "Alitas con papas a la francesa",
         items: [
-          { id: "zz-al-4", n: "Orden de 4 alitas", d: "Incluye papas a la francesa.", p: 11000 },
-          { id: "zz-al-6", n: "Orden de 6 alitas", d: "Incluye papas a la francesa.", p: 16000 },
-          { id: "zz-al-10", n: "Orden de 10 alitas", d: "Incluye papas a la francesa.", p: 23000 },
-          { id: "zz-al-15", n: "Orden de 15 alitas", d: "Incluye papas a la francesa.", p: 31000 },
-          { id: "zz-al-20", n: "Orden de 20 alitas", d: "Incluye papas a la francesa.", p: 42000 },
-          { id: "zz-al-25", n: "Orden de 25 alitas", d: "Incluye papas a la francesa.", p: 52000 },
-          { id: "zz-al-30", n: "Orden de 30 alitas", d: "Incluye papas a la francesa.", p: 62000 },
-          { id: "zz-al-35", n: "Orden de 35 alitas", d: "Incluye papas a la francesa.", p: 72000 },
-          { id: "zz-al-40", n: "Orden de 40 alitas", d: "Incluye papas a la francesa.", p: 82000 },
-          { id: "zz-al-45", n: "Orden de 45 alitas", d: "Incluye papas a la francesa.", p: 92000 },
-          { id: "zz-al-50", n: "Orden de 50 alitas", d: "Incluye papas a la francesa.", p: 102000 },
-        ],
-      },
-      {
-        sec: "Salsas",
-        items: [
-          { id: "zz-sa-bbq", n: "BBQ picante", d: "", p: 0 },
-          { id: "zz-sa-miel-mostaza", n: "Miel mostaza", d: "", p: 0 },
-          { id: "zz-sa-maracuya", n: "Maracuyá", d: "", p: 0 },
+          { id: "zz-al-4", n: "Orden de 4 alitas", d: "Incluye papas a la francesa.", p: 11000, opciones: ZZ_SALSAS },
+          { id: "zz-al-6", n: "Orden de 6 alitas", d: "Incluye papas a la francesa.", p: 16000, opciones: ZZ_SALSAS },
+          { id: "zz-al-10", n: "Orden de 10 alitas", d: "Incluye papas a la francesa.", p: 23000, opciones: ZZ_SALSAS },
+          { id: "zz-al-15", n: "Orden de 15 alitas", d: "Incluye papas a la francesa.", p: 31000, opciones: ZZ_SALSAS },
+          { id: "zz-al-20", n: "Orden de 20 alitas", d: "Incluye papas a la francesa.", p: 42000, opciones: ZZ_SALSAS },
+          { id: "zz-al-25", n: "Orden de 25 alitas", d: "Incluye papas a la francesa.", p: 52000, opciones: ZZ_SALSAS },
+          { id: "zz-al-30", n: "Orden de 30 alitas", d: "Incluye papas a la francesa.", p: 62000, opciones: ZZ_SALSAS },
+          { id: "zz-al-35", n: "Orden de 35 alitas", d: "Incluye papas a la francesa.", p: 72000, opciones: ZZ_SALSAS },
+          { id: "zz-al-40", n: "Orden de 40 alitas", d: "Incluye papas a la francesa.", p: 82000, opciones: ZZ_SALSAS },
+          { id: "zz-al-45", n: "Orden de 45 alitas", d: "Incluye papas a la francesa.", p: 92000, opciones: ZZ_SALSAS },
+          { id: "zz-al-50", n: "Orden de 50 alitas", d: "Incluye papas a la francesa.", p: 102000, opciones: ZZ_SALSAS },
         ],
       },
     ],
