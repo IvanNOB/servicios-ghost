@@ -1514,3 +1514,5 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 }
 .dish-opc__add { flex: 0 0 auto; }
 .add-btn--ok { background: var(--success); color: #fff; border-color: var(--success); }
+
+.dish__price--confirmar { color: var(--text-2); font-style: italic; font-weight: 600; }

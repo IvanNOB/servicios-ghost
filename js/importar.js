@@ -26,7 +26,10 @@
     "3. Cada plato en una línea: Nombre | Descripción corta | Precio\n" +
     "   - Precio solo en números, sin $ ni puntos (ej: 16000).\n" +
     "   - Descripción breve (máx. 12 palabras). Si no hay, deja vacío: Nombre || Precio\n" +
-    "   - Si un plato tiene varios tamaños, pon una línea por tamaño (ej: Pizza mediana | | 30000).\n" +
+    "   - Si un plato viene en varios tamaños o el cliente elige algo (salsa, sabor, proteína), deja UNA sola línea\n" +
+    "     con el precio MÁS BAJO y agrega al final las opciones. Si una opción sube el precio, pon cuánto suma:\n" +
+    "     Arroz paisa | Cerdo, pollo y maduro | 25000 | Tamaño: Personal, Mediano (precio=5000), Grande (precio=15000)\n" +
+    "     Alitas x6 | Con papas | 16000 | Salsa: BBQ, Miel mostaza, Maracuyá\n" +
     "4. Si hay almuerzo del día con opciones, agrégalo al final así:\n" +
     "   ALMUERZO: precio=12000 | desc=Incluye sopa, principio y bebida\n" +
     "   Grupo: Proteína > Pollo, Res, Cerdo\n" +
@@ -220,9 +223,21 @@
       var ms = l.match(/^\[(.+)\]$/) || l.match(/^#{1,4}\s*(.+)$/);
       if (ms) { nuevaSeccion(ms[1]); continue; }
 
-      // Plato con barras: Nombre | desc | precio
+      // Plato con barras: Nombre | desc | precio | Grupo: opción, opción (opcional)
       if (l.indexOf("|") !== -1) {
         var partes = l.split("|").map(limpiar);
+        // Partes finales con forma "Grupo: a, b" son opciones que elige el cliente.
+        var opcionesPlato = [];
+        while (partes.length > 3 && /^[^:]{2,25}:\s*\S/.test(partes[partes.length - 1])) {
+          var gOpc = parsearLineaGrupo(partes.pop());
+          if (gOpc) opcionesPlato.unshift({ nombre: gOpc.nombre, opciones: gOpc.opciones });
+        }
+        if (opcionesPlato.length) {
+          agregarPlato(partes[0], partes.length > 2 ? partes.slice(1, -1).filter(Boolean).join(" · ") : "",
+            precio(partes[partes.length - 1]), raw);
+          seccion.items[seccion.items.length - 1].opciones = opcionesPlato;
+          continue;
+        }
         var nombre = partes[0];
         var p = precio(partes[partes.length - 1]);
         var desc = partes.length > 2 ? partes.slice(1, -1).filter(Boolean).join(" · ") : "";

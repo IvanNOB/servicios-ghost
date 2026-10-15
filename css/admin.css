@@ -358,3 +358,10 @@ code {
 .importar__msg:empty { display: none; }
 .importar__avisos { margin-top: 6px; color: #fcd34d; font-size: 0.84rem; }
 .importar__avisos ul { margin: 4px 0 0; padding-left: 18px; }
+
+/* ------------- Opciones por plato y avisos de precio ------------- */
+.falta-precio { color: #fcd34d; font-size: 0.82rem; font-weight: 700; }
+.plato-opc { margin-top: 2px; }
+.plato-opc summary { cursor: pointer; color: var(--text-2); font-size: 0.85rem; padding: 4px 0; }
+.plato-opc textarea { min-height: 54px; font-size: 0.85rem; margin-top: 4px; }
+.plato-opc__ayuda { font-size: 0.78rem; margin: 4px 0 0; }

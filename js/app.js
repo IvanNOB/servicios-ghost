@@ -30,6 +30,12 @@
     return "$" + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
 
+  // Precio para mostrar: si el restaurante aún no lo ha definido (0), no
+  // decimos "$0" (parece gratis) sino que se confirma por WhatsApp.
+  function precioTxt(n) {
+    return n > 0 ? money(n) : "Precio a confirmar";
+  }
+
   // Escapa texto para evitar inyección de HTML.
   function esc(value) {
     return String(value)
@@ -114,7 +120,9 @@
   /* ------------------------- Estado global ------------------------ */
 
   var LS_KEY = "ghost_cart_v1";
+  var LS_ARMADOS = "ghost_armados_v1";
   var cart = loadCart();          // { "restId::itemId": qty }
+  almuerzosArmados = loadArmados();
   var filtroCategoria = "Todos";
   var termino = "";
   var vistaActual = null;         // null = inicio, o id de restaurante
@@ -137,7 +145,35 @@
   function saveCart() {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(cart));
+      // Las combinaciones (salsa, tamaño, almuerzo armado) se guardan aparte:
+      // sin ellas, al recargar la página el carrito no sabría qué eran.
+      var usados = {};
+      for (var k in cart) {
+        var id = parseKey(k).itemId;
+        if (almuerzosArmados[id]) usados[id] = almuerzosArmados[id];
+      }
+      localStorage.setItem(LS_ARMADOS, JSON.stringify(usados));
     } catch (e) { /* modo privado / cuota: no rompemos la app */ }
+  }
+
+  function loadArmados() {
+    try {
+      var data = JSON.parse(localStorage.getItem(LS_ARMADOS) || "{}");
+      return data && typeof data === "object" ? data : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  // Quita del carrito lo que ya no existe (plato borrado de la carta, etc.)
+  // para que el contador y el total nunca muestren productos "fantasma".
+  function limpiarHuerfanos() {
+    var cambio = false;
+    for (var k in cart) {
+      var p = parseKey(k);
+      if (!findRest(p.restId) || !findItem(p.restId, p.itemId)) { delete cart[k]; cambio = true; }
+    }
+    if (cambio) saveCart();
   }
 
   function cartKey(restId, itemId) { return restId + "::" + itemId; }
@@ -174,6 +210,16 @@
       if (it) total += it.p * cart[key];
     }
     return total;
+  }
+
+  // ¿Hay en el carrito algún producto sin precio definido?
+  function hayPorConfirmar() {
+    for (var key in cart) {
+      var p = parseKey(key);
+      var it = findItem(p.restId, p.itemId);
+      if (it && !(it.p > 0)) return true;
+    }
+    return false;
   }
 
   // Agrupa el carrito por restaurante (ignorando entradas huérfanas).
@@ -362,13 +408,13 @@
     if (tieneOpciones(it) && !it.agotado && r.abierto) {
       // "desde $X" si algún grupo cambia el precio (hay tamaños/variantes).
       var variaPrecio = it.opciones.some(grupoTienePrecios);
-      var precioTxt = (variaPrecio ? "desde " : "") + money(it.p);
+      var precioMostrar = it.p > 0 ? (variaPrecio ? "desde " : "") + money(it.p) : precioTxt(0);
       return (
         '<div class="dish dish--opciones" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
           '<div class="dish__info">' +
             '<div class="dish__name">' + esc(it.n) + "</div>" +
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
-            '<div class="dish__price">' + esc(precioTxt) + "</div>" +
+            '<div class="dish__price">' + esc(precioMostrar) + "</div>" +
           "</div>" +
           opcionesPlatoHTML(r, it) +
         "</div>"
@@ -379,7 +425,7 @@
         '<div class="dish__info">' +
           '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
           '<div class="dish__desc">' + esc(it.d) + "</div>" +
-          '<div class="dish__price">' + esc(money(it.p)) + "</div>" +
+          '<div class="dish__price' + (it.p > 0 ? "" : " dish__price--confirmar") + '">' + esc(precioTxt(it.p)) + "</div>" +
         "</div>" +
         '<div class="dish__action">' + controlHTML(r, it, qty) + "</div>" +
       "</div>"
@@ -769,11 +815,11 @@
           '<div class="cart-line">' +
             '<div class="cart-line__info">' +
               '<div class="cart-line__name">' + esc(item.n) + "</div>" +
-              '<div class="cart-line__price">' + esc(money(item.p)) + " c/u</div>" +
+              '<div class="cart-line__price">' + esc(item.p > 0 ? money(item.p) + " c/u" : precioTxt(0)) + "</div>" +
             "</div>" +
             '<div class="cart-line__right">' +
               stepperHTML(g.rest.id, item, qty) +
-              '<span class="cart-line__sub">' + esc(money(item.p * qty)) + "</span>" +
+              '<span class="cart-line__sub">' + esc(item.p > 0 ? money(item.p * qty) : "—") + "</span>" +
             "</div>" +
           "</div>";
       }
@@ -786,6 +832,8 @@
       gruposHTML +
       '<div class="cart-total"><span>Total productos</span><span>' +
         esc(money(totalPesos())) + "</span></div>" +
+      (hayPorConfirmar()
+        ? '<p class="cart-note">Algunos productos tienen precio a confirmar: te lo decimos por WhatsApp.</p>' : "") +
       '<p class="cart-note">Domicilio: se confirma por WhatsApp.</p>' +
       '<h3 class="form__heading">Tus datos de entrega</h3>' +
       '<form class="form" id="pedidoForm" novalidate>' +
@@ -953,14 +1001,16 @@
       for (var i = 0; i < g.items.length; i++) {
         var item = g.items[i].item;
         var qty = g.items[i].qty;
-        lines.push("- " + qty + " x " + item.n + " = " + money(item.p * qty));
+        lines.push("- " + qty + " x " + item.n + " = " +
+          (item.p > 0 ? money(item.p * qty) : "precio a confirmar"));
       }
       lines.push("Subtotal: " + money(g.subtotal));
       lines.push("");
     }
 
     lines.push("--------------------------------");
-    lines.push("Total productos: " + money(totalPesos()));
+    lines.push("Total productos: " + money(totalPesos()) +
+      (hayPorConfirmar() ? " + productos con precio a confirmar" : ""));
     lines.push("(el domicilio se cobra aparte segun el barrio)");
     lines.push("");
     lines.push("DATOS DE ENTREGA");
@@ -1281,6 +1331,8 @@
       .then(function (lista) {
         if (Array.isArray(lista) && lista.length) {
           DATA = lista;
+          // Con la lista definitiva ya cargada, quitamos del carrito lo que no existe.
+          limpiarHuerfanos();
           renderChips();
           renderAlmuerzosHoy();
           renderGrid();

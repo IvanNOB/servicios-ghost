@@ -105,6 +105,42 @@ const FENIX_COMBO_TAMANOS = [
   ] },
 ];
 
+// Pizzas de El Barril de Migue: sabor (mismo precio) + tamaño. Base = porción $11.000.
+const MIGUE_PIZZA = [
+  { nombre: "Sabor", opciones: [
+    { n: "Hawaiana" }, { n: "Pardo's" }, { n: "Carnes frías" }, { n: "Mexicana" }, { n: "Vegetariana" },
+    { n: "Napolitana" }, { n: "Criolla" }, { n: "Champiñón" }, { n: "Mixta" }, { n: "Tropical" },
+  ] },
+  { nombre: "Tamaño", opciones: [
+    { n: "Porción" },                          // 11.000
+    { n: "Personal (6 porciones)", precio: 4000 },   // 15.000
+    { n: "Pequeña (4 porciones)", precio: 24000 },   // 35.000
+    { n: "Mediana (6 porciones)", precio: 43000 },   // 54.000
+    { n: "Grande (8 porciones)", precio: 59000 },    // 70.000
+  ] },
+];
+
+// Tamaños de los arroces de El Doradito. Arroz chino base $18.000.
+const DORADITO_TAMANOS = [
+  { nombre: "Tamaño", opciones: [
+    { n: "Personal" },                    // 18.000
+    { n: "Mediano", precio: 7000 },       // 25.000
+    { n: "Grande", precio: 12000 },       // 30.000
+    { n: "Familiar", precio: 17000 },     // 35.000
+    { n: "Gigante", precio: 22000 },      // 40.000
+  ] },
+];
+// Arroz valenciano base $20.000.
+const DORADITO_VALENCIANO = [
+  { nombre: "Tamaño", opciones: [
+    { n: "Personal" },                    // 20.000
+    { n: "Mediano", precio: 5000 },       // 25.000
+    { n: "Grande", precio: 10000 },       // 30.000
+    { n: "Familiar", precio: 15000 },     // 35.000
+    { n: "Gigante", precio: 20000 },      // 40.000
+  ] },
+];
+
 const RESTAURANTES = [
   {
     id: "lucarnes",
@@ -1323,11 +1359,7 @@ const RESTAURANTES = [
       {
         sec: "Arroz chino",
         items: [
-          { id: "ch-ac-1", n: "Arroz chino (personal)", d: "Verdura, camarón, pollo desmechado, jamón, lechuga y raíces chinas.", p: 18000 },
-          { id: "ch-ac-2", n: "Arroz chino (mediano)", d: "Verdura, camarón, pollo desmechado, jamón, lechuga y raíces chinas.", p: 25000 },
-          { id: "ch-ac-3", n: "Arroz chino (grande)", d: "Verdura, camarón, pollo desmechado, jamón, lechuga y raíces chinas.", p: 30000 },
-          { id: "ch-ac-4", n: "Arroz chino (familiar)", d: "Verdura, camarón, pollo desmechado, jamón, lechuga y raíces chinas.", p: 35000 },
-          { id: "ch-ac-5", n: "Arroz chino (gigante)", d: "Verdura, camarón, pollo desmechado, jamón, lechuga y raíces chinas.", p: 40000 },
+          { id: "ch-ac-1", n: "Arroz chino", d: "Verdura, camarón, pollo desmechado, jamón, lechuga y raíces chinas. Elige el tamaño.", p: 18000, opciones: DORADITO_TAMANOS },
         ],
       },
       {
@@ -1355,11 +1387,7 @@ const RESTAURANTES = [
       {
         sec: "Arroz valenciano",
         items: [
-          { id: "ch-av-1", n: "Arroz valenciano (personal)", d: "Carne de cerdo, salchicha, verduras, lechuga y raíces.", p: 20000 },
-          { id: "ch-av-2", n: "Arroz valenciano (mediano)", d: "Carne de cerdo, salchicha, verduras, lechuga y raíces.", p: 25000 },
-          { id: "ch-av-3", n: "Arroz valenciano (grande)", d: "Carne de cerdo, salchicha, verduras, lechuga y raíces.", p: 30000 },
-          { id: "ch-av-4", n: "Arroz valenciano (familiar)", d: "Carne de cerdo, salchicha, verduras, lechuga y raíces.", p: 35000 },
-          { id: "ch-av-5", n: "Arroz valenciano (gigante)", d: "Carne de cerdo, salchicha, verduras, lechuga y raíces.", p: 40000 },
+          { id: "ch-av-1", n: "Arroz valenciano", d: "Carne de cerdo, salchicha, verduras, lechuga y raíces. Elige el tamaño.", p: 20000, opciones: DORADITO_VALENCIANO },
         ],
       },
       {
@@ -1937,28 +1965,9 @@ const RESTAURANTES = [
     logo: "",
     carta: [
       {
-        sec: "Sabores de pizza",
+        sec: "Pizzas",
         items: [
-          { id: "mg-sp-hawaiana", n: "Hawaiana", d: "Piña, jamón, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-pardos", n: "Pardo's", d: "Jamón, salami, pepperoni, pollo, queso, champiñones. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-carnes-frias", n: "Carnes frías", d: "Jamón, salami, queso, pepperoni. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-mexicana", n: "Mexicana", d: "Carne desmechada, tomate, jalapeño, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-vegetariana", n: "Vegetariana", d: "Cebolla, tomate, lechuga, champiñones, maíz, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-napolitana", n: "Napolitana", d: "Tomate, orégano, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-criolla", n: "Criolla", d: "Carne desmechada, maíz, pepperoni, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-champinon", n: "Champiñón", d: "Pollo, queso, champiñones. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-mixta", n: "Mixta", d: "Jamón, salami, pepperoni, pollo, champiñones, piña, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
-          { id: "mg-sp-tropical", n: "Tropical", d: "Piña, uvas, queso, cerezas. Elige el tamaño en la sección Pizzas.", p: 0 },
-        ],
-      },
-      {
-        sec: "Pizzas (por tamaño)",
-        items: [
-          { id: "mg-pz-porcion", n: "Porción", d: "1 porción.", p: 11000 },
-          { id: "mg-pz-personal", n: "Personal", d: "6 porciones.", p: 15000 },
-          { id: "mg-pz-pequena", n: "Pequeña", d: "4 porciones.", p: 35000 },
-          { id: "mg-pz-mediana", n: "Mediana", d: "6 porciones.", p: 54000 },
-          { id: "mg-pz-grande", n: "Grande", d: "8 porciones.", p: 70000 },
+          { id: "mg-pz-pizza", n: "Pizza", d: "Elige sabor y tamaño. Hawaiana: piña y jamón · Pardo's: jamón, salami, pepperoni, pollo y champiñones · Carnes frías: jamón, salami y pepperoni · Mexicana: carne, tomate y jalapeño · Vegetariana: cebolla, tomate, lechuga, champiñones y maíz · Napolitana: tomate y orégano · Criolla: carne, maíz y pepperoni · Champiñón: pollo y champiñones · Mixta: jamón, salami, pepperoni, pollo, champiñones y piña · Tropical: piña, uvas y cerezas. Todas con queso.", p: 11000, opciones: MIGUE_PIZZA },
         ],
       },
       {

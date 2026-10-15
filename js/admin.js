@@ -134,7 +134,9 @@
           '<div class="admin-card__info">' +
             '<div class="admin-card__name">' + esc(r.nombre) + "</div>" +
             '<div class="admin-card__meta">' + esc(r.cat) + " · " + (r.abierto ? "Abierto" : "Cerrado") +
-              " · " + contarPlatos(r) + " platos" + (almuerzoHoy(r) ? " · 🍲 almuerzo hoy" : "") + "</div>" +
+              " · " + contarPlatos(r) + " platos" + (almuerzoHoy(r) ? " · 🍲 almuerzo hoy" : "") +
+              (contarSinPrecio(r) ? ' · <span class="falta-precio">⚠️ ' + contarSinPrecio(r) + " sin precio</span>" : "") +
+              "</div>" +
           "</div>" +
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
@@ -434,8 +436,30 @@
           esc(it.p != null ? it.p : "") + '" placeholder="Precio (ej. 12000)" />' +
         '<label class="agotado-check"><input type="checkbox" data-plato-ag="' + si + "-" + pi + '"' +
           (it.agotado ? " checked" : "") + " /> Agotado</label>" +
+        (it.p > 0 || !it.n ? "" : '<span class="falta-precio">⚠️ Falta el precio</span>') +
+        platoOpcionesHTML(it, si + "-" + pi) +
       "</div>"
     );
+  }
+
+  // Opciones que elige el cliente (salsa, tamaño, proteína…), en texto simple.
+  function platoOpcionesHTML(it, key) {
+    var texto = (window.Importar && Array.isArray(it.opciones))
+      ? window.Importar.opcionesATexto(it.opciones) : "";
+    return (
+      '<details class="plato-opc"' + (texto ? " open" : "") + ">" +
+        "<summary>⚙️ Opciones que elige el cliente" + (texto ? " (" + it.opciones.length + ")" : "") + "</summary>" +
+        '<textarea class="field__textarea" rows="2" data-plato-opc="' + key + '" placeholder="Salsa: BBQ, Miel mostaza, Maracuyá&#10;Tamaño: Personal, Mediano (precio=5000), Grande (precio=15000)">' +
+          esc(texto) + "</textarea>" +
+        '<p class="muted plato-opc__ayuda">Una línea por grupo. <code>(precio=5000)</code> suma ese valor al precio del plato.</p>' +
+      "</details>"
+    );
+  }
+
+  function contarSinPrecio(r) {
+    var n = 0;
+    (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (!(it.p > 0)) n++; }); });
+    return n;
   }
 
   // Lee los valores actuales del formulario hacia el objeto "editando".
@@ -470,13 +494,22 @@
         var idPlato = pEl.getAttribute("data-plato-id") || "";
         if (!idPlato || usadosIds[idPlato]) idPlato = slug(nombre) + "-" + Math.random().toString(36).slice(2, 6);
         usadosIds[idPlato] = true;
-        items.push({
+        var plato = {
           id: idPlato,
           n: nombre,
           d: d ? d.value.trim() : "",
           p: p ? Number(p.value) || 0 : 0,
           agotado: ag ? ag.checked : false,
-        });
+        };
+        // Opciones del plato (salsa, tamaño…). Antes se perdían al guardar.
+        var opcEl = pEl.querySelector('[data-plato-opc="' + key + '"]');
+        if (opcEl && window.Importar) {
+          var grupos = window.Importar.parsearOpciones(opcEl.value).map(function (g) {
+            return { nombre: g.nombre, opciones: g.opciones };
+          });
+          if (grupos.length) plato.opciones = grupos;
+        }
+        items.push(plato);
       });
       nuevasSecs.push({ sec: nombreSec ? nombreSec.value.trim() : "Sección", items: items });
     });
