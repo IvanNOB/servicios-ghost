@@ -759,4 +759,120 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "delicias-de-wily",
+    nombre: "Las Delicias de Wily",
+    cat: "Comida rápida y pescados",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#0ea5e9",
+    desc: "Comidas rápidas, mariscos y pescados. Hamburguesas, perros, arroces especiales y pescado fresco.",
+    logo: "",
+    carta: [
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "wi-ham-sencilla", n: "Hamburguesa Sencilla", d: "Carne, vegetales, queso, jamón, ripio (pan o plátano).", p: 12000 },
+          { id: "wi-ham-doble", n: "Doble Carne", d: "2 carnes, vegetales, queso, jamón, ripio (pan o plátano).", p: 15000 },
+          { id: "wi-ham-xl", n: "Burguer XL", d: "3 carnes, vegetales, queso, jamón, ripio (pan o plátano).", p: 19000 },
+          { id: "wi-ham-campesina", n: "Hamburguesa Campesina", d: "3 carnes, vegetales, queso, jamón, huevo frito, ripio (pan o plátano).", p: 25000 },
+          { id: "wi-ham-vegetariana", n: "Hamburguesa Vegetariana", d: "Carne de lentejas, vegetales, queso, jamón, huevo, ripio (pan o plátano).", p: 17000 },
+          { id: "wi-ham-ranchera", n: "Hamburguesa Ranchera", d: "2 carnes, vegetales, maíz, queso, jamón, tocineta, chorizo, ripio.", p: 20000 },
+          { id: "wi-ham-hawaiana", n: "Hamburguesa Hawaiana", d: "2 carnes, vegetales, queso, jamón, piña, ripio (pan o plátano).", p: 20000 },
+          { id: "wi-ham-camaron", n: "Hamburguesa con Camarón", d: "2 carnes, vegetales, queso, jamón, camarones, ripio (pan o plátano).", p: 30000 },
+        ],
+      },
+      {
+        sec: "Perros Calientes",
+        items: [
+          { id: "wi-pe-sencillo", n: "Sencillo", d: "Carnes, vegetales, queso, papa a la francesa.", p: 12000 },
+          { id: "wi-pe-super", n: "Súper Perro", d: "Queso, pan, chorizo, tocineta, maíz, ripio.", p: 17000 },
+          { id: "wi-pe-hawaiano", n: "Hawaiano", d: "Pan, salchicha, queso, jamón, ripio, piña.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Burrito",
+        items: [
+          { id: "wi-bu-sencillo", n: "Sencillo", d: "Carnes, vegetales, queso y papa a la francesa.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Comidas Rápidas",
+        items: [
+          { id: "wi-cr-alitas-bbq", n: "Alitas BBQ", d: "", p: 15000 },
+          { id: "wi-cr-alitas-rellenas", n: "Alitas Rellenas", d: "", p: 20000 },
+          { id: "wi-cr-patacon", n: "Patacón con Todo", d: "", p: 25000 },
+          { id: "wi-cr-mazorcada", n: "Mazorcada", d: "", p: 25000 },
+          { id: "wi-cr-picada-carne", n: "Picada de Carne", d: "", p: 30000 },
+        ],
+      },
+      {
+        sec: "Salchipapas",
+        items: [
+          { id: "wi-sp-sencilla", n: "Sencilla", d: "Queso, salchicha, papa a la francesa.", p: 12000 },
+          { id: "wi-sp-salchipollo", n: "Salchipollo", d: "Queso, salchicha, huevo de codorniz, maíz, papa francesa.", p: 17000 },
+          { id: "wi-sp-choripollo", n: "Choripollo", d: "Queso, chorizo, pollo, maíz, papa a la francesa.", p: 17000 },
+          { id: "wi-sp-choripapa", n: "Choripapa", d: "Queso, chorizo y papa a la francesa.", p: 13000 },
+        ],
+      },
+      {
+        sec: "Arroz Especial",
+        items: [
+          { id: "wi-ar-chino", n: "Arroz Chino", d: "", p: 20000 },
+          { id: "wi-ar-paisa", n: "Arroz Paisa", d: "", p: 20000 },
+          { id: "wi-ar-camarones", n: "Arroz con Camarones", d: "Pequeño $40.000 / grande $60.000.", p: 40000 },
+          { id: "wi-ar-pollo-parrilla", n: "Arroz Pollo Estilo Parrilla", d: "", p: 25000 },
+        ],
+      },
+      {
+        sec: "Mariscos",
+        items: [
+          { id: "wi-ma-ceviche-copa", n: "Ceviche de Camarón en Copa", d: "", p: 40000 },
+          { id: "wi-ma-coctel", n: "Coctel de Camarón", d: "", p: 40000 },
+          { id: "wi-ma-patacon-camaron", n: "Patacón con Camarón", d: "", p: 40000 },
+          { id: "wi-ma-camaron-apanado", n: "Camarón Apanado", d: "", p: 45000 },
+          { id: "wi-ma-camaron-ajillo", n: "Camarón al Ajillo", d: "", p: 40000 },
+          { id: "wi-ma-cazuela", n: "Cazuela de Mariscos", d: "", p: 40000 },
+        ],
+      },
+      {
+        sec: "Pescado",
+        items: [
+          { id: "wi-pz-salmon", n: "Salmón", d: "", p: 40000 },
+          { id: "wi-pz-salmon-marinero", n: "Salmón Marinero", d: "", p: 60000 },
+          { id: "wi-pz-salmon-ajillo", n: "Salmón al Ajillo", d: "", p: 50000 },
+          { id: "wi-pz-trucha", n: "Trucha", d: "", p: 40000 },
+          { id: "wi-pz-trucha-marinera", n: "Trucha Marinera", d: "", p: 60000 },
+          { id: "wi-pz-trucha-ajillo", n: "Trucha al Ajillo", d: "", p: 50000 },
+          { id: "wi-pz-milanesa", n: "Milanesa de Pescado", d: "", p: 40000 },
+          { id: "wi-pz-mojarra-ahumada", n: "Mojarra Ahumada", d: "", p: 40000 },
+          { id: "wi-pz-mojarra-frita", n: "Mojarra Frita", d: "", p: 30000 },
+          { id: "wi-pz-mojarra-marinera", n: "Mojarra Marinera", d: "", p: 50000 },
+          { id: "wi-pz-cachama-ahumada", n: "Cachama Ahumada", d: "", p: 30000 },
+          { id: "wi-pz-bagre-criolla", n: "Bagre en Salsa Criolla", d: "", p: 40000 },
+        ],
+      },
+      {
+        sec: "Adiciones",
+        items: [
+          { id: "wi-ad-papas", n: "Porción de Papas a la Francesa", d: "", p: 7000 },
+          { id: "wi-ad-codorniz", n: "Porción de Huevos de Codorniz", d: "", p: 7000 },
+          { id: "wi-ad-patacon", n: "Porción de Patacón", d: "", p: 7000 },
+          { id: "wi-ad-yuca", n: "Porción de Yuca", d: "", p: 7000 },
+          { id: "wi-ad-ensalada", n: "Porción de Ensalada", d: "", p: 7000 },
+        ],
+      },
+      {
+        sec: "Bebidas",
+        items: [
+          { id: "wi-be-limonada-personal", n: "Limonada Personal", d: "", p: 5000 },
+          { id: "wi-be-limonada-coco", n: "Limonada de Coco", d: "", p: 13000 },
+          { id: "wi-be-cerezada", n: "Cerezada", d: "", p: 8000 },
+          { id: "wi-be-jugo-agua", n: "Jugos Naturales en Agua", d: "", p: 5000 },
+          { id: "wi-be-jugo-leche", n: "Jugos Naturales en Leche", d: "", p: 7000 },
+        ],
+      },
+    ],
+  },
 ];
