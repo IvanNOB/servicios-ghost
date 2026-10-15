@@ -668,4 +668,195 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "cakes-and-coffee",
+    nombre: "Cakes and Coffee",
+    cat: "Café y Panadería",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#7c3f1d",
+    desc: "Café de especialidad, repostería, sándwiches gourmet, smoothies, helados y bebidas de temporada.",
+    logo: "",
+    carta: [
+      {
+        sec: "Entradas",
+        items: [
+          { id: "cc-ent-brushettas", n: "Brushettas x6 und", d: "Montaditos en pan artesano, queso, pollo y salsa a elección.", p: 15000 },
+          { id: "cc-ent-choricitos", n: "Choricitos endiablados", d: "Chorizo en salsa agridulce picante con croquetas de yuca.", p: 20000 },
+          { id: "cc-ent-patacones", n: "Patacones con hogao", d: "Tostones de plátano con hogao y queso doble crema.", p: 12000 },
+          { id: "cc-ent-salchipapa", n: "Salchipapa sencilla", d: "Papas a la francesa, salchicha, queso derretido, huevo, salsas.", p: 25000 },
+        ],
+      },
+      {
+        sec: "Sándwichs",
+        items: [
+          { id: "cc-sa-sencillo", n: "Sencillo", d: "Pan, jamón, queso, salsa de maíz y salsa de piña.", p: 6000 },
+          { id: "cc-sa-emparedado", n: "Emparedado", d: "Pan, lechuga, tomate, doble jamón, queso, salsas.", p: 9000 },
+          { id: "cc-sa-gratinado", n: "Gratinado", d: "2 pisos, jamón, queso, salsa de la casa, piña y queso gratinado.", p: 14000 },
+        ],
+      },
+      {
+        sec: "Sándwich cubano",
+        items: [
+          { id: "cc-cu-criollo", n: "Criollo", d: "Pan francés, lechuga, tomate, carne desmechada, chorizo, maduro, queso, papitas.", p: 30000 },
+          { id: "cc-cu-roastbeef", n: "Roast beef", d: "Pan francés, lechuga, tomate, res y cerdo, queso crema, pimentón, papitas.", p: 30000 },
+          { id: "cc-cu-pollo-crunchy", n: "Pollo crunchy", d: "Pan francés, lechuga, tomate, pechuga apanada, queso, papitas.", p: 30000 },
+          { id: "cc-cu-panini", n: "Panini de pollo y pimentón caramelizado", d: "Pan brioche, pollo desmechado, jamón, queso, pimientos, papitas.", p: 28000 },
+        ],
+      },
+      {
+        sec: "Comidas",
+        items: [
+          { id: "cc-co-patacon-mixto", n: "Patacón mixto", d: "Base de patacón con carne, pollo, maíz, jamón, queso y tocineta.", p: 25000 },
+          { id: "cc-co-costilla-bbq", n: "Costilla BBQ", d: "300g costilla ahumada en salsa BBQ, ensalada y papas.", p: 38000 },
+          { id: "cc-co-deditos", n: "Deditos de pollo", d: "Pechuga apanada en panko, papitas a la francesa y ensalada.", p: 25000 },
+          { id: "cc-co-pechuga-grat", n: "Pechuga gratinada", d: "Pechuga a la plancha gratinada con jamón, queso, papas y ensalada.", p: 30000 },
+          { id: "cc-co-ham-clasica", n: "Hamburguesa clásica", d: "Carne artesanal, jamón, doble queso, lechuga, tomate, salsas, papas.", p: 24000 },
+          { id: "cc-co-ham-argentina", n: "Hamburguesa argentina", d: "Carne artesanal, chorizo, chimichurri, cebolla caramelizada, papas.", p: 26000 },
+          { id: "cc-co-ham-casa", n: "Hamburguesa de la casa", d: "Roast beef, piña asada, tocineta, triple queso, salsas, papas.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Plato de temporada",
+        items: [
+          { id: "cc-ts-lomo-cerdo", n: "Lomo de cerdo ahumado", d: "Lomo en salsa de vino tinto, puré de papa y ensalada.", p: 38000 },
+        ],
+      },
+      {
+        sec: "Cafés",
+        items: [
+          { id: "cc-cf-espresso-sencillo", n: "Espresso sencillo", d: "", p: 6000 },
+          { id: "cc-cf-espresso-doble", n: "Espresso doble", d: "", p: 9000 },
+          { id: "cc-cf-americano", n: "Americano", d: "", p: 6000 },
+          { id: "cc-cf-con-leche", n: "Café con leche", d: "", p: 8000 },
+          { id: "cc-cf-irlandes", n: "Irlandés/Francés", d: "", p: 10000 },
+          { id: "cc-cf-carajillo", n: "Carajillo", d: "", p: 10000 },
+          { id: "cc-cf-quesillo", n: "Café con quesillo", d: "", p: 10000 },
+          { id: "cc-cf-campesino", n: "Café campesino", d: "", p: 8000 },
+        ],
+      },
+      {
+        sec: "Capuccinos",
+        items: [
+          { id: "cc-cap-tradicional", n: "Tradicional", d: "", p: 10000 },
+          { id: "cc-cap-saborizado", n: "Canela/Macadamia/Vainilla", d: "", p: 12000 },
+          { id: "cc-cap-mokaccino", n: "Mokaccino", d: "Café y chocolate.", p: 12000 },
+          { id: "cc-cap-irlandes", n: "Irlandés", d: "Crema de whisky.", p: 15000 },
+          { id: "cc-cap-frances", n: "Francés", d: "Ron.", p: 15000 },
+          { id: "cc-cap-vienes", n: "Vienés", d: "Crema chantilly.", p: 15000 },
+          { id: "cc-cap-latte-arequipe", n: "Latte con arequipe", d: "", p: 12000 },
+        ],
+      },
+      {
+        sec: "Aromáticas e infusiones",
+        items: [
+          { id: "cc-ar-frutos-rojos", n: "Frutos rojos", d: "", p: 9000 },
+          { id: "cc-ar-frutos-verdes", n: "Frutos verdes", d: "", p: 9000 },
+          { id: "cc-ar-pina-naranja", n: "Piña, naranja y limoncillo", d: "", p: 9000 },
+          { id: "cc-ar-jamaica", n: "Flor de Jamaica", d: "", p: 9000 },
+          { id: "cc-ar-manzana-canela", n: "Manzana-canela", d: "", p: 9000 },
+          { id: "cc-ar-te-chai", n: "Té chai", d: "", p: 14000 },
+        ],
+      },
+      {
+        sec: "Tortas y postres",
+        items: [
+          { id: "cc-to-waffle-pandebono", n: "Waffle de pandebono", d: "Acompañado de salsa de bocadillo y dulce de leche.", p: 14000 },
+          { id: "cc-to-tortas", n: "Chocolate/María Luisa/Maracuyá", d: "", p: 9000 },
+          { id: "cc-to-tres-leches", n: "Tres leches", d: "", p: 10000 },
+        ],
+      },
+      {
+        sec: "Granizados",
+        items: [
+          { id: "cc-gr-frutales", n: "Mandarina/Naranja/Limón/Maracuyá/Mora", d: "", p: 12000 },
+          { id: "cc-gr-cremosos", n: "Café/Milo/Brownie/Galleta/Frutos rojos/Coco/Vainilla", d: "", p: 14000 },
+        ],
+      },
+      {
+        sec: "Nevados (granizado + chantilly)",
+        items: [
+          { id: "cc-ne-cremosos", n: "Café/Milo/Brownie/Galleta/Frutos rojos/Coco/Vainilla/Caramelo", d: "", p: 16000 },
+          { id: "cc-ne-macadamia", n: "Macadamia", d: "", p: 17000 },
+          { id: "cc-ne-amor-perfecto", n: "Amor perfecto", d: "Granizado de café con crema de whisky.", p: 18000 },
+        ],
+      },
+      {
+        sec: "Limonadas",
+        items: [
+          { id: "cc-li-vino", n: "Limonada de vino", d: "", p: 14000 },
+          { id: "cc-li-natural", n: "Natural", d: "", p: 6000 },
+          { id: "cc-li-citricas", n: "Yerbabuena/Mandarina/Naranja", d: "", p: 10000 },
+          { id: "cc-li-frutales", n: "Mango/Piña/Sandía", d: "", p: 12000 },
+          { id: "cc-li-especiales", n: "Cítrica/Vino/Frutos rojos/Coco/Cerezada", d: "", p: 14000 },
+        ],
+      },
+      {
+        sec: "Jugos naturales",
+        items: [
+          { id: "cc-ju-agua", n: "En agua", d: "Maracuyá, fresa, mango, mora, piña, guanábana, sandía, uva, papaya.", p: 7000 },
+          { id: "cc-ju-leche", n: "En leche (sorbetes)", d: "Maracuyá, fresa, mango, mora, guanábana, uva.", p: 9000 },
+        ],
+      },
+      {
+        sec: "Extractos",
+        items: [
+          { id: "cc-ex-mandarina", n: "Mandarina (sin hielo)", d: "", p: 14000 },
+          { id: "cc-ex-naranja", n: "Naranja (sin hielo)", d: "", p: 14000 },
+        ],
+      },
+      {
+        sec: "Smoothies",
+        items: [
+          { id: "cc-sm-peachberry", n: "Peachberry", d: "Frutos rojos y durazno.", p: 14000 },
+          { id: "cc-sm-sunset", n: "Sunset", d: "Coco, piña y durazno.", p: 14000 },
+          { id: "cc-sm-paradise", n: "Paradise", d: "Piña, mandarina y mango.", p: 14000 },
+          { id: "cc-sm-frutos-rojos", n: "Frutos rojos", d: "Fresa, mora, arándano y cereza.", p: 14000 },
+        ],
+      },
+      {
+        sec: "Malteadas",
+        items: [
+          { id: "cc-ma-todas", n: "Vainilla/Chocolate/Arequipe/Fresa/Café/Vainilla chips/Brownie", d: "", p: 16000 },
+        ],
+      },
+      {
+        sec: "Helados",
+        items: [
+          { id: "cc-he-payasito", n: "Payasito", d: "", p: 10000 },
+          { id: "cc-he-ratoncito", n: "Ratoncito", d: "", p: 10000 },
+          { id: "cc-he-pulpo", n: "Pulpo", d: "", p: 12000 },
+          { id: "cc-he-yogurt", n: "Helado con yogurt", d: "", p: 14000 },
+          { id: "cc-he-affogato", n: "Affogato", d: "", p: 14000 },
+          { id: "cc-he-affogato-licor", n: "Affogato con licor", d: "", p: 16000 },
+          { id: "cc-he-brownie", n: "Brownie con helado", d: "", p: 16000 },
+          { id: "cc-he-casa", n: "Helado de la casa", d: "3 bolas de helado, fruta, chantilly, salsa de chocolate.", p: 18000 },
+          { id: "cc-he-waffle", n: "Waffle con fruta y helado", d: "Kiwi, fresa, mango y uva.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Otras bebidas frías",
+        items: [
+          { id: "cc-bf-milo", n: "Milo frío", d: "", p: 10000 },
+          { id: "cc-bf-latte", n: "Latte frío", d: "", p: 15000 },
+          { id: "cc-bf-te-chai", n: "Té chai frío", d: "", p: 16000 },
+          { id: "cc-bf-soda", n: "Soda saborizada", d: "Tamarindo, cereza, mandarina, piña, sandía, maracuyá, otros.", p: 14000 },
+          { id: "cc-bf-michelada", n: "Michelada Tropical", d: "Mango, manzana verde, fresa, uva, cerezas y gomitas.", p: 16000 },
+        ],
+      },
+      {
+        sec: "Bebidas de temporada",
+        items: [
+          { id: "cc-tp-golden-milk", n: "Golden Milk", d: "Leche dorada con cúrcuma, canela y un toque de miel.", p: 16500 },
+          { id: "cc-tp-caramel-latte", n: "Caramel Latte", d: "Latte cremoso con caramelo artesanal.", p: 17000 },
+          { id: "cc-tp-mango-matcha", n: "Mango Matcha Latte", d: "Mezcla tropical de mango con matcha y leche.", p: 17000 },
+          { id: "cc-tp-tinto-verano", n: "Tinto de Verano", d: "Vino tinto con frutas cítricas y especias.", p: 18000 },
+          { id: "cc-tp-soda-maracumango", n: "Soda de Maracumango", d: "Soda refrescante con maracuyá, mango y hierbabuena.", p: 16000 },
+          { id: "cc-tp-pink-matcha", n: "Pink Matcha", d: "Matcha con un toque de fresa y espuma cremosa.", p: 16000 },
+          { id: "cc-tp-mojito-fresa", n: "Mojito de Fresa", d: "Cóctel refrescante con ron, fresas, hierbabuena y limón.", p: 18000 },
+        ],
+      },
+    ],
+  },
 ];
