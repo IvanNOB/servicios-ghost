@@ -94,3 +94,6 @@ create policy "borrar fotos admin"
 --   Authentication → Users → "Add user" (pon tu correo y contraseña).
 -- Con ese correo y contraseña entrarás en /admin.html
 -- =====================================================================
+
+-- Después de este archivo, ejecuta también supabase-pedidos.sql y
+-- supabase-mejoras.sql (horarios, ajustes, seguimiento y cuentas de aliados).

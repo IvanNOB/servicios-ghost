@@ -31,13 +31,23 @@
   var elEditorBody = $("#editorBody");
   var elEditorTitle = $("#editorTitle");
 
-  // Fecha de hoy YYYY-MM-DD (hora local).
-  function hoyISO() {
-    var d = new Date();
-    var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
-    var dd = String(d.getDate()); if (dd.length < 2) dd = "0" + dd;
-    return d.getFullYear() + "-" + m + "-" + dd;
+  // Fecha YYYY-MM-DD en Colombia (igual que la tienda, sin importar la zona del PC).
+  function fechaColombia(d) {
+    try {
+      return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" })
+        .format(d || new Date());
+    } catch (e) {
+      d = d || new Date();
+      var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
+      var dd = String(d.getDate()); if (dd.length < 2) dd = "0" + dd;
+      return d.getFullYear() + "-" + m + "-" + dd;
+    }
   }
+  function hoyISO() { return fechaColombia(); }
+
+  // Perfil del usuario con sesión: { rol: "admin" } o { rol: "aliado", restaurante_id }.
+  var perfil = { rol: "admin" };
+  function esAliado() { return perfil && perfil.rol === "aliado"; }
   function almuerzoHoy(r) {
     var a = r && r.almuerzo;
     return !!(a && a.activo && (!a.fecha || a.fecha === hoyISO()));
@@ -106,15 +116,64 @@
   async function iniciarPanel() {
     var sesion = await window.Store.sesionActual();
     if (!sesion) { mostrar("login"); return; }
-    elAdminUser.textContent = sesion.user && sesion.user.email ? sesion.user.email : "Admin";
+    try {
+      perfil = await window.Store.miPerfil();
+    } catch (ex) {
+      // No sabemos qué permisos tiene: mejor no mostrar nada que mostrar de más.
+      mostrar("login");
+      $("#loginError").textContent = "No pudimos verificar tu cuenta (" + (ex && ex.message ? ex.message : "sin conexión") +
+        "). Revisa tu internet y recarga la página.";
+      return;
+    }
+    if (!perfil) {
+      mostrar("login");
+      $("#loginError").textContent = "Tu cuenta no tiene permisos todavía. Pídele al administrador de Servicios Ghost que te asigne tu restaurante.";
+      await window.Store.salir();
+      return;
+    }
+    elAdminUser.textContent = (sesion.user && sesion.user.email ? sesion.user.email : "Admin") +
+      (esAliado() ? " · aliado" : "");
+    aplicarRol();
     mostrar("panel");
     await recargarLista();
+    if (!esAliado()) {
+      revisarSql();
+      iniciarAvisos();
+    }
+  }
+
+  // Un aliado solo ve su restaurante y su almuerzo del día.
+  function aplicarRol() {
+    var aliado = esAliado();
+    document.body.classList.toggle("modo-aliado", aliado);
+    document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado; });
+    ["#btnNuevo", "#btnNuevoLugarAlm"].forEach(function (s) { var el = $(s); if (el) el.hidden = aliado; });
   }
 
   async function recargarLista() {
     restaurantes = await window.Store.listar();
+    if (esAliado()) {
+      restaurantes = restaurantes.filter(function (r) { return r.id === perfil.restaurante_id; });
+    }
     pintarLista();
     pintarAlmuerzos();
+  }
+
+  // Avisa si falta ejecutar el SQL de mejoras (y qué se activa al hacerlo).
+  async function revisarSql() {
+    var el = $("#avisoSql");
+    if (!el) return;
+    await window.Store.leerAjustes(true);
+    var faltan = [];
+    if (perfil && perfil.legado) faltan.push("cuentas para aliados");
+    if (window.Store.ajustesDisponibles() === false) faltan.push("domicilio por barrio, promociones y lo más pedido");
+    if (window.Store.columnasFaltantes().indexOf("horario") !== -1) faltan.push("horarios automáticos");
+    if (perfil && perfil.legado) faltan.push("seguimiento del pedido para clientes");
+    if (!faltan.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = "<strong>⚡ Falta un paso para activar:</strong> " + esc(faltan.join(", ")) + ". " +
+      "Abre Supabase → <em>SQL Editor</em>, pega el archivo <code>supabase-mejoras.sql</code> del repositorio y pulsa <em>Run</em>. " +
+      "Luego recarga esta página.";
   }
 
   function pintarLista() {
@@ -140,7 +199,7 @@
           "</div>" +
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
-            '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>' +
+            (esAliado() ? "" : '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>') +
           "</div>" +
         "</div>";
     }
@@ -206,8 +265,11 @@
         campoColor(r.color) +
       "</div>" +
       campoTextarea("Descripción", "desc", r.desc, "Frase corta sobre el restaurante") +
-      '<label class="pay__option" style="margin:4px 0 16px; max-width:220px">' +
-        '<input type="checkbox" id="campoAbierto" ' + (r.abierto ? "checked" : "") + " /> Abierto ahora</label>" +
+      '<label class="pay__option" style="margin:4px 0 6px; max-width:320px">' +
+        '<input type="checkbox" id="campoAbierto" ' + (r.abierto ? "checked" : "") + " /> Recibe pedidos</label>" +
+      '<p class="muted" style="font-size:.82rem;margin:0 0 14px">Desmárcalo para cerrarlo ya (por ejemplo, si hoy no abre); ' +
+        "queda cerrado hasta que lo vuelvas a marcar. Si tiene horario, se abre y se cierra solo según las horas.</p>" +
+      horarioEditorHTML(r) +
 
       almuerzoEditorHTML(r) +
 
@@ -220,6 +282,83 @@
       "</div>";
 
     enlazarEditor();
+  }
+
+  /* ---------------------------- Horario --------------------------- */
+  var DIAS_H = [
+    ["lun", "Lunes"], ["mar", "Martes"], ["mie", "Miércoles"], ["jue", "Jueves"],
+    ["vie", "Viernes"], ["sab", "Sábado"], ["dom", "Domingo"],
+  ];
+  function horarioEditorHTML(r) {
+    var h = r.horario || {};
+    var filas = DIAS_H.map(function (d) {
+      var x = h[d[0]];
+      return '<div class="hor-fila" data-hor="' + d[0] + '">' +
+          '<label class="agotado-check hor-dia"><input type="checkbox" data-hor-abre-dia="' + d[0] + '"' + (x ? " checked" : "") + " /> " + d[1] + "</label>" +
+          '<input class="field__input hor-hora" type="time" data-hor-abre="' + d[0] + '" value="' + esc(x ? x.abre : "11:00") + '"' + (x ? "" : " disabled") + ' aria-label="Abre ' + d[1] + '" />' +
+          '<span class="muted">a</span>' +
+          '<input class="field__input hor-hora" type="time" data-hor-cierra="' + d[0] + '" value="' + esc(x ? x.cierra : "22:00") + '"' + (x ? "" : " disabled") + ' aria-label="Cierra ' + d[1] + '" />' +
+        "</div>";
+    }).join("");
+    var activo = !!r.horario;
+    return '<details class="editor-section hor"' + (activo ? " open" : "") + ">" +
+        '<summary class="editor-section__title">🕒 Horario de atención ' +
+          '<span class="muted" style="font-weight:500">' + (activo ? "(se abre y cierra solo)" : "(opcional)") + "</span></summary>" +
+        '<p class="muted" style="font-size:.82rem;margin:8px 0">Marca los días que abre. Si cierra después de medianoche, ' +
+          "pon la hora de cierre normal (ej. 6:00 p. m. a 2:00 a. m.). Hora de Colombia.</p>" +
+        filas +
+        '<div class="inline-actions" style="margin-top:8px">' +
+          '<button type="button" class="btn-copy btn-sm" data-hor-copiar>Copiar el lunes a todos los días</button>' +
+          '<button type="button" class="btn-danger btn-sm" data-hor-limpiar>Quitar horario</button>' +
+        "</div>" +
+      "</details>";
+  }
+  function leerHorario() {
+    var out = {}, alguno = false;
+    DIAS_H.forEach(function (d) {
+      var on = elEditorBody.querySelector('[data-hor-abre-dia="' + d[0] + '"]');
+      var a = elEditorBody.querySelector('[data-hor-abre="' + d[0] + '"]');
+      var c = elEditorBody.querySelector('[data-hor-cierra="' + d[0] + '"]');
+      if (on && on.checked && a && c && a.value && c.value) { out[d[0]] = { abre: a.value, cierra: c.value }; alguno = true; }
+      else out[d[0]] = null;
+    });
+    return alguno ? out : null;
+  }
+
+  /* ------------------- Fotos (comprimidas al subir) ---------------- */
+  // Una foto de celular pesa 3-8 MB; la reducimos a ~150 KB antes de subirla
+  // para que la carta cargue rápido incluso con datos móviles.
+  function comprimirImagen(file, maxLado, calidad) {
+    return new Promise(function (resolve) {
+      if (!file || !/^image\//.test(file.type) || /gif|svg/.test(file.type)) { resolve(file); return; }
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var esc2 = Math.min(1, maxLado / Math.max(img.naturalWidth, img.naturalHeight));
+        var w = Math.round(img.naturalWidth * esc2), h = Math.round(img.naturalHeight * esc2);
+        var c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        var ctx = c.getContext("2d");
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        var tipo = c.toDataURL("image/webp").indexOf("image/webp") === 5 ? "image/webp" : "image/jpeg";
+        c.toBlob(function (blob) {
+          if (!blob || blob.size >= file.size) { resolve(file); return; }
+          var ext = tipo === "image/webp" ? "webp" : "jpg";
+          try { resolve(new File([blob], "foto." + ext, { type: tipo })); }
+          catch (e) { blob.name = "foto." + ext; resolve(blob); }
+        }, tipo, calidad);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+  }
+  async function subirFotoComprimida(file, carpeta, maxLado) {
+    var lista = await comprimirImagen(file, maxLado || 1200, 0.8);
+    // Cada aliado sube a su propia carpeta (las reglas de Supabase lo exigen).
+    if (esAliado()) carpeta = "aliados/" + perfil.restaurante_id + "/" + carpeta;
+    return window.Store.subirFoto(lista, carpeta);
   }
 
   // Caja "Pegar carta": convierte texto en carta automáticamente.
@@ -437,6 +576,15 @@
         '<label class="agotado-check"><input type="checkbox" data-plato-ag="' + si + "-" + pi + '"' +
           (it.agotado ? " checked" : "") + " /> Agotado</label>" +
         (it.p > 0 || !it.n ? "" : '<span class="falta-precio">⚠️ Falta el precio</span>') +
+        '<div class="plato-foto">' +
+          (it.foto ? '<img src="' + esc(it.foto) + '" alt="" loading="lazy" />' : "") +
+          '<input type="hidden" data-plato-foto="' + si + "-" + pi + '" value="' + esc(it.foto || "") + '" />' +
+          '<label class="btn-copy btn-sm" style="cursor:pointer">' +
+            '<span data-plato-foto-txt="' + si + "-" + pi + '">' + (it.foto ? "📷 Cambiar foto" : "📷 Foto del plato") + "</span>" +
+            '<input type="file" accept="image/*" hidden data-plato-foto-input="' + si + "-" + pi + '" />' +
+          "</label>" +
+          (it.foto ? '<button type="button" class="btn-danger btn-sm" data-plato-foto-quitar="' + si + "-" + pi + '">Quitar</button>' : "") +
+        "</div>" +
         platoOpcionesHTML(it, si + "-" + pi) +
       "</div>"
     );
@@ -474,6 +622,7 @@
     r.abierto = ab ? ab.checked : true;
     var imp = $("#importTexto");
     if (imp) r._importTexto = imp.value;
+    if (elEditorBody.querySelector("[data-hor]")) r.horario = leerHorario();
     var usadosIds = {};
 
     // Secciones y platos
@@ -501,6 +650,8 @@
           p: p ? Number(p.value) || 0 : 0,
           agotado: ag ? ag.checked : false,
         };
+        var fotoEl = pEl.querySelector('[data-plato-foto="' + key + '"]');
+        if (fotoEl && fotoEl.value) plato.foto = fotoEl.value;
         // Opciones del plato (salsa, tamaño…). Antes se perdían al guardar.
         var opcEl = pEl.querySelector('[data-plato-opc="' + key + '"]');
         if (opcEl && window.Importar) {
@@ -562,7 +713,7 @@
         var txt = $("#subirTxt");
         txt.innerHTML = '<span class="spinner"></span>Subiendo…';
         try {
-          var url = await window.Store.subirFoto(file, "restaurantes");
+          var url = await subirFotoComprimida(file, "restaurantes", 1400);
           editando.logo = url;
           leerEditor();           // conservar lo escrito
           pintarEditor();         // repintar con la foto
@@ -661,7 +812,7 @@
 
   async function guardarRestauranteAlm(r, msgOk) {
     if (typeof r.orden !== "number") r.orden = restaurantes.length;
-    await window.Store.guardar(r);
+    await window.Store.guardar(r, { soloActualizar: esAliado() });
     toast(msgOk);
     await recargarLista();
   }
@@ -778,6 +929,43 @@
     var bo = t.closest("[data-borrar]");
     if (bo) { borrar(bo.getAttribute("data-borrar")); return; }
 
+    // Horario: copiar el lunes a todos / quitar
+    if (t.closest("[data-hor-copiar]")) {
+      var on = elEditorBody.querySelector('[data-hor-abre-dia="lun"]');
+      var a0 = elEditorBody.querySelector('[data-hor-abre="lun"]').value;
+      var c0 = elEditorBody.querySelector('[data-hor-cierra="lun"]').value;
+      DIAS_H.forEach(function (d) {
+        elEditorBody.querySelector('[data-hor-abre-dia="' + d[0] + '"]').checked = on.checked;
+        var a = elEditorBody.querySelector('[data-hor-abre="' + d[0] + '"]');
+        var c = elEditorBody.querySelector('[data-hor-cierra="' + d[0] + '"]');
+        a.value = a0; c.value = c0; a.disabled = c.disabled = !on.checked;
+      });
+      toast("Horario del lunes copiado a toda la semana");
+      return;
+    }
+    if (t.closest("[data-hor-limpiar]")) {
+      elEditorBody.querySelectorAll("[data-hor-abre-dia]").forEach(function (x) { x.checked = false; });
+      elEditorBody.querySelectorAll("[data-hor-abre],[data-hor-cierra]").forEach(function (x) { x.disabled = true; });
+      return;
+    }
+
+    // Quitar la foto de un plato
+    var qf = t.closest("[data-plato-foto-quitar]");
+    if (qf) {
+      leerEditor();
+      var pq = qf.getAttribute("data-plato-foto-quitar").split("-");
+      var itq = editando.carta[Number(pq[0])].items[Number(pq[1])];
+      if (itq) delete itq.foto;
+      pintarEditor();
+      return;
+    }
+
+    // Ajustes / ventas / avisos
+    if (t.closest("#btnAvisos")) { alternarAvisos(); return; }
+    if (t.closest("#btnCsv")) { descargarCsv(); return; }
+    var aj = t.closest("[data-aj]");
+    if (aj) { accionAjustes(aj.getAttribute("data-aj"), aj); return; }
+
     // Quitar foto
     if (t.closest("[data-quitar-foto]")) {
       leerEditor(); editando.logo = ""; pintarEditor(); return;
@@ -851,8 +1039,40 @@
 
   // Filtro de pedidos por estado
   document.addEventListener("change", function (e) {
-    if (e.target && e.target.id === "filtroPedidos") recargarPedidos();
+    var t = e.target;
+    if (!t) return;
+    if (t.id === "filtroPedidos") { recargarPedidos(); return; }
+    if (t.id === "rangoVentas") { cargarVentas(); return; }
+
+    // Horario: activar/desactivar las horas del día
+    var dia = t.getAttribute && t.getAttribute("data-hor-abre-dia");
+    if (dia) {
+      elEditorBody.querySelectorAll('[data-hor-abre="' + dia + '"],[data-hor-cierra="' + dia + '"]')
+        .forEach(function (x) { x.disabled = !t.checked; });
+      return;
+    }
+
+    // Foto de un plato
+    var key = t.getAttribute && t.getAttribute("data-plato-foto-input");
+    if (key && t.files && t.files[0]) subirFotoPlato(key, t.files[0]);
   });
+
+  async function subirFotoPlato(key, file) {
+    var txt = elEditorBody.querySelector('[data-plato-foto-txt="' + key + '"]');
+    if (txt) txt.innerHTML = '<span class="spinner"></span>Subiendo…';
+    try {
+      var url = await subirFotoComprimida(file, "platos", 800);
+      leerEditor();
+      var p = key.split("-");
+      var it = editando.carta[Number(p[0])] && editando.carta[Number(p[0])].items[Number(p[1])];
+      if (it) it.foto = url;
+      pintarEditor();
+      toast("Foto del plato lista ✓ (recuerda Guardar cambios)");
+    } catch (ex) {
+      toast("No se pudo subir la foto: " + (ex && ex.message ? ex.message : "error"), true);
+      if (txt) txt.textContent = "📷 Foto del plato";
+    }
+  }
 
   async function guardar() {
     leerEditor();
@@ -868,8 +1088,13 @@
     btn.innerHTML = '<span class="spinner"></span>Guardando…';
     try {
       delete r._esNuevo;
-      await window.Store.guardar(r);
-      toast("Guardado ✓");
+      delete r._importTexto;
+      delete r._importMsg;
+      await window.Store.guardar(r, { soloActualizar: esAliado() });
+      var falta = window.Store.columnasFaltantes();
+      toast(falta.indexOf("horario") !== -1 && r.horario
+        ? "Guardado ✓ (el horario se activará al ejecutar supabase-mejoras.sql)"
+        : "Guardado ✓");
       cerrarEditor();
       await recargarLista();
     } catch (ex) {
@@ -889,6 +1114,7 @@
       return "Falta una columna en la base de datos. Ejecuta el SQL de supabase-setup.sql " +
              "(o el ALTER TABLE de la columna almuerzo) en Supabase y vuelve a intentar.";
     }
+    if (/No tienes permiso para editar/i.test(msg)) return msg;
     // Sesión caducada / sin permisos → RLS
     if (code === "42501" || /row-level security|JWT|not authorized|permission denied/i.test(msg)) {
       return "Tu sesión caducó o no tienes permisos. Cierra sesión y vuelve a entrar.";
@@ -914,13 +1140,15 @@
     document.querySelectorAll(".tab").forEach(function (t) {
       t.classList.toggle("tab--active", t.getAttribute("data-tab") === cual);
     });
-    var r = document.getElementById("tabRestaurantes");
-    var al = document.getElementById("tabAlmuerzos");
-    var p = document.getElementById("tabPedidos");
-    if (r) r.hidden = cual !== "restaurantes";
-    if (al) al.hidden = cual !== "almuerzos";
-    if (p) p.hidden = cual !== "pedidos";
+    var paneles = { restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
+      ventas: "tabVentas", ajustes: "tabAjustes" };
+    Object.keys(paneles).forEach(function (k) {
+      var el = document.getElementById(paneles[k]);
+      if (el) el.hidden = k !== cual;
+    });
     if (cual === "almuerzos") pintarAlmuerzos();
+    if (cual === "ventas") cargarVentas();
+    if (cual === "ajustes") pintarAjustes();
     if (cual === "pedidos") recargarPedidos();
   }
 
@@ -964,7 +1192,7 @@
   function fechaCorta(iso) {
     try {
       var d = new Date(iso);
-      return d.toLocaleString("es-CO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
     } catch (e) { return ""; }
   }
 
@@ -998,9 +1226,16 @@
           '<span class="pedido__fecha">' + esc(fechaCorta(p.creado_en)) + "</span>" +
         "</div>" +
         '<ul class="pedido__items">' + lineas + "</ul>" +
-        '<div class="pedido__total">Total: <strong>' + esc(money(p.total || 0)) + "</strong> <span class=\"muted\">(domicilio aparte)</span></div>" +
+        '<div class="pedido__total">Productos: <strong>' + esc(money(p.total || 0)) + "</strong>" +
+          (typeof cliente.domicilio === "number"
+            ? " · Domicilio: <strong>" + esc(cliente.domicilio > 0 ? money(cliente.domicilio) : "gratis") + "</strong>" +
+              ' · <span class="pedido__pagar">Total a cobrar: ' + esc(money((p.total || 0) + cliente.domicilio)) + "</span>"
+            : ' <span class="muted">(domicilio por confirmar)</span>') + "</div>" +
         '<div class="pedido__cliente">' +
-          "👤 " + esc(cliente.nombre || "—") + " · 📞 " + esc(cliente.telefono || "—") + "<br>" +
+          "👤 " + esc(cliente.nombre || "—") + " · 📞 " +
+          (cliente.telefono
+            ? '<a href="https://wa.me/' + esc(telWa(cliente.telefono)) + '" target="_blank" rel="noopener">' + esc(cliente.telefono) + "</a>"
+            : "—") + "<br>" +
           "📍 " + esc(cliente.direccion || "—") + ", " + esc(cliente.barrio || "—") +
           " · 💳 " + esc(cliente.pago || "—") +
           (cliente.notas ? "<br>📝 " + esc(cliente.notas) : "") +
@@ -1022,7 +1257,7 @@
   }
 
   async function cancelarPedido(id) {
-    var motivo = prompt("Motivo de la cancelación / incidencia (opcional):", "");
+    var motivo = prompt("Motivo de la cancelación (opcional). El cliente lo verá al seguir su pedido:", "");
     if (motivo === null) return; // canceló el prompt
     try {
       await window.Store.actualizarEstadoPedido(id, "cancelado", motivo || "");
@@ -1031,6 +1266,544 @@
     } catch (ex) {
       toast("No se pudo cancelar: " + (ex && ex.message ? ex.message : "error"), true);
     }
+  }
+
+  /* ------------------------- Utilidades --------------------------- */
+  // Teléfono → número de WhatsApp (Colombia por defecto).
+  function telWa(tel) {
+    var d = String(tel || "").replace(/\D/g, "");
+    if (d.length === 10 && d[0] === "3") d = "57" + d;
+    return d;
+  }
+  function pct(n, total) { return total ? Math.round((n / total) * 100) : 0; }
+  function idBase(platoId) { return String(platoId || "").split("--")[0]; }
+
+  /* ---------------------------- Ventas ---------------------------- */
+  var ventasPedidos = [];
+
+  // Fecha ISO desde la que se cuentan las ventas (medianoche de Colombia).
+  function desdeRango(v) {
+    var hoy = fechaColombia();
+    function medianoche(fecha) { return new Date(fecha + "T00:00:00-05:00").toISOString(); }
+    if (v === "hoy") return medianoche(hoy);
+    if (v === "mes") return medianoche(hoy.slice(0, 8) + "01");
+    if (v === "7" || v === "30") {
+      var d = new Date(new Date(hoy + "T12:00:00-05:00").getTime() - (Number(v) - 1) * 86400000);
+      return medianoche(fechaColombia(d));
+    }
+    return null;
+  }
+
+  async function cargarVentas() {
+    var cont = $("#contVentas");
+    if (!cont) return;
+    cont.innerHTML = '<p class="muted">Calculando ventas…</p>';
+    var rango = ($("#rangoVentas") || {}).value || "7";
+    try {
+      await window.Store.leerAjustes();
+      ventasPedidos = await window.Store.listarPedidos("todos", desdeRango(rango));
+      cont.innerHTML = ventasHTML(ventasPedidos, rango);
+      publicarPopulares(ventasPedidos, rango);
+    } catch (ex) {
+      cont.innerHTML = '<p class="muted">No se pudieron cargar las ventas: ' + esc(ex && ex.message ? ex.message : "error") + "</p>";
+    }
+  }
+
+  function calcularVentas(lista) {
+    // Dinero (ventas, comisión, domicilios) = SOLO pedidos marcados "Entregado".
+    // Lo demás (popularidad, horas pico) cuenta todo lo que no se canceló.
+    var r = { pedidos: 0, cancelados: 0, entregados: 0, ventas: 0, domicilios: 0,
+      pendientes: 0, ventasPendientes: 0,
+      porRest: {}, porPlato: {}, porDia: {}, porHora: new Array(24).fill(0) };
+    lista.forEach(function (p) {
+      if (p.estado === "cancelado") { r.cancelados++; return; }
+      r.pedidos++;
+      var entregado = p.estado === "entregado";
+      if (!entregado) { r.pendientes++; r.ventasPendientes += Number(p.total) || 0; }
+      if (entregado) {
+        r.entregados++;
+        r.ventas += Number(p.total) || 0;
+        var c = p.cliente || {};
+        if (typeof c.domicilio === "number") r.domicilios += c.domicilio;
+        var dia = fechaColombia(new Date(p.creado_en));
+        r.porDia[dia] = (r.porDia[dia] || 0) + (Number(p.total) || 0);
+      }
+      try {
+        var h = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Bogota", hour: "2-digit", hourCycle: "h23" })
+          .format(new Date(p.creado_en))) % 24;
+        r.porHora[h]++;
+      } catch (e) { r.porHora[new Date(p.creado_en).getHours()]++; }
+      var restEnPedido = {};
+      (p.items || []).forEach(function (it) {
+        var rid = it.restaurante_id || it.restaurante || "?";
+        if (entregado) {
+          var R = r.porRest[rid] || (r.porRest[rid] = { nombre: it.restaurante || rid, pedidos: 0, unidades: 0, ventas: 0 });
+          R.unidades += Number(it.cantidad) || 0;
+          R.ventas += Number(it.subtotal) || 0;
+          if (!restEnPedido[rid]) { R.pedidos++; restEnPedido[rid] = true; }
+        }
+        if (/^almuerzo-/.test(it.plato_id || "")) return; // el almuerzo cambia cada día
+        var kb = rid + "::" + idBase(it.plato_id);
+        var P = r.porPlato[kb] || (r.porPlato[kb] = { rest: rid, item: idBase(it.plato_id), restNombre: it.restaurante,
+          nombre: String(it.plato || "").replace(/\s*\(.*\)\s*$/, ""), unidades: 0, ventas: 0 });
+        P.unidades += Number(it.cantidad) || 0;
+        P.ventas += Number(it.subtotal) || 0;
+      });
+    });
+    return r;
+  }
+
+  function barrasHTML(pares, formato) {
+    var max = Math.max.apply(null, pares.map(function (x) { return x[1]; }).concat([1]));
+    return '<div class="barras">' + pares.map(function (x) {
+      return '<div class="barra" title="' + esc(x[0] + ": " + formato(x[1])) + '">' +
+          '<div class="barra__valor" style="height:' + Math.max(2, Math.round((x[1] / max) * 100)) + '%"></div>' +
+          '<span class="barra__etq">' + esc(x[0]) + "</span>" +
+        "</div>";
+    }).join("") + "</div>";
+  }
+
+  function ventasHTML(lista, rango) {
+    var v = calcularVentas(lista);
+    if (!lista.length) return '<p class="muted">Todavía no hay pedidos en este periodo.</p>';
+    var filasRestVacias = !Object.keys(v.porRest).length;
+    var aj = window.Store.ajustesDisponibles() ? (cacheAjustes().comision || 0) : 0;
+    var comision = Number(aj) || 0;
+    var kpis = [
+      ["Ventas entregadas", money(v.ventas)],
+      ["Pedidos entregados", v.entregados + " de " + v.pedidos],
+      ["Ticket promedio", money(v.entregados ? Math.round(v.ventas / v.entregados) : 0)],
+      ["Domicilios cobrados", money(v.domicilios)],
+      ["Sin marcar como entregados", v.pendientes + (v.pendientes ? " · " + money(v.ventasPendientes) : "")],
+      ["Cancelados", String(v.cancelados)],
+    ];
+    if (comision) kpis.splice(1, 0, ["Comisión (" + comision + "%)", money(Math.round(v.ventas * comision / 100))]);
+    var avisoPend = v.pendientes
+      ? '<p class="aviso-sql aviso-sql--inline">Hay ' + v.pendientes + " pedido(s) sin marcar como <strong>Entregado</strong>. " +
+        "Las ventas y la comisión solo cuentan pedidos entregados: márcalos en la pestaña Pedidos.</p>"
+      : "";
+
+    var rest = Object.keys(v.porRest).map(function (k) { return v.porRest[k]; })
+      .sort(function (a, b) { return b.ventas - a.ventas; });
+    var filasRest = rest.map(function (R) {
+      return "<tr><td>" + esc(R.nombre) + "</td><td>" + R.pedidos + "</td><td>" + R.unidades + "</td><td>" +
+        esc(money(R.ventas)) + ' <span class="muted">(' + pct(R.ventas, v.ventas) + "%)</span></td>" +
+        (comision ? "<td>" + esc(money(Math.round(R.ventas * comision / 100))) + "</td>" : "") + "</tr>";
+    }).join("");
+
+    var platos = Object.keys(v.porPlato).map(function (k) { return v.porPlato[k]; })
+      .sort(function (a, b) { return b.unidades - a.unidades || b.ventas - a.ventas; }).slice(0, 10);
+
+    var dias = Object.keys(v.porDia).sort();
+    var graficoDias = dias.length > 1
+      ? '<div class="ventas-card"><h3>Ventas por día</h3>' +
+          barrasHTML(dias.map(function (d) { return [d.slice(8, 10) + "/" + d.slice(5, 7), v.porDia[d]]; }), money) + "</div>"
+      : "";
+    var horas = [];
+    for (var h = 6; h < 24; h++) horas.push([(h % 12 || 12) + (h < 12 ? "a" : "p"), v.porHora[h]]);
+
+    return avisoPend + '<div class="kpis">' + kpis.map(function (k) {
+        return '<div class="kpi"><span class="kpi__etq">' + esc(k[0]) + '</span><strong class="kpi__val">' + esc(k[1]) + "</strong></div>";
+      }).join("") + "</div>" +
+      graficoDias +
+      '<div class="ventas-grid">' +
+        '<div class="ventas-card"><h3>Por restaurante <span class="muted" style="font-weight:500;font-size:.8rem">(entregados)</span></h3><div class="tabla-scroll"><table class="tabla">' +
+          "<thead><tr><th>Restaurante</th><th>Pedidos</th><th>Unid.</th><th>Ventas</th>" + (comision ? "<th>Comisión</th>" : "") + "</tr></thead>" +
+          "<tbody>" + (filasRestVacias ? '<tr><td colspan="5" class="muted">Aún no hay pedidos entregados.</td></tr>' : filasRest) + "</tbody></table></div>" +
+          (comision ? "" : '<p class="muted" style="font-size:.82rem">Configura tu % de comisión en Ajustes para ver cuánto le corresponde a Ghost de cada aliado.</p>') +
+        "</div>" +
+        '<div class="ventas-card"><h3>Platos más vendidos</h3><ol class="top-platos">' +
+          platos.map(function (P) {
+            return "<li><span>" + esc(P.nombre) + ' <span class="muted">· ' + esc(P.restNombre) + "</span></span><strong>" + P.unidades + "</strong></li>";
+          }).join("") + "</ol>" +
+          '<p class="muted" style="font-size:.82rem" id="notaPopulares"></p>' +
+        "</div>" +
+      "</div>" +
+      '<div class="ventas-card"><h3>Horas con más pedidos</h3>' +
+        barrasHTML(horas, function (n) { return n + (n === 1 ? " pedido" : " pedidos"); }) + "</div>";
+  }
+
+  function cacheAjustes() {
+    return window.Store._ajustesCache ? window.Store._ajustesCache() : {};
+  }
+
+  // Publica en la tienda la sección "Lo más pedido" con los datos del periodo.
+  async function publicarPopulares(lista, rango) {
+    var nota = $("#notaPopulares");
+    if (rango === "hoy") { if (nota) nota.textContent = "Elige 7 días o más para actualizar “Lo más pedido” en la tienda."; return; }
+    if (window.Store.ajustesDisponibles() === false) {
+      if (nota) nota.textContent = "Ejecuta supabase-mejoras.sql para mostrar estos platos en la tienda como “Lo más pedido”.";
+      return;
+    }
+    var v = calcularVentas(lista);
+    var top = Object.keys(v.porPlato).map(function (k) { return v.porPlato[k]; })
+      .sort(function (a, b) { return b.unidades - a.unidades; }).slice(0, 8)
+      .map(function (P) { return { rest: P.rest, item: P.item, veces: P.unidades }; });
+    if (top.length < 3) { if (nota) nota.textContent = "Con al menos 3 platos vendidos aparecerá “Lo más pedido” en la tienda."; return; }
+    var antes = JSON.stringify(cacheAjustes().populares || []);
+    try {
+      if (antes !== JSON.stringify(top)) await window.Store.guardarAjuste("populares", top);
+      if (nota) nota.textContent = "✓ Estos platos se muestran en la tienda como “Lo más pedido”.";
+    } catch (ex) {
+      if (nota) nota.textContent = ex.message || "No se pudo publicar en la tienda.";
+    }
+  }
+
+  function descargarCsv() {
+    if (!ventasPedidos.length) { toast("No hay pedidos en este periodo", true); return; }
+    var cab = ["fecha", "codigo", "estado", "cliente", "telefono", "barrio", "direccion", "pago",
+      "restaurante", "plato", "cantidad", "precio_unitario", "subtotal", "total_productos", "domicilio"];
+    function celda(x) {
+      x = x == null ? "" : String(x);
+      // Evita que Excel ejecute como fórmula lo que escribió un cliente (=, +, -, @).
+      if (/^[=+\-@\t\r]/.test(x) && !/^-?\d+(\.\d+)?$/.test(x)) x = "'" + x;
+      return /[;"\n\r]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x;
+    }
+    var filas = [cab.join(";")];
+    ventasPedidos.forEach(function (p) {
+      var c = p.cliente || {};
+      (p.items && p.items.length ? p.items : [{}]).forEach(function (it) {
+        filas.push([fechaColombia(new Date(p.creado_en)) + " " + new Date(p.creado_en).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit" }),
+          p.codigo, p.estado, c.nombre, c.telefono, c.barrio, c.direccion, c.pago,
+          it.restaurante, it.plato, it.cantidad, it.precio_unit, it.subtotal, p.total,
+          typeof c.domicilio === "number" ? c.domicilio : ""].map(celda).join(";"));
+      });
+    });
+    var blob = new Blob(["\ufeff" + filas.join("\n")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "ventas-servicios-ghost-" + fechaColombia() + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  /* ---------------------------- Ajustes --------------------------- */
+  var ajLocal = null; // copia editable { barrios: [], promos: [], comision: 0 }
+
+  async function pintarAjustes() {
+    var cont = $("#contAjustes");
+    if (!cont) return;
+    cont.innerHTML = '<p class="muted">Cargando…</p>';
+    var a = (await window.Store.leerAjustes(true)) || {};
+    ajLocal = {
+      barrios: ((a.domicilios && a.domicilios.barrios) || []).map(function (b) { return { n: b.n, p: b.p }; }),
+      promos: Array.isArray(a.promos) ? a.promos.slice()
+        : (typeof PROMOCIONES !== "undefined" ? PROMOCIONES.map(function (p) { return Object.assign({ activo: true }, p); }) : []),
+      comision: Number(a.comision) || 0,
+    };
+    renderAjustes();
+    cargarAliados();
+  }
+
+  function opcionesRestaurantes(sel) {
+    return '<option value="">— Ninguno —</option>' + restaurantes.map(function (r) {
+      return '<option value="' + esc(r.id) + '"' + (r.id === sel ? " selected" : "") + ">" + esc(r.nombre) + "</option>";
+    }).join("");
+  }
+
+  function renderAjustes() {
+    var sinSql = window.Store.ajustesDisponibles() === false;
+    var avisoSql = sinSql ? '<p class="aviso-sql aviso-sql--inline">Para guardar esto, ejecuta <code>supabase-mejoras.sql</code> en Supabase (una sola vez).</p>' : "";
+    var a = ajLocal;
+    $("#contAjustes").innerHTML =
+      // Domicilios
+      '<section class="aj-card">' +
+        "<h3>🛵 Domicilio por barrio</h3>" +
+        '<p class="muted">El cliente elige su barrio al pedir y ve el valor del domicilio y el total a pagar. ' +
+          "Si su barrio no está en la lista, se confirma por WhatsApp. Déjala vacía para confirmar siempre por WhatsApp.</p>" +
+        avisoSql +
+        '<div class="aj-filas" id="ajBarrios">' + (a.barrios.length ? a.barrios.map(function (b, i) {
+          return '<div class="aj-fila" data-barrio="' + i + '">' +
+              '<input class="field__input" data-b-n value="' + esc(b.n || "") + '" placeholder="Barrio" />' +
+              '<input class="field__input aj-precio" data-b-p type="number" min="0" step="500" value="' + esc(b.p != null ? b.p : "") + '" placeholder="Valor" />' +
+              '<button type="button" class="btn-danger btn-sm" data-aj="del-barrio" data-i="' + i + '" aria-label="Quitar barrio">✕</button>' +
+            "</div>";
+        }).join("") : '<p class="muted">Aún no hay barrios.</p>') + "</div>" +
+        '<div class="inline-actions">' +
+          '<button type="button" class="btn-copy btn-sm" data-aj="add-barrio">+ Agregar barrio</button>' +
+          '<button type="button" class="btn-primary btn-sm" data-aj="guardar-barrios">Guardar domicilios</button>' +
+        "</div>" +
+        '<details class="aj-pegar"><summary>Pegar una lista de barrios</summary>' +
+          '<textarea class="field__textarea" id="ajPegarBarrios" rows="4" placeholder="Centro - 3000&#10;El Progreso - 4000&#10;Villa del Río 5.000"></textarea>' +
+          '<button type="button" class="btn-copy btn-sm" data-aj="pegar-barrios">Agregar estos barrios</button>' +
+        "</details>" +
+      "</section>" +
+
+      // Promociones
+      '<section class="aj-card">' +
+        "<h3>🔥 Promociones del inicio</h3>" +
+        '<p class="muted">Se muestran en la franja de la tienda. Si eliges un restaurante, al tocarla se abre su carta.</p>' +
+        avisoSql +
+        '<div class="aj-filas" id="ajPromos">' + (a.promos.length ? a.promos.map(function (p, i) {
+          return '<div class="aj-promo" data-promo="' + i + '">' +
+              '<input class="field__input aj-emoji" data-p-emoji value="' + esc(p.emoji || "") + '" placeholder="🔥" maxlength="4" />' +
+              '<input class="field__input" data-p-titulo value="' + esc(p.titulo || "") + '" placeholder="Título (ej. 2x1 en hamburguesas)" />' +
+              '<input class="field__input" data-p-texto value="' + esc(p.texto || "") + '" placeholder="Texto corto" />' +
+              '<select class="field__input field__select" data-p-rest aria-label="Restaurante">' + opcionesRestaurantes(p.rest) + "</select>" +
+              '<label class="agotado-check"><input type="checkbox" data-p-activo' + (p.activo !== false ? " checked" : "") + " /> Visible</label>" +
+              '<button type="button" class="btn-danger btn-sm" data-aj="del-promo" data-i="' + i + '" aria-label="Quitar promoción">✕</button>' +
+            "</div>";
+        }).join("") : '<p class="muted">No hay promociones.</p>') + "</div>" +
+        '<div class="inline-actions">' +
+          '<button type="button" class="btn-copy btn-sm" data-aj="add-promo">+ Agregar promoción</button>' +
+          '<button type="button" class="btn-primary btn-sm" data-aj="guardar-promos">Guardar promociones</button>' +
+        "</div>" +
+      "</section>" +
+
+      // Comisión
+      '<section class="aj-card">' +
+        "<h3>💰 Comisión de Servicios Ghost</h3>" +
+        '<p class="muted">Porcentaje que cobras a los restaurantes sobre sus ventas. Se usa en la pestaña Ventas.</p>' +
+        avisoSql +
+        '<div class="inline-actions">' +
+          '<input class="field__input aj-precio" id="ajComision" type="number" min="0" max="100" step="0.5" value="' + esc(a.comision || "") + '" placeholder="Ej: 10" />' +
+          '<span class="muted">%</span>' +
+          '<button type="button" class="btn-primary btn-sm" data-aj="guardar-comision">Guardar comisión</button>' +
+        "</div>" +
+      "</section>" +
+
+      // Aliados
+      '<section class="aj-card">' +
+        "<h3>🤝 Cuentas de restaurantes aliados</h3>" +
+        '<p class="muted">Cada aliado entra a este mismo panel con su correo y <strong>solo</strong> puede editar su carta, ' +
+          "marcar agotados, cambiar su horario y publicar su almuerzo del día. No ve pedidos, ventas ni a los demás restaurantes.</p>" +
+        '<ol class="muted aj-pasos">' +
+          "<li>En Supabase → <em>Authentication → Users → Add user</em>, crea la cuenta con el correo del aliado y una contraseña (marca <em>Auto Confirm User</em>).</li>" +
+          "<li>Aquí abajo escribe ese correo, elige su restaurante y toca <strong>Dar acceso</strong>.</li>" +
+          "<li>Pásale al aliado el enlace del panel, su correo y su contraseña.</li>" +
+        "</ol>" +
+        '<div class="aj-fila">' +
+          '<input class="field__input" id="ajAliadoEmail" type="email" placeholder="correo@del-aliado.com" />' +
+          '<select class="field__input field__select" id="ajAliadoRest" aria-label="Restaurante">' + opcionesRestaurantes("") + "</select>" +
+          '<button type="button" class="btn-primary btn-sm" data-aj="asignar">Dar acceso</button>' +
+        "</div>" +
+        '<div id="ajAliados" class="aj-aliados"><p class="muted">Cargando aliados…</p></div>' +
+      "</section>";
+  }
+
+  // Pasa lo escrito en pantalla a ajLocal (para no perderlo al repintar).
+  function leerAjustesDOM() {
+    if (!ajLocal) return;
+    var bs = [];
+    document.querySelectorAll("#ajBarrios [data-barrio]").forEach(function (f) {
+      bs.push({ n: f.querySelector("[data-b-n]").value.trim(), p: Number(f.querySelector("[data-b-p]").value) || 0 });
+    });
+    if (document.querySelector("#ajBarrios")) ajLocal.barrios = bs;
+    var ps = [];
+    document.querySelectorAll("#ajPromos [data-promo]").forEach(function (f) {
+      ps.push({
+        emoji: f.querySelector("[data-p-emoji]").value.trim(),
+        titulo: f.querySelector("[data-p-titulo]").value.trim(),
+        texto: f.querySelector("[data-p-texto]").value.trim(),
+        rest: f.querySelector("[data-p-rest]").value || "",
+        activo: f.querySelector("[data-p-activo]").checked,
+      });
+    });
+    if (document.querySelector("#ajPromos")) ajLocal.promos = ps;
+    var c = $("#ajComision");
+    if (c) ajLocal.comision = Number(c.value) || 0;
+  }
+
+  async function guardarAj(clave, valor, boton, okMsg) {
+    var texto = boton.textContent;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner"></span>Guardando…';
+    try {
+      await window.Store.guardarAjuste(clave, valor);
+      toast(okMsg);
+    } catch (ex) {
+      toast(ex && ex.message ? ex.message : "No se pudo guardar", true);
+    } finally {
+      boton.disabled = false;
+      boton.textContent = texto;
+    }
+  }
+
+  async function accionAjustes(accion, el) {
+    leerAjustesDOM();
+    var i = Number(el.getAttribute("data-i"));
+    switch (accion) {
+      case "add-barrio": ajLocal.barrios.push({ n: "", p: "" }); renderAjustes(); cargarAliados();
+        var ult = document.querySelectorAll("#ajBarrios [data-b-n]"); if (ult.length) ult[ult.length - 1].focus(); return;
+      case "del-barrio": ajLocal.barrios.splice(i, 1); renderAjustes(); cargarAliados(); return;
+      case "pegar-barrios": {
+        var txt = ($("#ajPegarBarrios") || {}).value || "";
+        var n = 0;
+        txt.split(/\r?\n/).forEach(function (l) {
+          var m = l.trim().match(/^(.*?)[\s:\-–—|]*\$?\s*([\d.,]+\s*(?:mil|k)?)\s*$/i);
+          if (m && m[1].trim()) { ajLocal.barrios.push({ n: m[1].trim(), p: window.Importar ? window.Importar.precio(m[2]) : Number(m[2].replace(/\D/g, "")) }); n++; }
+          else if (l.trim()) { ajLocal.barrios.push({ n: l.trim(), p: 0 }); n++; }
+        });
+        renderAjustes(); cargarAliados();
+        toast(n ? n + " barrios agregados. Revisa y pulsa Guardar." : "No encontré barrios en el texto", !n);
+        return;
+      }
+      case "guardar-barrios": {
+        var limpios = ajLocal.barrios.filter(function (b) { return b.n; })
+          .sort(function (a, b) { return a.n.localeCompare(b.n, "es"); });
+        var vistos = {}, dup = limpios.filter(function (b) { var k = b.n.toLowerCase(); if (vistos[k]) return true; vistos[k] = 1; return false; });
+        if (dup.length) { toast("Hay barrios repetidos: " + dup.map(function (b) { return b.n; }).join(", "), true); return; }
+        ajLocal.barrios = limpios;
+        await guardarAj("domicilios", { barrios: limpios }, el, limpios.length ? "Domicilios guardados ✓ (" + limpios.length + " barrios)" : "Listo: el domicilio se confirmará por WhatsApp");
+        renderAjustes(); cargarAliados();
+        return;
+      }
+      case "add-promo": ajLocal.promos.push({ emoji: "✨", titulo: "", texto: "", rest: "", activo: true }); renderAjustes(); cargarAliados(); return;
+      case "del-promo": ajLocal.promos.splice(i, 1); renderAjustes(); cargarAliados(); return;
+      case "guardar-promos": {
+        var promos = ajLocal.promos.filter(function (p) { return p.titulo || p.texto; });
+        await guardarAj("promos", promos, el, "Promociones guardadas ✓");
+        return;
+      }
+      case "guardar-comision": {
+        if (ajLocal.comision < 0 || ajLocal.comision > 100) { toast("La comisión debe estar entre 0 y 100", true); return; }
+        await guardarAj("comision", ajLocal.comision, el, "Comisión guardada ✓");
+        return;
+      }
+      case "asignar": return asignarAliadoUI(el);
+      case "quitar": return quitarAliadoUI(el.getAttribute("data-email"));
+    }
+  }
+
+  async function cargarAliados() {
+    var cont = $("#ajAliados");
+    if (!cont) return;
+    try {
+      var lista = await window.Store.listarAliados();
+      if (!lista.length) { cont.innerHTML = '<p class="muted">Aún no hay aliados con acceso.</p>'; return; }
+      cont.innerHTML = lista.map(function (x) {
+        var r = restaurantes.filter(function (y) { return y.id === x.restaurante_id; })[0];
+        return '<div class="aj-aliado"><span><strong>' + esc(x.email) + "</strong> → " + esc(r ? r.nombre : x.restaurante_id) + "</span>" +
+          '<button type="button" class="btn-danger btn-sm" data-aj="quitar" data-email="' + esc(x.email) + '">Quitar acceso</button></div>';
+      }).join("");
+    } catch (ex) {
+      cont.innerHTML = '<p class="aviso-sql aviso-sql--inline">' + esc(ex && ex.code === "SIN_SQL"
+        ? "Para crear cuentas de aliados, ejecuta supabase-mejoras.sql en Supabase."
+        : "No se pudieron cargar los aliados: " + (ex && ex.message ? ex.message : "error")) + "</p>";
+    }
+  }
+
+  async function asignarAliadoUI(boton) {
+    var email = ($("#ajAliadoEmail").value || "").trim();
+    var rid = $("#ajAliadoRest").value;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { toast("Escribe un correo válido", true); return; }
+    if (!rid) { toast("Elige el restaurante del aliado", true); return; }
+    var texto = boton.textContent;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner"></span>Dando acceso…';
+    try {
+      try {
+        await window.Store.asignarAliado(email, rid);
+      } catch (ex) {
+        // Si el restaurante solo estaba en data.js, lo subimos a la nube y reintentamos.
+        if (!/no está guardado/i.test(ex && ex.message || "")) throw ex;
+        var r = restaurantes.filter(function (x) { return x.id === rid; })[0];
+        if (typeof r.orden !== "number") r.orden = restaurantes.indexOf(r);
+        await window.Store.guardar(r);
+        await window.Store.asignarAliado(email, rid);
+      }
+      toast("Listo: " + email + " ya puede editar su restaurante ✓");
+      $("#ajAliadoEmail").value = "";
+      cargarAliados();
+    } catch (ex) {
+      toast(ex && ex.message ? ex.message : "No se pudo dar acceso", true);
+    } finally {
+      boton.disabled = false;
+      boton.textContent = texto;
+    }
+  }
+
+  async function quitarAliadoUI(email) {
+    if (!confirm("¿Quitarle el acceso a " + email + "? Ya no podrá editar su restaurante.")) return;
+    try {
+      await window.Store.quitarAliado(email);
+      toast("Acceso quitado");
+      cargarAliados();
+    } catch (ex) {
+      toast(ex && ex.message ? ex.message : "No se pudo quitar", true);
+    }
+  }
+
+  /* ------------------- Avisos de pedidos nuevos ------------------- */
+  var LS_AVISOS = "ghost_admin_avisos";
+  var avisos = { on: false, vistos: null, timer: null, ctx: null, tituloBase: document.title };
+  try { avisos.on = localStorage.getItem(LS_AVISOS) === "1"; } catch (e) { /* nada */ }
+
+  function pintarBotonAvisos() {
+    var b = $("#btnAvisos");
+    if (!b) return;
+    b.hidden = false;
+    b.textContent = avisos.on ? "🔔 Avisos activos" : "🔕 Activar avisos";
+    b.classList.toggle("btn-avisos--on", avisos.on);
+  }
+
+  function iniciarAvisos() {
+    pintarBotonAvisos();
+    sondearPedidos();
+    if (avisos.timer) clearInterval(avisos.timer);
+    avisos.timer = setInterval(sondearPedidos, 20000);
+    window.addEventListener("focus", function () { document.title = avisos.tituloBase; });
+  }
+
+  function alternarAvisos() {
+    avisos.on = !avisos.on;
+    try { localStorage.setItem(LS_AVISOS, avisos.on ? "1" : "0"); } catch (e) { /* nada */ }
+    if (avisos.on) {
+      sonar(); // el primer sonido necesita un toque del usuario para desbloquear el audio
+      if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
+      toast("Te avisaremos con sonido cuando llegue un pedido. Deja esta pestaña abierta.");
+    }
+    pintarBotonAvisos();
+  }
+
+  // "Ding-dong" generado (no necesita archivos de audio).
+  function sonar() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      avisos.ctx = avisos.ctx || new AC();
+      var ctx = avisos.ctx;
+      if (ctx.state === "suspended") ctx.resume();
+      [[880, 0], [660, 0.22], [880, 0.6], [660, 0.82]].forEach(function (n) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + n[1]);
+        g.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + n[1] + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + n[1] + 0.35);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime + n[1]); o.stop(ctx.currentTime + n[1] + 0.4);
+      });
+    } catch (e) { /* sin audio */ }
+  }
+
+  async function sondearPedidos() {
+    var lista;
+    try { lista = await window.Store.listarPedidos("recibido", null, "id, codigo, cliente, total, creado_en"); } catch (e) { return; }
+    var badge = $("#badgePedidos");
+    if (badge) { badge.hidden = !lista.length; badge.textContent = String(lista.length); }
+    var ids = {};
+    lista.forEach(function (p) { ids[p.id] = true; });
+    if (avisos.vistos) {
+      var nuevos = lista.filter(function (p) { return !avisos.vistos[p.id]; });
+      if (nuevos.length) {
+        var txt = nuevos.length === 1
+          ? "Pedido nuevo " + (nuevos[0].codigo || "") + " · " + ((nuevos[0].cliente || {}).nombre || "") + " · " + money(nuevos[0].total || 0)
+          : nuevos.length + " pedidos nuevos";
+        toast("🛎️ " + txt);
+        if (avisos.on) {
+          sonar();
+          if (document.hidden || !document.hasFocus()) document.title = "(" + nuevos.length + ") 🛎️ Pedido nuevo · Ghost";
+          if ("Notification" in window && Notification.permission === "granted") {
+            try { new Notification("🛎️ Servicios Ghost", { body: txt, icon: "assets/icon-192.png", tag: "pedido-nuevo" }); }
+            catch (e) { /* algunos celulares no permiten notificaciones desde la página */ }
+          }
+        }
+        var tabP = $("#tabPedidos");
+        if (tabP && !tabP.hidden) recargarPedidos();
+      }
+    }
+    avisos.vistos = ids;
   }
 
   /* --------------------------- Arranque --------------------------- */

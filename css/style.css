@@ -1516,3 +1516,174 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .add-btn--ok { background: var(--success); color: #fff; border-color: var(--success); }
 
 .dish__price--confirmar { color: var(--text-2); font-style: italic; font-weight: 600; }
+
+/* =====================================================================
+   Mejoras: horarios, domicilio, seguimiento, lo más pedido, fotos, app
+   ===================================================================== */
+
+/* Estado de apertura con detalle ("Abierto · Hasta las 10 pm") */
+.state__det { font-weight: 500; opacity: 0.85; }
+.state--soon { color: var(--advertencia); background: color-mix(in srgb, var(--advertencia) 15%, transparent); }
+.state--soon .state__dot { background: currentColor; }
+.card--cerrado { opacity: 0.62; }
+.card--cerrado:hover { opacity: 0.9; }
+
+.btn--ghost { background: transparent; color: var(--primary); border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
+.btn--ghost:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.btn-link {
+  background: none; border: 0; color: var(--text-2); font: inherit; font-weight: 600;
+  cursor: pointer; padding: 8px; text-decoration: underline; text-underline-offset: 3px;
+}
+.btn-link:hover { color: var(--text); }
+.btn-primary-sm {
+  background: var(--primary); color: var(--text-oscuro); border: 0; border-radius: var(--radius);
+  font: inherit; font-weight: 700; padding: 0 16px; cursor: pointer; white-space: nowrap;
+}
+.btn-primary-sm:hover { background: var(--primary-hover); }
+
+/* Fotos de platos */
+.dish--foto { align-items: center; }
+.dish__foto {
+  width: 84px; height: 84px; flex: 0 0 84px; object-fit: cover;
+  border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border);
+}
+.dish--opciones.dish--foto .dish__foto { align-self: flex-start; }
+@media (min-width: 640px) { .dish__foto { width: 96px; height: 96px; flex-basis: 96px; } }
+.dish--destacado { animation: destacar 2.2s ease; }
+@keyframes destacar {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  15%, 70% { box-shadow: 0 0 0 2px var(--primary); }
+}
+
+/* Repetir último pedido */
+.repetir-box { margin-top: 18px; }
+.repetir {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  border-radius: var(--radius); padding: 12px 14px; margin: 12px 0;
+}
+.repetir__txt { display: flex; flex-direction: column; gap: 2px; }
+.repetir__txt span { color: var(--text-2); font-size: 0.86rem; }
+
+/* Promociones con enlace */
+.promo--link { cursor: pointer; text-align: left; font: inherit; color: inherit; }
+.promo--link:hover { border-color: var(--primary); }
+.promo__cta { color: var(--primary); font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
+
+/* Lo más pedido */
+.pop-grid {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr);
+  gap: 12px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.pop-grid::-webkit-scrollbar { display: none; }
+@media (min-width: 1000px) { .pop-grid { grid-auto-flow: row; grid-template-columns: repeat(4, 1fr); overflow: visible; } }
+.pop {
+  position: relative; display: flex; align-items: center; gap: 12px; text-align: left;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 10px; color: inherit; font: inherit; cursor: pointer; scroll-snap-align: start;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.pop:hover { border-color: var(--primary); transform: translateY(-2px); }
+.pop__rank {
+  position: absolute; top: 6px; left: 6px; z-index: 1; font-size: 0.7rem; font-weight: 800;
+  background: var(--primary); color: var(--text-oscuro); border-radius: var(--radius-pill); padding: 2px 7px;
+}
+.pop__img {
+  width: 64px; height: 64px; flex: 0 0 64px; border-radius: 12px; object-fit: cover;
+  display: grid; place-items: center; font-family: var(--font-title); font-weight: 800; color: var(--primary);
+}
+.pop__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pop__plato { font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pop__rest { color: var(--text-2); font-size: 0.8rem; }
+.pop__precio { color: var(--primary); font-weight: 800; font-size: 0.9rem; }
+
+/* Checkout: totales y avisos */
+.cart-total--sub { font-size: 0.95rem; font-weight: 600; border-top: 0; padding-top: 2px; }
+.cart-total--grande { font-size: 1.15rem; color: var(--primary); }
+.cart-warn {
+  background: color-mix(in srgb, var(--advertencia) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--advertencia) 40%, transparent);
+  color: #fcd34d; border-radius: 12px; padding: 10px 12px; font-size: 0.88rem; margin: 10px 0;
+}
+.form__hint--ok { color: var(--success); }
+#fBarrioOtro { margin-top: 8px; }
+
+/* Confirmación */
+.confirm__codigo {
+  background: var(--surface-2); border: 1px dashed var(--primary); border-radius: 12px;
+  padding: 10px 16px; margin-bottom: 6px; letter-spacing: 0.02em;
+}
+.confirm__codigo strong { color: var(--primary); font-size: 1.1rem; }
+
+/* Seguimiento */
+.track-form { display: grid; gap: 8px; margin-bottom: 16px; }
+.track-form__row { display: flex; gap: 8px; }
+.track-form__row .field__input { flex: 1; text-transform: uppercase; letter-spacing: 0.04em; }
+.track-mis { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.85rem; }
+.chip--sm { padding: 5px 10px; font-size: 0.78rem; }
+.track-msg { margin: 6px 0 12px; }
+.track-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+.track-card__head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.track-card__codigo { font-family: var(--font-title); font-weight: 800; font-size: 1.15rem; }
+.track-card__fecha { font-size: 0.82rem; margin: 4px 0 14px; }
+.track-cancel { color: #fca5a5; }
+.track-wa { width: 100%; justify-content: center; text-align: center; text-decoration: none; display: flex; }
+.estado-pill { font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: var(--radius-pill); background: rgba(212,175,55,.18); color: var(--primary); }
+.estado-pill--entregado { background: rgba(16,185,129,.18); color: #6ee7b7; }
+.estado-pill--cancelado { background: rgba(239,68,68,.18); color: #fca5a5; }
+.tpasos { list-style: none; margin: 0; padding: 0; }
+.tpaso { position: relative; display: flex; gap: 12px; padding: 0 0 16px 0; }
+.tpaso:last-child { padding-bottom: 0; }
+.tpaso::before {
+  content: ""; position: absolute; left: 7px; top: 18px; bottom: -2px; width: 2px; background: var(--border-fuerte);
+}
+.tpaso:last-child::before { display: none; }
+.tpaso__punto { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 50%; border: 2px solid var(--border-fuerte); background: var(--bg); margin-top: 2px; z-index: 1; }
+.tpaso div { display: flex; flex-direction: column; gap: 2px; }
+.tpaso span { color: var(--text-2); font-size: 0.85rem; }
+.tpaso--off { color: var(--text-2); }
+.tpaso--hecho .tpaso__punto { background: var(--success); border-color: var(--success); }
+.tpaso--hecho::before { background: var(--success); }
+.tpaso--actual .tpaso__punto { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 25%, transparent); animation: latido 1.6s ease infinite; }
+.tpaso--actual strong { color: var(--primary); }
+@keyframes latido { 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--primary) 0%, transparent); } }
+.track-items { margin-top: 14px; font-size: 0.9rem; }
+.track-items summary { cursor: pointer; color: var(--text-2); }
+.track-items ul { margin: 8px 0; padding-left: 18px; }
+.track-total { margin: 4px 0 0; }
+
+.footer__link { color: var(--primary); font-weight: 700; font-size: 0.88rem; text-decoration: none; }
+.footer__link:hover { text-decoration: underline; }
+
+/* Aviso flotante */
+.toast-app {
+  position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 80;
+  transform: translate(-50%, 16px); opacity: 0; transition: opacity .25s ease, transform .25s ease;
+  background: var(--text); color: var(--text-oscuro); font-weight: 700; font-size: 0.92rem;
+  padding: 12px 18px; border-radius: var(--radius-pill); box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  max-width: min(92vw, 420px); text-align: center;
+}
+.toast-app--ver { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tpaso--actual .tpaso__punto, .dish--destacado { animation: none; }
+  .toast-app { transition: none; }
+}
+
+#resumenTotales { margin-bottom: 18px; }
+
+/* logo-flotante en celular: más pequeño para no tapar el contenido */
+@media (max-width: 600px) {
+  .logo-flotante { width: 44px; height: 44px; left: 10px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Lo oculto (atributo hidden) nunca se muestra, aunque otra regla le dé display. */
+[hidden] { display: none !important; }
+
+/* Barra del carrito en una sola línea, también en celulares pequeños */
+.cart-bar__left { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cart-bar__total { white-space: nowrap; flex: 0 0 auto; }
+@media (max-width: 420px) { .cart-bar { font-size: 0.92rem; gap: 10px; } }
+@media (max-width: 420px) { .cart-bar__prod { display: none; } }

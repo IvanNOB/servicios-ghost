@@ -20,7 +20,48 @@ js/store.js            Capa de datos (Supabase o respaldo)
 js/app.js              Lógica de la tienda
 js/admin.js            Lógica del panel de admin
 supabase-setup.sql     SQL para preparar Supabase (ejecutar 1 vez)
+supabase-pedidos.sql   SQL de la tabla de pedidos (ejecutar 1 vez)
+supabase-mejoras.sql   SQL de horarios, ajustes, seguimiento y aliados (ejecutar 1 vez)
+js/importar.js         "Pegar carta": convierte texto de ChatGPT en carta
+manifest.webmanifest   App instalable (ícono, nombre, colores)
+sw.js                  Service worker: la app abre aunque la señal esté mala
+assets/icon-*.png      Íconos de la app · assets/og.jpg: vista previa al compartir
 ```
+
+## ⚡ Activar las mejoras (una sola vez)
+
+1. Supabase → **SQL Editor → New query** → pega **todo** `supabase-mejoras.sql` → **Run**.
+   La primera vez, los usuarios que ya existen quedan como **administradores**.
+2. Supabase → **Authentication → Sign In / Providers → Email** → desactiva
+   **"Allow new users to sign up"**. Así solo tú creas cuentas.
+3. Recarga `admin.html`. Si falta algo, el panel muestra un aviso amarillo diciendo qué.
+
+Sin este paso la web sigue funcionando como antes; solo quedan apagadas las
+funciones nuevas que necesitan la base de datos.
+
+## Qué hay en el panel
+
+| Pestaña | Para qué |
+|---|---|
+| 🍽️ Restaurantes | Cartas, fotos de platos, **horario** (se abre/cierra solo, hora de Colombia), opciones por plato (salsa, tamaño), "Pegar carta". |
+| 🍲 Almuerzos del día | Publicar cada día el almuerzo de cada lugar. Se oculta solo al día siguiente. |
+| 📋 Pedidos | Cambiar estado (el cliente lo ve en "Seguir mi pedido"). Contador de pedidos nuevos. |
+| 📊 Ventas | Ventas **entregadas**, comisión, por restaurante, platos más vendidos, horas pico, descarga **CSV** (Excel). Al abrirla se actualiza "Lo más pedido" en la tienda. |
+| ⚙️ Ajustes | **Domicilio por barrio**, promociones del inicio, % de comisión y **cuentas de aliados**. |
+
+- **🔔 Activar avisos** (arriba): suena y muestra una notificación cuando llega un pedido. Deja la pestaña abierta.
+- **Cuentas de aliados**: crea la cuenta en Supabase → *Authentication → Users → Add user*
+  (marca *Auto Confirm User*), luego en *Ajustes → Cuentas de aliados* asígnale su restaurante.
+  El aliado entra al mismo `admin.html` y solo ve **su** carta y su almuerzo del día.
+  Lo que ves en Ventas tampoco lo ve el aliado.
+
+## Qué ve el cliente
+
+- Estado real de cada restaurante: "Abierto · Hasta las 10 pm", "Cerrado · Abre mañana 11 am".
+- Al pedir, elige su barrio y ve **domicilio y total a pagar**. La web recuerda sus datos.
+- Cada pedido tiene un **código** (GH-XXXXXX) y un enlace para **seguir el pedido**.
+- **Repetir mi último pedido**, sección **🔥 Lo más pedido**, fotos de platos.
+- Se puede **instalar como app** (botón "📲 Instalar app" en Android; en iPhone: Compartir → Agregar a inicio).
 
 > **¿Cómo funciona?** Si configuras Supabase, los restaurantes viven en la
 > nube y los editas desde `admin.html` (subiendo fotos y todo). Si NO lo

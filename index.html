@@ -3,9 +3,58 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="Servicios Ghost — Soluciones express y domicilios en Cartagena del Chairá. Mira las cartas, arma tu pedido y envíalo por WhatsApp." />
+  <title>Servicios Ghost · Domicilios en Cartagena del Chairá</title>
+  <meta name="description" content="Domicilios en Cartagena del Chairá: hamburguesas, pizza, comida china, almuerzos corrientes, helados y más. Mira las cartas, arma tu pedido y envíalo por WhatsApp." />
   <meta name="theme-color" content="#0B0B0B" />
-  <title>Servicios Ghost · Domicilios</title>
+  <link rel="canonical" href="https://ivannob.github.io/servicios-ghost/" />
+
+  <!-- Vista previa al compartir el enlace (WhatsApp, Facebook, etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Servicios Ghost" />
+  <meta property="og:locale" content="es_CO" />
+  <meta property="og:title" content="Servicios Ghost · Domicilios en Cartagena del Chairá" />
+  <meta property="og:description" content="Pide en tus restaurantes favoritos. Nosotros lo llevamos. Arma tu pedido y envíalo por WhatsApp." />
+  <meta property="og:url" content="https://ivannob.github.io/servicios-ghost/" />
+  <meta property="og:image" content="https://ivannob.github.io/servicios-ghost/assets/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Logo de Servicios Ghost: fantasma chef con una campana de servicio" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Servicios Ghost · Domicilios en Cartagena del Chairá" />
+  <meta name="twitter:description" content="Pide en tus restaurantes favoritos. Nosotros lo llevamos." />
+  <meta name="twitter:image" content="https://ivannob.github.io/servicios-ghost/assets/og.jpg" />
+
+  <!-- App instalable -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png" />
+  <link rel="apple-touch-icon" href="assets/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Ghost" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <!-- Datos para Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": "Servicios Ghost",
+    "description": "Soluciones express y domicilios de restaurantes en Cartagena del Chairá.",
+    "url": "https://ivannob.github.io/servicios-ghost/",
+    "logo": "https://ivannob.github.io/servicios-ghost/assets/icon-512.png",
+    "image": "https://ivannob.github.io/servicios-ghost/assets/og.jpg",
+    "telephone": "+57 321 428 6626",
+    "areaServed": "Cartagena del Chairá, Caquetá, Colombia",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Cartagena del Chairá",
+      "addressRegion": "Caquetá",
+      "addressCountry": "CO"
+    },
+    "priceRange": "$",
+    "sameAs": ["https://wa.me/573214286626"]
+  }
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -44,6 +93,7 @@
         <a href="#restaurantes">Restaurantes</a>
         <a href="#almuerzos">Almuerzos</a>
         <a href="#como-funciona">Cómo funciona</a>
+        <a href="#" data-track-open="">Seguir mi pedido</a>
       </nav>
 
       <button type="button" class="header__cart" id="cartBtnTop" aria-label="Ver mi pedido">
@@ -55,7 +105,7 @@
 
   <!-- Logo flotante fijo en una esquina (siempre visible) -->
   <a class="logo-flotante" href="#" aria-label="Servicios Ghost">
-    <img src="assets/logo.png" alt="Logo de Servicios Ghost: fantasma chef con una campana de servicio" onerror="this.style.display='none'" />
+    <img src="assets/logo-sm.png" width="64" height="64" alt="Logo de Servicios Ghost: fantasma chef con una campana de servicio" onerror="this.style.display='none'" />
   </a>
 
   <main class="main" id="main">
@@ -75,7 +125,9 @@
           <div class="hero__actions">
             <a class="btn btn--primary" href="#restaurantes">Ver restaurantes</a>
             <a class="btn btn--outline" id="heroWa" href="#" target="_blank" rel="noopener">WhatsApp 321 428 6626</a>
+            <button type="button" class="btn btn--ghost" id="btnInstalar" hidden>📲 Instalar app</button>
           </div>
+          <div class="repetir-box" id="repetirBox" hidden></div>
         </div>
         <div class="hero__visual">
           <div class="hero__card">
@@ -114,6 +166,14 @@
         <p class="empty" id="almuerzosVacio" hidden>
           Hoy todavía no hay almuerzos publicados. Vuelve más tarde o escríbenos por WhatsApp.
         </p>
+      </section>
+
+      <!-- ======================== LO MÁS PEDIDO ======================== -->
+      <section id="populares" class="bloque" hidden>
+        <div class="bloque__head">
+          <h2 class="bloque__title">🔥 Lo más pedido</h2>
+        </div>
+        <div class="pop-grid" id="gridPopulares"></div>
       </section>
 
       <!-- ===================== RESTAURANTES ===================== -->
@@ -173,7 +233,7 @@
   <button type="button" class="cart-bar" id="cartBar" hidden>
     <span class="cart-bar__left">
       <span class="cart-bar__badge" id="cartBarCount">0</span>
-      Ver mi pedido · <span id="cartBarProductos">0 productos</span>
+      Ver mi pedido<span class="cart-bar__prod"> · <span id="cartBarProductos">0 productos</span></span>
     </span>
     <span class="cart-bar__total" id="cartBarTotal"></span>
   </button>
@@ -192,11 +252,26 @@
     </div>
   </div>
 
+  <!-- ================== SEGUIMIENTO DEL PEDIDO =================== -->
+  <div class="sheet" id="trackSheet" hidden>
+    <div class="sheet__backdrop" data-track-close></div>
+    <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="trackTitle">
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="trackTitle">📦 Seguir mi pedido</h2>
+        <button type="button" class="icon-btn" data-track-close aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="sheet__body" id="trackBody"></div>
+    </div>
+  </div>
+
   <!-- ============================ PIE ============================ -->
   <footer class="footer">
     <div class="footer__inner">
       <span class="footer__brand"><span class="gold">SERVICIOS</span> GHOST</span>
       <span class="footer__meta">Cartagena del Chairá · WhatsApp 321 428 6626</span>
+      <a class="footer__link" href="#" data-track-open="">📦 Seguir mi pedido</a>
     </div>
   </footer>
 

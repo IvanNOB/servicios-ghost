@@ -1,17 +1,15 @@
 /* =====================================================================
    Servicios Ghost — Capa de datos (store)
    ---------------------------------------------------------------------
-   Expone window.Store con utilidades para leer/escribir restaurantes.
+   Expone window.Store con todo lo que lee/escribe la web.
 
    - Si Supabase está configurado (supabase-config.js) y responde, los
      datos vienen de la nube.
-   - Si no, usa el array RESTAURANTES de data.js como respaldo, para que
-     la web nunca se quede en blanco.
-
-   Un restaurante tiene esta forma (igual que en data.js):
-     { id, nombre, cat, tiempo, abierto, color, desc, logo, carta: [
-         { sec, items: [ { id, n, d, p } ] }
-     ] }
+   - Si no, usa los datos de data.js como respaldo, para que la web nunca
+     se quede en blanco.
+   - Todo lo "nuevo" (ajustes, seguimiento, aliados) funciona aunque aún
+     no se haya ejecutado supabase-mejoras.sql: simplemente se desactiva
+     y la web sigue andando como antes.
    ===================================================================== */
 (function () {
   "use strict";
@@ -35,6 +33,19 @@
     return _client;
   }
 
+  // Columnas que la base de datos dijo no tener (para avisar en el admin).
+  var columnasFaltantes = {};
+
+  // ¿El error de Supabase significa "esa función / tabla / columna no existe"?
+  function esNoExiste(err) {
+    if (!err) return false;
+    var code = String(err.code || "");
+    var msg = String(err.message || "");
+    return code === "PGRST202" || code === "PGRST205" || code === "PGRST204" ||
+      code === "42883" || code === "42P01" || code === "42703" ||
+      /does not exist|Could not find the/i.test(msg);
+  }
+
   // Convierte una fila de la tabla "restaurantes" al formato de la app.
   function filaARestaurante(row) {
     return {
@@ -46,21 +57,19 @@
       color: row.color || "#3b82f6",
       desc: row.descripcion || "",
       logo: row.logo || "",
-      // "carta" se guarda como JSON en la base de datos.
       carta: Array.isArray(row.carta) ? row.carta : [],
       almuerzo: row.almuerzo || null,
+      horario: normalizarHorario(row.horario),
       orden: typeof row.orden === "number" ? row.orden : 0,
     };
   }
 
-  // Lee todos los restaurantes. Devuelve una promesa con el array.
-  // IMPORTANTE: combina Supabase + data.js. Muestra lo de la nube y AÑADE
-  // los restaurantes de data.js cuyo id aún no exista en Supabase. Así, lo
-  // que se agrega en el código se ve de inmediato sin tener que migrar.
+  // Lee todos los restaurantes. Combina Supabase + data.js: la nube manda y
+  // se AÑADEN los de data.js cuyo id aún no exista en Supabase.
   async function listar() {
     var base = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []).slice();
     var sb = client();
-    if (!sb) return base; // sin Supabase: solo data.js
+    if (!sb) return base;
 
     try {
       var res = await sb
@@ -70,8 +79,6 @@
         .order("nombre", { ascending: true });
       if (res.error) throw res.error;
       var nube = (res.data || []).map(filaARestaurante);
-
-      // Combinar: la nube manda; añadimos los de data.js que no estén en la nube.
       var idsNube = {};
       for (var i = 0; i < nube.length; i++) idsNube[nube[i].id] = true;
       var faltantes = base.filter(function (r) { return !idsNube[r.id]; });
@@ -82,10 +89,22 @@
     }
   }
 
-  /* ---------------- Operaciones de administración ----------------- */
-  /* Requieren sesión iniciada; las políticas RLS las protegen.        */
+  /* ----------------------- Normalizadores -------------------------- */
 
-  // Normaliza la carta: array de secciones con items válidos.
+  function normalizarOpciones(grupos) {
+    return grupos.map(function (g) {
+      return {
+        nombre: g && g.nombre ? String(g.nombre) : "Opción",
+        opciones: Array.isArray(g && g.opciones) ? g.opciones.map(function (op) {
+          var o = { n: String(op.n || ""), agotado: !!op.agotado };
+          if (Number(op.precio) > 0) o.precio = Number(op.precio);
+          return o;
+        }) : [],
+      };
+    });
+  }
+
+  // Carta: array de secciones con items válidos (conserva opciones y foto).
   function normalizarCarta(carta) {
     if (!Array.isArray(carta)) return [];
     return carta.map(function (sec) {
@@ -100,26 +119,15 @@
             p: Number(it.p) || 0,
             agotado: !!it.agotado,
           };
-          // Opciones a elegir (ej. salsa). Se conservan tal cual si existen.
-          if (Array.isArray(it.opciones) && it.opciones.length) {
-            plato.opciones = it.opciones.map(function (g) {
-              return {
-                nombre: g && g.nombre ? String(g.nombre) : "Opción",
-                opciones: Array.isArray(g && g.opciones) ? g.opciones.map(function (op) {
-                  var o = { n: String(op.n || ""), agotado: !!op.agotado };
-                  if (Number(op.precio) > 0) o.precio = Number(op.precio);
-                  return o;
-                }) : [],
-              };
-            });
-          }
+          if (it.foto) plato.foto = String(it.foto);
+          if (Array.isArray(it.opciones) && it.opciones.length) plato.opciones = normalizarOpciones(it.opciones);
           return plato;
         }) : [],
       };
     });
   }
 
-  // Normaliza el almuerzo del día (o devuelve null si no está activo/definido).
+  // Almuerzo del día (o null).
   function normalizarAlmuerzo(a) {
     if (!a || typeof a !== "object") return null;
     return {
@@ -127,7 +135,6 @@
       titulo: a.titulo ? String(a.titulo) : "Almuerzo del día",
       desc: a.desc ? String(a.desc) : "",
       precio: Number(a.precio) || 0,
-      // Día para el que se publicó (YYYY-MM-DD). Vacío = permanente.
       fecha: a.fecha ? String(a.fecha) : "",
       grupos: Array.isArray(a.grupos) ? a.grupos.map(function (g) {
         var grupo = {
@@ -146,8 +153,50 @@
     };
   }
 
-  // Crea o actualiza un restaurante (upsert por id).
-  async function guardar(rest) {
+  // Horario: { lun: {abre:"11:00", cierra:"22:00"} | null, ..., dom }.
+  // Devuelve null si no hay ningún día configurado.
+  var DIAS = ["lun", "mar", "mie", "jue", "vie", "sab", "dom"];
+  var RE_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+  function normalizarHorario(h) {
+    if (!h || typeof h !== "object") return null;
+    var out = {}, alguno = false;
+    DIAS.forEach(function (d) {
+      var x = h[d];
+      if (x && RE_HORA.test(x.abre || "") && RE_HORA.test(x.cierra || "")) {
+        out[d] = { abre: x.abre, cierra: x.cierra };
+        alguno = true;
+      } else {
+        out[d] = null;
+      }
+    });
+    return alguno ? out : null;
+  }
+
+  /* ---------------- Operaciones de administración ----------------- */
+
+  // Escribe una fila y, si la base de datos no tiene alguna columna (porque
+  // aún no se ejecutó el SQL de mejoras), la quita y reintenta. Así guardar
+  // NUNCA falla por una columna nueva.
+  async function escribirResiliente(hacer, fila) {
+    for (var intento = 0; intento < 4; intento++) {
+      var res = await hacer(fila);
+      if (!res.error) return res;
+      var m = String(res.error.message || "").match(/Could not find the '([^']+)' column/i) ||
+              String(res.error.message || "").match(/column "?([a-z_]+)"? .*does not exist/i);
+      if (m && m[1] in fila) {
+        columnasFaltantes[m[1]] = true;
+        fila = Object.assign({}, fila);
+        delete fila[m[1]];
+        continue;
+      }
+      throw res.error;
+    }
+    throw new Error("No se pudo guardar.");
+  }
+
+  // Crea o actualiza un restaurante. Con { soloActualizar: true } usa UPDATE
+  // (necesario para los aliados, que pueden editar pero no crear).
+  async function guardar(rest, opciones) {
     var sb = client();
     if (!sb) throw new Error("Supabase no está configurado.");
     var fila = {
@@ -161,10 +210,18 @@
       logo: rest.logo || "",
       carta: normalizarCarta(rest.carta),
       almuerzo: normalizarAlmuerzo(rest.almuerzo),
+      horario: normalizarHorario(rest.horario),
       orden: typeof rest.orden === "number" ? rest.orden : 0,
     };
-    var res = await sb.from("restaurantes").upsert(fila, { onConflict: "id" }).select();
-    if (res.error) throw res.error;
+    var soloActualizar = opciones && opciones.soloActualizar;
+    var res = await escribirResiliente(function (f) {
+      return soloActualizar
+        ? sb.from("restaurantes").update(f).eq("id", f.id).select()
+        : sb.from("restaurantes").upsert(f, { onConflict: "id" }).select();
+    }, fila);
+    if (soloActualizar && (!res.data || !res.data.length)) {
+      throw new Error("No tienes permiso para editar este restaurante.");
+    }
     return res.data && res.data[0];
   }
 
@@ -176,64 +233,107 @@
     return true;
   }
 
-  // Sube de una vez todos los restaurantes definidos en data.js (RESTAURANTES).
-  // Útil para migrar el contenido inicial a la base de datos.
-  async function migrarDesdeData() {
+  /* ------------------------------ Ajustes -------------------------- */
+  // Tabla "ajustes" (clave → valor JSON): domicilios, promociones,
+  // comisión, lo más pedido… Si la tabla no existe, devuelve null.
+
+  var _ajustes = null, _ajustesPromesa = null, ajustesDisponibles = null;
+
+  async function leerAjustes(forzar) {
+    if (_ajustes && !forzar) return _ajustes;
+    if (_ajustesPromesa && !forzar) return _ajustesPromesa;
+    var sb = client();
+    if (!sb) { ajustesDisponibles = false; return null; }
+    _ajustesPromesa = (async function () {
+      try {
+        var res = await sb.from("ajustes").select("clave, valor");
+        if (res.error) throw res.error;
+        var out = {};
+        (res.data || []).forEach(function (f) { out[f.clave] = f.valor; });
+        _ajustes = out;
+        ajustesDisponibles = true;
+        return out;
+      } catch (e) {
+        ajustesDisponibles = false;
+        if (!esNoExiste(e)) console.warn("No se pudieron leer los ajustes:", e && e.message);
+        return null;
+      } finally {
+        _ajustesPromesa = null;
+      }
+    })();
+    return _ajustesPromesa;
+  }
+
+  async function guardarAjuste(clave, valor) {
     var sb = client();
     if (!sb) throw new Error("Supabase no está configurado.");
-    var base = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []);
-    var filas = base.map(function (r, idx) {
-      return {
-        id: r.id,
-        nombre: r.nombre,
-        cat: r.cat,
-        tiempo: r.tiempo,
-        abierto: !!r.abierto,
-        color: r.color || "#3b82f6",
-        descripcion: r.desc || "",
-        logo: r.logo || "",
-        carta: r.carta || [],
-        almuerzo: r.almuerzo || null,
-        orden: typeof r.orden === "number" ? r.orden : idx,
-      };
-    });
-    if (!filas.length) return 0;
-    var res = await sb.from("restaurantes").upsert(filas, { onConflict: "id" }).select();
-    if (res.error) throw res.error;
-    return res.data ? res.data.length : 0;
+    var res = await sb.from("ajustes")
+      .upsert({ clave: clave, valor: valor, actualizado: new Date().toISOString() }, { onConflict: "clave" });
+    if (res.error) {
+      if (esNoExiste(res.error)) {
+        var e = new Error("Falta ejecutar supabase-mejoras.sql en Supabase para guardar ajustes.");
+        e.code = "SIN_SQL";
+        throw e;
+      }
+      throw res.error;
+    }
+    if (_ajustes) _ajustes[clave] = valor;
+    return true;
   }
 
   /* ----------------------------- Pedidos -------------------------- */
 
-  // Crea un pedido en la base de datos. Devuelve el pedido guardado
-  // (con su id/código). Lo puede hacer un cliente sin cuenta.
+  // Código corto, fácil de dictar (sin 0/O ni 1/I): GH-7K3QPA
+  function nuevoCodigo() {
+    var abc = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ", s = "";
+    var rnd = new Uint32Array(6);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(rnd);
+    else for (var j = 0; j < 6; j++) rnd[j] = Math.floor(Math.random() * 4294967296);
+    for (var i = 0; i < 6; i++) s += abc[rnd[i] % abc.length];
+    return "GH-" + s;
+  }
+
+  // Crea un pedido (lo puede hacer un cliente sin cuenta).
+  // IMPORTANTE: sin .select(). El cliente anónimo no tiene permiso de LEER
+  // pedidos, y pedir la fila de vuelta hacía que Supabase rechazara el
+  // pedido entero (los pedidos de clientes reales no llegaban al panel).
   async function crearPedido(pedido) {
     var sb = client();
     if (!sb) throw new Error("Supabase no está configurado.");
     var fila = {
-      codigo: pedido.codigo || null,
+      codigo: pedido.codigo || nuevoCodigo(),
       estado: "recibido",
       cliente: pedido.cliente || {},
       items: pedido.items || [],
       total: pedido.total || 0,
     };
-    var res = await sb.from("pedidos").insert(fila).select();
+    var res = await sb.from("pedidos").insert(fila);
     if (res.error) throw res.error;
-    return res.data && res.data[0];
+    return { codigo: fila.codigo };
   }
 
-  // Lista los pedidos (solo admin). Opcionalmente filtra por estado.
-  async function listarPedidos(estado) {
+  // Lista pedidos (solo admin). estado: "todos" o uno concreto.
+  // desdeISO (opcional): solo pedidos creados desde esa fecha.
+  // Supabase entrega máximo 1000 filas por consulta: pedimos de a páginas
+  // para que los reportes nunca se queden cortos sin avisar.
+  // columnas (opcional): para consultas livianas, ej. el aviso de pedidos nuevos.
+  async function listarPedidos(estado, desdeISO, columnas) {
     var sb = client();
     if (!sb) throw new Error("Supabase no está configurado.");
-    var q = sb.from("pedidos").select("*").order("creado_en", { ascending: false });
-    if (estado && estado !== "todos") q = q.eq("estado", estado);
-    var res = await q;
-    if (res.error) throw res.error;
-    return res.data || [];
+    var PAGINA = 1000, todos = [];
+    for (var desde = 0; desde < 50000; desde += PAGINA) {
+      var q = sb.from("pedidos").select(columnas || "*").order("creado_en", { ascending: false });
+      if (estado && estado !== "todos") q = q.eq("estado", estado);
+      if (desdeISO) q = q.gte("creado_en", desdeISO);
+      var res = await q.range(desde, desde + PAGINA - 1);
+      if (res.error) throw res.error;
+      var filas = res.data || [];
+      todos = todos.concat(filas);
+      if (filas.length < PAGINA) break;
+    }
+    return todos;
   }
 
-  // Cambia el estado de un pedido (solo admin).
   async function actualizarEstadoPedido(id, estado, incidencia) {
     var sb = client();
     if (!sb) throw new Error("Supabase no está configurado.");
@@ -244,21 +344,36 @@
     return res.data && res.data[0];
   }
 
+  // Seguimiento público: el cliente consulta SOLO el estado de su pedido
+  // con el código (función segura en la base de datos, sin datos personales).
+  // Devuelve el pedido, null si no existe, o lanza { code: "SIN_SQL" }.
+  async function estadoPedido(codigo) {
+    var sb = client();
+    if (!sb) { var e0 = new Error("sin supabase"); e0.code = "SIN_SQL"; throw e0; }
+    var res = await sb.rpc("estado_pedido", { p_codigo: String(codigo || "").trim().toUpperCase() });
+    if (res.error) {
+      if (esNoExiste(res.error)) { var e = new Error("sin función"); e.code = "SIN_SQL"; throw e; }
+      throw res.error;
+    }
+    var d = Array.isArray(res.data) ? res.data[0] : res.data;
+    return d || null;
+  }
+
+  /* ------------------------------ Fotos ---------------------------- */
+
   // Sube una foto al bucket y devuelve su URL pública.
   async function subirFoto(file, carpeta) {
     var sb = client();
     if (!sb) throw new Error("Supabase no está configurado.");
-    var ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    var ext = (String(file.name || "foto.jpg").split(".").pop() || "jpg").toLowerCase();
     var nombre = (carpeta ? carpeta + "/" : "") +
       Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
-
     var up = await sb.storage.from(SUPABASE_BUCKET).upload(nombre, file, {
-      cacheControl: "3600",
+      cacheControl: "31536000",   // las fotos no cambian de nombre: caché de 1 año
       upsert: false,
       contentType: file.type || "image/jpeg",
     });
     if (up.error) throw up.error;
-
     var pub = sb.storage.from(SUPABASE_BUCKET).getPublicUrl(nombre);
     return pub.data.publicUrl;
   }
@@ -286,19 +401,67 @@
     await sb.auth.signOut();
   }
 
+  // Rol del usuario con sesión: { rol: "admin" } o { rol: "aliado", restaurante_id }.
+  // Si aún no se ejecutó el SQL de mejoras, todos los usuarios son admin
+  // (comportamiento de antes) y se marca legado: true.
+  // Devuelve null si el usuario no tiene ningún permiso asignado.
+  async function miPerfil() {
+    var sb = client();
+    if (!sb) return null;
+    var res = await sb.rpc("mi_perfil");
+    if (res.error) {
+      if (esNoExiste(res.error)) return { rol: "admin", legado: true };
+      throw res.error;
+    }
+    var d = Array.isArray(res.data) ? res.data[0] : res.data;
+    return d && d.rol ? d : null;
+  }
+
+  async function rpcAdmin(nombre, args) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var res = await sb.rpc(nombre, args || {});
+    if (res.error) {
+      if (esNoExiste(res.error)) {
+        var e = new Error("Falta ejecutar supabase-mejoras.sql en Supabase.");
+        e.code = "SIN_SQL";
+        throw e;
+      }
+      throw res.error;
+    }
+    return res.data;
+  }
+  function listarAliados() { return rpcAdmin("listar_aliados").then(function (d) { return d || []; }); }
+  function asignarAliado(email, restauranteId) {
+    return rpcAdmin("asignar_aliado", { p_email: email, p_restaurante: restauranteId });
+  }
+  function quitarAliado(email) { return rpcAdmin("quitar_aliado", { p_email: email }); }
+
   window.Store = {
     supabaseDisponible: supabaseDisponible,
     client: client,
     listar: listar,
     guardar: guardar,
     eliminar: eliminar,
-    migrarDesdeData: migrarDesdeData,
+    leerAjustes: leerAjustes,
+    guardarAjuste: guardarAjuste,
+    ajustesDisponibles: function () { return ajustesDisponibles; },
+    _ajustesCache: function () { return _ajustes || {}; },
+    columnasFaltantes: function () { return Object.keys(columnasFaltantes); },
+    nuevoCodigo: nuevoCodigo,
     crearPedido: crearPedido,
     listarPedidos: listarPedidos,
     actualizarEstadoPedido: actualizarEstadoPedido,
+    estadoPedido: estadoPedido,
     subirFoto: subirFoto,
     sesionActual: sesionActual,
     entrar: entrar,
     salir: salir,
+    miPerfil: miPerfil,
+    listarAliados: listarAliados,
+    asignarAliado: asignarAliado,
+    quitarAliado: quitarAliado,
+    normalizarHorario: normalizarHorario,
+    DIAS: DIAS,
   };
 })();

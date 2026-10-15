@@ -29,6 +29,7 @@
       <span class="logo__tag">Admin</span>
     </a>
     <div class="admin-header__right" id="headerRight" hidden>
+      <button type="button" class="btn-copy btn-avisos" id="btnAvisos" hidden title="Sonido y aviso cuando llegue un pedido nuevo">🔕 Activar avisos</button>
       <span class="admin-user" id="adminUser"></span>
       <button type="button" class="btn-copy" id="btnSalir">Cerrar sesión</button>
     </div>
@@ -65,10 +66,38 @@
     <!-- Panel (lista + editor) -->
     <section id="vistaPanel" hidden>
       <!-- Pestañas: Restaurantes / Pedidos -->
+      <div class="aviso-sql" id="avisoSql" hidden></div>
+
       <div class="tabs" role="tablist">
         <button type="button" class="tab tab--active" data-tab="restaurantes" role="tab">🍽️ Restaurantes</button>
         <button type="button" class="tab" data-tab="almuerzos" role="tab">🍲 Almuerzos del día</button>
-        <button type="button" class="tab" data-tab="pedidos" role="tab">📋 Pedidos</button>
+        <button type="button" class="tab" data-tab="pedidos" role="tab" data-solo-admin>📋 Pedidos <span class="tab__badge" id="badgePedidos" hidden>0</span></button>
+        <button type="button" class="tab" data-tab="ventas" role="tab" data-solo-admin>📊 Ventas</button>
+        <button type="button" class="tab" data-tab="ajustes" role="tab" data-solo-admin>⚙️ Ajustes</button>
+      </div>
+
+      <!-- Pestaña Ventas -->
+      <div id="tabVentas" class="tab-panel" hidden>
+        <div class="panel__row">
+          <h2 class="panel__title">Ventas</h2>
+          <div class="inline-actions">
+            <select id="rangoVentas" class="field__select" aria-label="Periodo">
+              <option value="hoy">Hoy</option>
+              <option value="7" selected>Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="mes">Este mes</option>
+              <option value="todo">Todo</option>
+            </select>
+            <button type="button" class="btn-copy" id="btnCsv">⬇️ Descargar CSV</button>
+          </div>
+        </div>
+        <div id="contVentas" aria-live="polite"></div>
+      </div>
+
+      <!-- Pestaña Ajustes -->
+      <div id="tabAjustes" class="tab-panel" hidden>
+        <h2 class="panel__title">Ajustes del negocio</h2>
+        <div id="contAjustes"></div>
       </div>
 
       <!-- Pestaña Almuerzos del día -->
