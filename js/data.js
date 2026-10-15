@@ -1747,4 +1747,158 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "establo",
+    nombre: "Establo",
+    cat: "Comida rápida y parrillada",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#78350f",
+    desc: "Comida rápida y parrillada: hamburguesas artesanales, carnes, picadas, salchipapas, cócteles y bebidas.",
+    logo: "",
+    carta: [
+      {
+        sec: "Entradas",
+        items: [
+          { id: "es-ent-patacones", n: "Patacones con hogao", d: "Patacones crocantes con hogao tradicional preparado artesanalmente.", p: 12000 },
+          { id: "es-ent-aros", n: "Aros de cebolla", d: "Aros de cebolla gruesos, crujientes y dorados a la perfección.", p: 14000 },
+          { id: "es-ent-empanadas", n: "Empanadas Establo", d: "Empanaditas crujientes rellenas de sabor auténtico.", p: 17000 },
+        ],
+      },
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "es-ha-clasica", n: "Clásica", d: "Pan artesanal, 150 g de carne de res, cebolla morada, vegetales y queso mozzarella.", p: 18000 },
+          { id: "es-ha-campesina", n: "Campesina", d: "Pan artesanal, 150 g de carne, hogao, huevo frito, maduritos, cebolla morada, queso y vegetales.", p: 25000 },
+          { id: "es-ha-mexicana", n: "Mexicana", d: "Pan artesanal, 150 g de carne, guacamole, birria de res, jalapeños, pico de gallo, crema agria y quesos.", p: 25000 },
+          { id: "es-ha-bacon", n: "Bacon burger", d: "Pan artesanal, 150 g de carne, mermelada de tocineta, queso cheddar y salsa de pepinillos.", p: 26000 },
+          { id: "es-ha-caquetena", n: "Caqueteña", d: "Pan artesanal, 150 g de carne, chorizo ahumado, maduritos, queso cuajada y lechuga fresca.", p: 26000 },
+          { id: "es-ha-tocineta", n: "Tocineta", d: "Pan artesanal, 150 g de carne, tocineta, aros de cebolla y queso cheddar.", p: 26000 },
+          { id: "es-ha-smash", n: "Smash burger", d: "Pan artesanal, 210 g de carne de res gratinada en queso cheddar, base de queso crema y mermelada de pimentón.", p: 28000 },
+          { id: "es-ha-establo", n: "Establo", d: "Pan artesanal, 150 g de carne, filete de pechuga, carne desmechada, maduro, tocineta, chorizo, huevo frito, jamón, hogao, huevos de codorniz, champiñones, tomate, cebolla y triple queso.", p: 48000 },
+        ],
+      },
+      {
+        sec: "Carnes",
+        items: [
+          { id: "es-ca-churrasco", n: "Churrasco", d: "320 g de corte de res con marmoleo acompañado de papas en casco.", p: 40000 },
+          { id: "es-ca-costillas", n: "Costillas", d: "300 g de costilla ahumada en salsa BBQ de naranja con papa en casco.", p: 36000 },
+          { id: "es-ca-pechuga", n: "Pechuga a la plancha", d: "320 g de pechuga jugosa acompañada con papa en cascos.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Platos especiales",
+        items: [
+          { id: "es-pe-mazorcada", n: "Mazorcada personal", d: "Carne y pollo desmechados, chorizo, queso mozzarella, maíz tierno, huevos de codorniz y papas a la francesa.", p: 24000 },
+          { id: "es-pe-burrito", n: "Burrito Establo", d: "Tortilla de maíz con carne y pollo desmechados, maíz tierno, lechuga, tomate, queso mozzarella y huevos de codorniz con papas a la francesa.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Picadas",
+        items: [
+          { id: "es-pi-establo", n: "Establo", d: "300 g de carne de res, cerdo y pollo, chorizo, papas a la francesa y patacones.", p: 34000 },
+          { id: "es-pi-dos", n: "Para dos personas", d: "Carne de res, cerdo y pollo, chorizo, salchicha, papas a la francesa y patacones con salsas.", p: 65000 },
+          { id: "es-pi-tres", n: "Para tres personas", d: "Carne de res, cerdo y pollo, chorizo, salchicha, papas a la francesa y patacones con salsas.", p: 75000 },
+          { id: "es-pi-cuatro", n: "Para cuatro personas", d: "Carne de res, cerdo y pollo, chorizo, salchicha, papas a la francesa y patacones con salsas.", p: 85000 },
+        ],
+      },
+      {
+        sec: "Salchipapas",
+        items: [
+          { id: "es-sp-tradicional", n: "Tradicional", d: "Papas a la francesa, salchicha, tocineta en trozos y queso mozzarella.", p: 18000 },
+          { id: "es-sp-cheddar", n: "Cheddar", d: "Papas en casco con especias, salchicha americana, pollo desmechado, tocineta y queso cheddar gratinado.", p: 28000 },
+          { id: "es-sp-dos", n: "Establo para dos", d: "Papas a la francesa, papa en casco, salchicha americana, chorizo, pollo desmechado, carne desmechada, tocineta y queso.", p: 38000 },
+        ],
+      },
+      {
+        sec: "Menú infantil",
+        items: [
+          { id: "es-mi-nuggets", n: "Nuggets de pollo", d: "Trocitos de pollo doraditos con papas a la francesa.", p: 22000 },
+        ],
+      },
+      {
+        sec: "Postres",
+        items: [
+          { id: "es-po-cuchareables", n: "Cuchareables", d: "Frutos rojos, brownie y leche Klim.", p: 14000 },
+        ],
+      },
+      {
+        sec: "Adiciones",
+        items: [
+          { id: "es-ad-papas", n: "Papas a la francesa", d: "", p: 8000 },
+          { id: "es-ad-carne", n: "Carne hamburguesa", d: "", p: 10000 },
+          { id: "es-ad-queso", n: "Queso", d: "", p: 5000 },
+        ],
+      },
+      {
+        sec: "Cócteles",
+        items: [
+          { id: "es-co-margarita", n: "Margarita", d: "Tequila, blue curacao, limón y sirope.", p: 22000 },
+          { id: "es-co-mojito-coronita", n: "Mojito coronita", d: "Bacardí, limón, sirope, hierbabuena y coronita.", p: 28000 },
+          { id: "es-co-mojito", n: "Mojito", d: "Ron, Coca-Cola y limón.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Sodas italianas",
+        items: [
+          { id: "es-si-sodas", n: "Sodas italianas", d: "Fresa lychee, frutos rojos o maracuyá.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Vino",
+        items: [
+          { id: "es-vi-copa", n: "Copa de vino", d: "", p: 14000 },
+          { id: "es-vi-tinto-verano", n: "Tinto de verano", d: "", p: 16000 },
+          { id: "es-vi-botella", n: "Botella de vino", d: "", p: 50000 },
+        ],
+      },
+      {
+        sec: "Micheladas",
+        items: [
+          { id: "es-mi-cereza", n: "Cereza", d: "", p: 15000 },
+          { id: "es-mi-maracuya", n: "Maracuyá", d: "", p: 15000 },
+          { id: "es-mi-mango", n: "Mango", d: "", p: 15000 },
+        ],
+      },
+      {
+        sec: "Cerveza",
+        items: [
+          { id: "es-ce-coronita", n: "Coronita", d: "", p: 7000 },
+          { id: "es-ce-aguila-light", n: "Águila light", d: "", p: 7000 },
+          { id: "es-ce-club-colombia", n: "Club Colombia", d: "", p: 7000 },
+          { id: "es-ce-aguila-negra", n: "Águila negra", d: "", p: 7000 },
+        ],
+      },
+      {
+        sec: "Jugos naturales",
+        items: [
+          { id: "es-ju-agua-leche", n: "Agua y leche", d: "Fresa, mora, maracuyá, lulo, mango y guanábana.", p: 10000 },
+        ],
+      },
+      {
+        sec: "Limonadas",
+        items: [
+          { id: "es-li-coco", n: "Coco", d: "", p: 12000 },
+          { id: "es-li-cereza", n: "Cereza", d: "", p: 12000 },
+          { id: "es-li-hierbabuena", n: "Hierbabuena", d: "", p: 12000 },
+          { id: "es-li-mango", n: "Mango", d: "", p: 12000 },
+          { id: "es-li-maracuya", n: "Maracuyá", d: "", p: 12000 },
+          { id: "es-li-citrica", n: "Cítrica", d: "", p: 12000 },
+          { id: "es-li-jarra", n: "Jarra de limonada", d: "", p: 16000 },
+          { id: "es-li-media-jarra", n: "Media jarra de limonada", d: "", p: 10000 },
+        ],
+      },
+      {
+        sec: "Bebidas",
+        items: [
+          { id: "es-be-milo", n: "Milo", d: "", p: 10000 },
+          { id: "es-be-gaseosa-personal", n: "Gaseosa personal", d: "", p: 6000 },
+          { id: "es-be-gaseosa-15", n: "Gaseosa 1.5 L", d: "", p: 12000 },
+          { id: "es-be-soda", n: "Soda", d: "", p: 6000 },
+          { id: "es-be-agua", n: "Agua", d: "", p: 4000 },
+        ],
+      },
+    ],
+  },
 ];
