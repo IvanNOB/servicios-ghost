@@ -470,4 +470,134 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "ricuras-de-nana",
+    nombre: "Las Ricuras de Nana",
+    cat: "Rápida",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#dc2626",
+    desc: "Comidas rápidas: arepas, perros, hamburguesas, carnes y más.",
+    logo: "",
+    carta: [
+      {
+        sec: "Entradas",
+        items: [
+          { id: "rn-ent-huevos", n: "Porción de huevos", d: "Huevos de codorniz.", p: 7000 },
+          { id: "rn-ent-papas", n: "Porción de papas", d: "Papas a la francesa.", p: 8000 },
+          { id: "rn-ent-chicharrones", n: "Porción de chicharrones", d: "Porción de chicharrón.", p: 7000 },
+          { id: "rn-ent-pataconas", n: "Pataconas con salsa de la casa", d: "Pataconas con salsa de la casa.", p: 7000 },
+        ],
+      },
+      {
+        sec: "Arepas",
+        items: [
+          { id: "rn-ar-queso-jamon", n: "Arepa con queso y jamón", d: "Queso y jamón.", p: 7000 },
+          { id: "rn-ar-mixta", n: "Arepa mixta", d: "Queso, pollo, carne, chicharrón, huevo de codorniz.", p: 14000 },
+          { id: "rn-ar-especial", n: "Arepa especial", d: "Queso, jamón, pollo, carne, chicharrón, maíz tierno, chorizo, huevo de codorniz.", p: 20000 },
+          { id: "rn-ar-paisa", n: "Arepa paisa", d: "Queso, carne, pollo, chorizo, maíz tierno, chicharrón, maduro, huevo de codorniz.", p: 20000 },
+          { id: "rn-ar-mexicana", n: "Arepa mexicana", d: "Queso, pollo, carne, chicharrón, jalapeños, huevo de codorniz.", p: 20000 },
+          { id: "rn-ar-criolla", n: "Arepa criolla", d: "Queso, pollo, carne, chicharrón, maíz tierno, huevo frito, huevo de codorniz.", p: 20000 },
+          { id: "rn-ar-ranchera", n: "Arepa ranchera", d: "Queso, carne, chicharrón, chorizo, huevo de codorniz.", p: 20000 },
+          { id: "rn-ar-burguer", n: "Arepa burguer", d: "Queso, carne de hamburguesa, salsa de la casa, huevo de codorniz.", p: 12000 },
+        ],
+      },
+      {
+        sec: "Choripapas",
+        items: [
+          { id: "rn-ch-sencilla", n: "Choripapa sencilla", d: "Papa francesa, chorizo brisa, queso, huevo de codorniz.", p: 15000 },
+          { id: "rn-ch-especial", n: "Choripapa especial", d: "Papa francesa, chorizo brisa, queso, tocineta, maíz tierno, huevo de codorniz.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Perros Calientes",
+        items: [
+          { id: "rn-pe-sencillo", n: "Perro sencillo", d: "Salchicha, cebolla, ripio, queso y huevo de codorniz.", p: 15000 },
+          { id: "rn-pe-especial", n: "Perro especial", d: "Chorizo, carne desmechada, cebolla, ripio, queso, tocineta, huevo de codorniz.", p: 25000 },
+          { id: "rn-pe-perra", n: "Perra", d: "Carne, pollo desmechado, queso, maíz tierno, huevo de codorniz.", p: 20000 },
+          { id: "rn-pe-de-la-casa", n: "Perro de la casa", d: "Papa francesa, chorizo, carne desmechada, pollo, tocineta, maduro, queso, maíz tierno, huevo de codorniz.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "rn-ha-clasica", n: "Hamburguesa clásica", d: "Carne artesanal de res, ripio, queso, jamón, vegetales, huevo de codorniz.", p: 14000 },
+          { id: "rn-ha-especial", n: "Hamburguesa especial", d: "Carne artesanal de res, queso, tocineta, carne desmechada, vegetales, ripio, huevo de codorniz.", p: 20000 },
+          { id: "rn-ha-doble", n: "Hamburguesa doble carne", d: "Vegetales, ripio, queso, jamón, huevo de codorniz.", p: 23000 },
+          { id: "rn-ha-sparta", n: "Hamburguesa sparta", d: "Carne artesanal de res, tocineta, queso, chorizo, ripio, vegetales, huevo de codorniz.", p: 23000 },
+          { id: "rn-ha-criolla", n: "Hamburguesa criolla", d: "Carne artesanal de res, maíz tierno, huevo frito, tocineta, queso, vegetales, ripio, huevo de codorniz.", p: 20000 },
+          { id: "rn-ha-mexicana", n: "Hamburguesa mexicana", d: "Carne artesanal de res, queso, tocineta, ripio, vegetales, jalapeños, huevo de codorniz.", p: 20000 },
+          { id: "rn-ha-mixta", n: "Hamburguesa mixta", d: "Carne artesanal de res, pechuga, queso, tocineta, ripio, vegetales, huevo de codorniz.", p: 20000 },
+          { id: "rn-ha-hawaiana", n: "Hamburguesa hawaiana", d: "Carne artesanal de res, tocineta, ripio, vegetales, piña melada, huevo de codorniz.", p: 20000 },
+          { id: "rn-ha-monster", n: "Hamburguesa monster", d: "Carne artesanal de res, carne desmechada, pechuga, chorizo, tocineta, vegetales, maíz tierno, ripio, huevo de codorniz.", p: 30000 },
+        ],
+      },
+      {
+        sec: "Carnes",
+        items: [
+          { id: "rn-ca-lomo-cerdo", n: "Lomo cerdo", d: "Papa francesa, lechuga, tomate, huevo de codorniz.", p: 35000 },
+          { id: "rn-ca-picadas", n: "Picadas", d: "Carne de cerdo, pechuga, chorizo, costilla ahumada, papa francesa, maíz tierno, lechuga, tomate, huevo de codorniz.", p: 35000 },
+          { id: "rn-ca-costilla", n: "Costilla ahumada", d: "Papa francesa, lechuga, tomate, queso, maíz tierno, huevo de codorniz.", p: 30000 },
+          { id: "rn-ca-chorizo-brisa", n: "Chorizo brisa", d: "Papa francesa, lechuga, tomate.", p: 12000 },
+          { id: "rn-ca-pincho-cerdo", n: "Pincho de cerdo", d: "Papa francesa, lechuga, tomate, huevo de codorniz.", p: 20000 },
+          { id: "rn-ca-pechuga-plancha", n: "Pechuga a la plancha", d: "Papa francesa, lechuga, tomate, huevo de codorniz.", p: 30000 },
+          { id: "rn-ca-pechuga-gratinada", n: "Pechuga gratinada", d: "Papa francesa, lechuga, tomate, queso gratinado, huevo de codorniz.", p: 35000 },
+          { id: "rn-ca-pechuga-hawaiana", n: "Pechuga hawaiana", d: "Papa francesa, lechuga, tomate, piña melada, huevo de codorniz.", p: 35000 },
+          { id: "rn-ca-alita-rellena", n: "Alita rellena", d: "Papa a la francesa, lechuga, tomate, maíz tierno, queso, huevo de codorniz.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Patacones",
+        items: [
+          { id: "rn-pa-con-todo", n: "Patacón con todo", d: "Carne, pollo desmechado, queso, chorizo, chicharrón, maíz tierno, huevo de codorniz.", p: 30000 },
+          { id: "rn-pa-paisa", n: "Patacón paisa", d: "Carne, pollo desmechado, chicharrón, chorizo, costilla ahumada, maíz tierno, maduro, queso, huevo de codorniz.", p: 35000 },
+          { id: "rn-pa-carne-desmechada", n: "Patacón carne desmechada", d: "Chorizo, maíz tierno, queso, huevo de codorniz.", p: 25000 },
+          { id: "rn-pa-maduro-relleno", n: "Maduro relleno", d: "Carne, pollo desmechado, maíz tierno, chicharrón, huevo de codorniz.", p: 18000 },
+          { id: "rn-pa-maduro-queso", n: "Maduro con queso y mantequilla", d: "Maduro con queso y mantequilla.", p: 8000 },
+        ],
+      },
+      {
+        sec: "Mazorcadas",
+        items: [
+          { id: "rn-ma-tradicional", n: "Mazorcada tradicional", d: "Carne, pollo desmechado, papa francesa, maíz tierno, queso, chicharrón, chorizo, ripio, huevo de codorniz.", p: 30000 },
+          { id: "rn-ma-especial", n: "Mazorcada especial", d: "Carne de cerdo, pechuga, chorizo, queso, maíz tierno, papa francesa, huevo de codorniz.", p: 35000 },
+        ],
+      },
+      {
+        sec: "Caldo",
+        items: [
+          { id: "rn-cal-costilla", n: "Caldo de costilla", d: "Arroz, arepa, limonada.", p: 10000 },
+          { id: "rn-cal-menudencia", n: "Caldo de menudencia", d: "Arroz, arepa, limonada.", p: 10000 },
+          { id: "rn-cal-gallina", n: "Caldo de gallina", d: "Arroz, arepa, presa, limonada.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Otros",
+        items: [
+          { id: "rn-ot-choriburro", n: "Choriburro", d: "Carne, pollo desmechado, maíz tierno, chorizo, chicharrón, queso, huevo de codorniz.", p: 25000 },
+          { id: "rn-ot-burrito", n: "Burrito", d: "Carne, pollo desmechado, jamón, maíz tierno, queso, chicharrón, huevo de codorniz.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Calentados",
+        items: [
+          { id: "rn-ce-huevo", n: "Calentado con huevo", d: "Arepa + limonada.", p: 12000 },
+          { id: "rn-ce-chorizo", n: "Calentado con chorizo", d: "Arepa + limonada.", p: 16000 },
+          { id: "rn-ce-cerdo", n: "Calentado con carne de cerdo", d: "Arepa + limonada.", p: 18000 },
+        ],
+      },
+      {
+        sec: "Bebidas",
+        items: [
+          { id: "rn-be-limonada", n: "Limonada", d: "Limonada natural.", p: 5000 },
+          { id: "rn-be-jugos", n: "Jugos naturales", d: "Varios sabores.", p: 5000 },
+          { id: "rn-be-cerezada", n: "Cerezada", d: "Bebida de cereza.", p: 6000 },
+          { id: "rn-be-milo", n: "Milo", d: "Vaso de Milo.", p: 5000 },
+          { id: "rn-be-coca", n: "Coca Cola", d: "Gaseosa.", p: 5000 },
+          { id: "rn-be-hit", n: "Jugo Hit", d: "Jugo Hit.", p: 4000 },
+        ],
+      },
+    ],
+  },
 ];
