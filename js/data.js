@@ -71,6 +71,16 @@ const ZZ_SALSAS = [
   ] },
 ];
 
+// Base a elegir para las micheladas de El Barril de Migue.
+// Soda/Ginger: precio base; Cerveza: +$2.000 (de 14.000 a 16.000).
+const MIGUE_MICHELADA = [
+  { nombre: "Base", opciones: [
+    { n: "Soda" },
+    { n: "Ginger" },
+    { n: "Cerveza", precio: 2000 },
+  ] },
+];
+
 const RESTAURANTES = [
   {
     id: "lucarnes",
@@ -1887,6 +1897,185 @@ const RESTAURANTES = [
           { id: "es-be-gaseosa-15", n: "Gaseosa 1.5 L", d: "", p: 12000 },
           { id: "es-be-soda", n: "Soda", d: "", p: 6000 },
           { id: "es-be-agua", n: "Agua", d: "", p: 4000 },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: "barril-de-migue",
+    nombre: "El Barril de Migue",
+    cat: "Comida rápida y parrillada",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#92400e",
+    desc: "Comida rápida y parrillada: pizzas, hamburguesas, carnes al barril, alitas, arepas, quesadillas, patacones y bebidas.",
+    logo: "",
+    carta: [
+      {
+        sec: "Sabores de pizza",
+        items: [
+          { id: "mg-sp-hawaiana", n: "Hawaiana", d: "Piña, jamón, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-pardos", n: "Pardo's", d: "Jamón, salami, pepperoni, pollo, queso, champiñones. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-carnes-frias", n: "Carnes frías", d: "Jamón, salami, queso, pepperoni. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-mexicana", n: "Mexicana", d: "Carne desmechada, tomate, jalapeño, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-vegetariana", n: "Vegetariana", d: "Cebolla, tomate, lechuga, champiñones, maíz, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-napolitana", n: "Napolitana", d: "Tomate, orégano, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-criolla", n: "Criolla", d: "Carne desmechada, maíz, pepperoni, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-champinon", n: "Champiñón", d: "Pollo, queso, champiñones. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-mixta", n: "Mixta", d: "Jamón, salami, pepperoni, pollo, champiñones, piña, queso. Elige el tamaño en la sección Pizzas.", p: 0 },
+          { id: "mg-sp-tropical", n: "Tropical", d: "Piña, uvas, queso, cerezas. Elige el tamaño en la sección Pizzas.", p: 0 },
+        ],
+      },
+      {
+        sec: "Pizzas (por tamaño)",
+        items: [
+          { id: "mg-pz-porcion", n: "Porción", d: "1 porción.", p: 11000 },
+          { id: "mg-pz-personal", n: "Personal", d: "6 porciones.", p: 15000 },
+          { id: "mg-pz-pequena", n: "Pequeña", d: "4 porciones.", p: 35000 },
+          { id: "mg-pz-mediana", n: "Mediana", d: "6 porciones.", p: 54000 },
+          { id: "mg-pz-grande", n: "Grande", d: "8 porciones.", p: 70000 },
+        ],
+      },
+      {
+        sec: "Lasaña y panzeroti",
+        items: [
+          { id: "mg-la-junior", n: "Lasaña junior", d: "", p: 16000 },
+          { id: "mg-la-grande", n: "Lasaña grande", d: "", p: 22000 },
+          { id: "mg-la-panzeroti", n: "Panzeroti", d: "", p: 18000 },
+        ],
+      },
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "mg-ha-clasica", n: "Hamburguesa clásica", d: "150 g de carne, lechuga, jamón, tomate, queso, cebolla caramelizada, salsas y ripio.", p: 16000 },
+          { id: "mg-ha-especial", n: "Hamburguesa especial", d: "150 g de carne, tocineta, huevo, lechuga, jamón, tomate, queso, cebolla caramelizada, salsas y ripio.", p: 21000 },
+          { id: "mg-ha-mixta", n: "Hamburguesa mixta", d: "150 g de carne, pollo, tocineta, lechuga, jamón, tomate, doble queso, cebolla caramelizada, salsas y ripio.", p: 23000 },
+          { id: "mg-ha-todo-terreno", n: "Hamburguesa todo terreno", d: "150 g de carne, pollo, salchicha ranchera, tocineta, lechuga, jamón, tomate, doble queso, cebolla caramelizada, salsas y ripio.", p: 26000 },
+          { id: "mg-ha-burgmigue", n: "Burgmigue", d: "Doble carne, maíz tierno, chorizo, tocineta, doble queso, lechuga, jamón, tomate, cebolla caramelizada, salsas, ripio y porción de papa a la francesa.", p: 32000 },
+        ],
+      },
+      {
+        sec: "Sabores premium",
+        items: [
+          { id: "mg-pr-punta-anca", n: "Punta de anca", d: "Papa a la francesa, patacón, ensalada y chimichurri.", p: 48000 },
+          { id: "mg-pr-churrasco", n: "Churrasco", d: "Papa a la francesa, patacón, ensalada y chimichurri.", p: 48000 },
+          { id: "mg-pr-especialidad", n: "Especialidad al barril", d: "Res y cerdo al barril acompañado de ensalada, papa a la francesa y patacones.", p: 38000 },
+          { id: "mg-pr-picada", n: "Picada", d: "Carne de res y cerdo al barril, pollo, salchicha, chorizo, papa a la francesa, platanitos, salsas, lechuga, tomate y aguacate.", p: 35000 },
+          { id: "mg-pr-costillas", n: "Costillas al barril", d: "Costillas de cerdo con salsa BBQ de la casa, acompañadas de ensalada, papa a la francesa y patacón.", p: 35000 },
+        ],
+      },
+      {
+        sec: "Especialidades de Migue",
+        items: [
+          { id: "mg-em-mazorcada", n: "Mazorcada", d: "Carne de res y cerdo al barril, maíz tierno, pechuga, chorizo, salchicha, ripio, jamón y lechuga.", p: 30000 },
+          { id: "mg-em-pechuga-plancha", n: "Pechuga a la plancha", d: "300 g de pechuga, acompañada de ensalada, papa a la francesa y patacón.", p: 28000 },
+          { id: "mg-em-pechuga-gratinada", n: "Pechuga gratinada", d: "300 g de pechuga, quesillo, acompañada de ensalada, papa a la francesa y patacón.", p: 30000 },
+          { id: "mg-em-pechuga-hawaiana", n: "Pechuga hawaiana", d: "300 g de pechuga, piña, quesillo, jamón, acompañada de ensalada, papa a la francesa y patacón.", p: 35000 },
+          { id: "mg-em-pechuga-ranchera", n: "Pechuga ranchera", d: "300 g de pechuga, maíz, salchicha ranchera, quesillo, acompañada de ensalada, papa a la francesa y patacón.", p: 35000 },
+        ],
+      },
+      {
+        sec: "Hot dogs",
+        items: [
+          { id: "mg-hd-clasico", n: "Perro clásico", d: "Salchicha americana, pan, queso, ripio y salsas.", p: 13000 },
+          { id: "mg-hd-mixto", n: "Perro mixto", d: "Salchicha americana, pollo, tocineta, pan, queso, ripio y salsas.", p: 18000 },
+          { id: "mg-hd-todo-terreno", n: "Perro todo terreno", d: "Salchicha americana, pollo, carne al barril, chorizo, tocineta, queso, ripio y salsas.", p: 22000 },
+          { id: "mg-hd-dog-migue", n: "Dog Migue", d: "Salchicha americana, pollo, carne al barril, tocineta, pan, maíz tierno, chorizo, queso, ripio, salsas y porción de papa.", p: 27000 },
+        ],
+      },
+      {
+        sec: "Alitas BBQ",
+        items: [
+          { id: "mg-al-x3", n: "Alitas x3", d: "Acompañadas de papa a la francesa, patacones y ensalada a la vinagreta.", p: 20000 },
+          { id: "mg-al-x6", n: "Alitas x6", d: "Acompañadas de papa a la francesa, patacones y ensalada a la vinagreta.", p: 32000 },
+          { id: "mg-al-x10", n: "Alitas x10", d: "Acompañadas de papa a la francesa, patacones y ensalada a la vinagreta.", p: 48000 },
+        ],
+      },
+      {
+        sec: "Salchipapas",
+        items: [
+          { id: "mg-sa-gratinada", n: "Salchipapa gratinada", d: "Papa, salchicha a la llanera, queso y salsa.", p: 14000 },
+          { id: "mg-sa-especial", n: "Salchipapa especial", d: "Papa, salchicha a la llanera, huevos de codorniz, queso, jamón, tocineta y salsa.", p: 18000 },
+          { id: "mg-sa-mixta", n: "Salchipapa mixta", d: "Papa, salchicha a la llanera, carne, huevos de codorniz, chorizo, tocineta, queso y salsas.", p: 21000 },
+          { id: "mg-sa-todo-terreno", n: "Salchipapa todo terreno", d: "Papa a la francesa, carne al barril, chorizo, salchicha a la llanera, tocineta, queso y salsa.", p: 25000 },
+          { id: "mg-sa-salchimigue", n: "Salchimigue", d: "Papa a la francesa, carne al barril, maíz tierno, pollo, chorizo, salchicha a la llanera, ripio, lechuga, queso y salsa.", p: 35000 },
+        ],
+      },
+      {
+        sec: "Arepas",
+        items: [
+          { id: "mg-ar-mixta", n: "Arepa mixta", d: "Carne y pollo desmechado, jamón, queso, maíz.", p: 14000 },
+          { id: "mg-ar-pollo-tocineta", n: "Arepa pollo y tocineta", d: "Pollo desmechado, tocineta, jamón, queso, maíz.", p: 16000 },
+          { id: "mg-ar-ranchera", n: "Arepa ranchera", d: "Carne desmechada, queso, salchicha, tocineta, maíz, jamón.", p: 18000 },
+          { id: "mg-ar-tipica", n: "Arepa típica", d: "Carne desmechada, queso, chicharrón, chorizo, maíz, jamón.", p: 18000 },
+          { id: "mg-ar-con-todo", n: "Arepa con todo", d: "Carne de res y de cerdo, pollo, chorizo, salchicha, jamón, tocineta y queso.", p: 22000 },
+        ],
+      },
+      {
+        sec: "Chorizos",
+        items: [
+          { id: "mg-ch-briza", n: "Chorizo briza", d: "", p: 14000 },
+        ],
+      },
+      {
+        sec: "Combo infantil",
+        items: [
+          { id: "mg-ci-combo", n: "Combo infantil", d: "Mini hamburguesa, papa a la francesa y jugo en cajita.", p: 14000 },
+        ],
+      },
+      {
+        sec: "Camarones",
+        items: [
+          { id: "mg-cm-ceviche", n: "Ceviche de camarones", d: "", p: 32000 },
+          { id: "mg-cm-cazuela", n: "Cazuela de mariscos", d: "", p: 45000 },
+        ],
+      },
+      {
+        sec: "Quesadillas",
+        items: [
+          { id: "mg-qu-mixta", n: "Quesadilla mixta", d: "Carne y pollo desmechado, queso, jamón, aguacate, lechuga, tomate y salsa.", p: 20000 },
+          { id: "mg-qu-pollo-tocineta", n: "Quesadilla pollo y tocineta", d: "Pollo desmechado, tocineta, jamón, queso, aguacate, lechuga, tomate y salsa.", p: 22000 },
+          { id: "mg-qu-ranchera", n: "Quesadilla ranchera", d: "Carne desmechada, chorizo, maíz, queso, jamón, salchicha a la llanera, aguacate, lechuga, tomate, tocineta y salsa.", p: 28000 },
+          { id: "mg-qu-tipica", n: "Quesadilla típica", d: "Carne desmechada, chicharrón, maíz, jamón, chorizo, aguacate, lechuga, tomate y salsa.", p: 18000 },
+          { id: "mg-qu-con-todo", n: "Quesadilla con todo", d: "Carne de res y cerdo al barril, pechuga, chorizo, salchicha a la llanera, queso, jamón, tocineta, maíz tierno, aguacate, lechuga, tomate y salsas.", p: 32000 },
+        ],
+      },
+      {
+        sec: "Patacones",
+        items: [
+          { id: "mg-pa-mixto", n: "Patacón mixto", d: "Carne y pollo desmechado, queso, jamón, aguacate, lechuga y salsa.", p: 20000 },
+          { id: "mg-pa-pollo-tocineta", n: "Patacón pollo y tocineta", d: "Pollo desmechado, tocineta, jamón, queso, aguacate, lechuga y salsa.", p: 22000 },
+          { id: "mg-pa-tipico", n: "Patacón típico", d: "Carne desmechada, chicharrón, maíz, jamón, chorizo, aguacate, lechuga y salsa.", p: 28000 },
+          { id: "mg-pa-ranchero", n: "Patacón ranchero", d: "Carne desmechada, maíz, queso, jamón, salchicha a la llanera, aguacate, lechuga, tocineta y salsa.", p: 28000 },
+          { id: "mg-pa-con-todo", n: "Patacón con todo", d: "Carne de res y cerdo al barril, pechuga, chorizo, salchicha a la llanera, queso, jamón, tocineta, maíz tierno, aguacate, lechuga y salsas.", p: 32000 },
+        ],
+      },
+      {
+        sec: "Bebidas",
+        items: [
+          { id: "mg-be-lim-cerezada", n: "Limonada cerezada", d: "", p: 13000 },
+          { id: "mg-be-lim-coco", n: "Limonada coco", d: "", p: 13000 },
+          { id: "mg-be-lim-sandia", n: "Limonada sandía", d: "", p: 13000 },
+          { id: "mg-be-lim-maracumango", n: "Limonada maracumango", d: "", p: 13000 },
+          { id: "mg-be-lim-citrica", n: "Limonada cítrica", d: "", p: 6000 },
+          { id: "mg-be-gran-agua", n: "Granizados en agua", d: "", p: 10000 },
+          { id: "mg-be-gran-leche", n: "Granizados en leche", d: "", p: 12000 },
+          { id: "mg-be-gran-cafe-licor", n: "Granizado de café con licor", d: "", p: 15000 },
+          { id: "mg-be-gran-cafe", n: "Granizado de café sin licor", d: "", p: 12000 },
+          { id: "mg-be-jugo-agua", n: "Jugos naturales en agua", d: "", p: 7000 },
+          { id: "mg-be-jugo-leche", n: "Jugos naturales en leche", d: "", p: 9000 },
+          { id: "mg-be-milo", n: "Milo frío", d: "", p: 9000 },
+          { id: "mg-be-ginger-soda", n: "Ginger y soda preparada", d: "", p: 7000 },
+        ],
+      },
+      {
+        sec: "Micheladas",
+        items: [
+          { id: "mg-mi-frutos-rojos", n: "Frutos rojos", d: "Soda o Ginger $14.000 · Cerveza $16.000.", p: 14000, opciones: MIGUE_MICHELADA },
+          { id: "mg-mi-mango", n: "Mango", d: "Soda o Ginger $14.000 · Cerveza $16.000.", p: 14000, opciones: MIGUE_MICHELADA },
+          { id: "mg-mi-maracumango", n: "Maracumango", d: "Soda o Ginger $14.000 · Cerveza $16.000.", p: 14000, opciones: MIGUE_MICHELADA },
+          { id: "mg-mi-tropical", n: "Tropical", d: "Soda o Ginger $14.000 · Cerveza $16.000.", p: 14000, opciones: MIGUE_MICHELADA },
         ],
       },
     ],
