@@ -1046,4 +1046,147 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "antojo-house",
+    nombre: "Antojo House",
+    cat: "Comida rápida",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#ea580c",
+    desc: "Comida rápida: tacos, hamburguesas, salchipapas, carnes, nachos y bebidas.",
+    logo: "",
+    carta: [
+      {
+        sec: "Entradas",
+        items: [
+          { id: "ah-ent-patacones", n: "Patacones con guacamole", d: "", p: 11000 },
+          { id: "ah-ent-croquetas", n: "Croquetas de yuca con guacamole", d: "", p: 11000 },
+          { id: "ah-ent-chorizo", n: "Chorizo con papa y aguacate", d: "", p: 11000 },
+        ],
+      },
+      {
+        sec: "Tacos",
+        items: [
+          { id: "ah-ta-antojo-house", n: "Antojo House", d: "Queso, aguacate, cebolla roja, carne, pollo, tocineta, queso fundido, cilantro.", p: 25000 },
+          { id: "ah-ta-azteca", n: "Azteca", d: "Queso, carne desmechada, tocineta doble, guacamole, cebolla roja, cilantro.", p: 24000 },
+          { id: "ah-ta-pollito", n: "Pollito consentido", d: "Queso, pollo desmechado, guacamole, queso crema, cebolla, cilantro.", p: 24000 },
+          { id: "ah-ta-birria", n: "Birria house", d: "Queso fundido, birria de res cocinada, cebolla, cilantro, consomé.", p: 30000 },
+          { id: "ah-ta-forajido", n: "Forajido", d: "Res picada, queso, jalapeños, trozos de aguacate, cebolla, cilantro.", p: 26000 },
+        ],
+      },
+      {
+        sec: "Hamburguesas",
+        items: [
+          { id: "ah-ha-volcan", n: "Volcán burger", d: "Doble carne, doble queso, cebolla o pepino caramelizado, jamón, choriza, lechuga, tomate y queso gratinado.", p: 31000 },
+          { id: "ah-ha-monster", n: "Antojo monster", d: "200 g de carne, carne desmechada, queso, tocineta, aguacate, jamón, pico de gallo, cebolla o pepino, tomate, lechuga, salsa de la casa.", p: 34000 },
+          { id: "ah-ha-jalapeno", n: "Jalapeño picosa", d: "150 g de carne, queso, cebolla o pepino caramelizado, jamón, tocineta, jalapeños, pimentón salteado, lechuga, tomate, salsa de la casa y papas a la francesa.", p: 27000 },
+          { id: "ah-ha-clasica", n: "House clásica", d: "130 g de carne, queso, cebolla o pepino caramelizado, jamón, lechuga, tomate y salsa de la casa.", p: 17000 },
+          { id: "ah-ha-mini", n: "Mini clásica", d: "75 g de carne, queso, cebolla o pepino caramelizado, jamón, lechuga y tomate.", p: 10000 },
+          { id: "ah-ha-triple", n: "Triple antojo", d: "Doble carne, doble queso, carne desmechada, cebolla o pepino caramelizado, jamón, tocineta, lechuga, tomate, queso gratinado y salsa de la casa.", p: 36000 },
+        ],
+      },
+      {
+        sec: "Salchipapas",
+        items: [
+          { id: "ah-sa-triple", n: "Triple", d: "Papa a la francesa, chorizo, butifarra, ranchera, guacamole y huevo de codorniz.", p: 25000 },
+          { id: "ah-sa-poderosa", n: "La poderosa", d: "Papa a la francesa, salchicha, carne desmechada, maíz tierno, tocineta y huevo de codorniz.", p: 28000 },
+          { id: "ah-sa-clasica", n: "Clásica", d: "Papa a la francesa, salchicha, tocineta, huevo de codorniz y queso.", p: 20000 },
+        ],
+      },
+      {
+        sec: "Otros",
+        items: [
+          { id: "ah-ot-nuggets", n: "Nuggets de pollo", d: "Papa a la francesa, nuggets y monedas de plátano.", p: 20000 },
+          { id: "ah-ot-mega-nachos", n: "Mega nachos Antojo H", d: "Nachos, carne desmechada, tocineta, frijoles con chile y carne, pico de gallo, guacamole y trozos de aguacate.", p: 38000 },
+          { id: "ah-ot-ceviche", n: "Ceviche de camarones", d: "", p: 30000 },
+          { id: "ah-ot-ceviche-mango", n: "Ceviche de camarones con mango", d: "", p: 35000 },
+          { id: "ah-ot-patacon-forajido", n: "Patacón forajido", d: "Carne y pollo desmechado, queso, ranchera, jalapeños, aguacate, papa a la francesa.", p: 27000 },
+          { id: "ah-ot-sandwich", n: "Sándwich consentido", d: "Pollo desmechado, tocineta doble, queso, lechuga, tomate.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Carnes",
+        items: [
+          { id: "ah-ca-punta-anca", n: "Punta de anca", d: "Papa a la francesa, patacones, aguacate y chimichurri.", p: 0 },
+          { id: "ah-ca-churrasco", n: "Churrasco", d: "Papa a la francesa, patacones, aguacate y chimichurri.", p: 0 },
+          { id: "ah-ca-pechuga-plancha", n: "Pechuga a la plancha", d: "Papa a la francesa, patacones, aguacate.", p: 0 },
+          { id: "ah-ca-pechuga-gratinada", n: "Pechuga gratinada", d: "Papa a la francesa, patacones, aguacate.", p: 0 },
+          { id: "ah-ca-pechuga-suprema", n: "Pechuga suprema", d: "Champiñones y jalapeños, papa a la francesa, patacones y aguacate.", p: 0 },
+        ],
+      },
+      {
+        sec: "Jugos",
+        items: [
+          { id: "ah-ju-maracuya-agua", n: "Maracuyá", d: "En agua.", p: 8000 },
+          { id: "ah-ju-maracuya-leche", n: "Maracuyá", d: "En leche.", p: 9000 },
+          { id: "ah-ju-fresa-agua", n: "Fresa", d: "En agua.", p: 8000 },
+          { id: "ah-ju-fresa-leche", n: "Fresa", d: "En leche.", p: 9000 },
+          { id: "ah-ju-mora-agua", n: "Mora", d: "En agua.", p: 8000 },
+          { id: "ah-ju-mora-leche", n: "Mora", d: "En leche.", p: 9000 },
+          { id: "ah-ju-guanabana-agua", n: "Guanábana", d: "En agua.", p: 8000 },
+          { id: "ah-ju-guanabana-leche", n: "Guanábana", d: "En leche.", p: 9000 },
+          { id: "ah-ju-lulo-agua", n: "Lulo", d: "En agua.", p: 8000 },
+          { id: "ah-ju-mango-agua", n: "Mango", d: "En agua.", p: 8000 },
+          { id: "ah-ju-mango-leche", n: "Mango", d: "En leche.", p: 9000 },
+          { id: "ah-ju-sandia-agua", n: "Sandía", d: "En agua.", p: 8000 },
+          { id: "ah-ju-milo-leche", n: "Milo", d: "En leche.", p: 9000 },
+        ],
+      },
+      {
+        sec: "Granizados y limonadas",
+        items: [
+          { id: "ah-gr-maracuya", n: "Maracuyá", d: "", p: 8000 },
+          { id: "ah-gr-fresa", n: "Fresa", d: "", p: 8000 },
+          { id: "ah-gr-sandia", n: "Sandía", d: "", p: 8000 },
+          { id: "ah-gr-mango", n: "Mango", d: "", p: 8000 },
+          { id: "ah-gr-cereza", n: "Cereza", d: "", p: 9000 },
+          { id: "ah-gr-coco", n: "Coco", d: "", p: 12000 },
+          { id: "ah-gr-cafe", n: "Café", d: "", p: 16000 },
+          { id: "ah-gr-milo", n: "Milo", d: "", p: 14000 },
+        ],
+      },
+      {
+        sec: "Bebidas (sal y limón)",
+        items: [
+          { id: "ah-sl-soda-azteca", n: "Soda azteca", d: "", p: 8000 },
+          { id: "ah-sl-ginger-fuego", n: "Ginger fuego", d: "", p: 8000 },
+          { id: "ah-sl-coronita", n: "Coronita bandida", d: "", p: 8000 },
+          { id: "ah-sl-aguila", n: "Águila forajida", d: "", p: 8000 },
+        ],
+      },
+      {
+        sec: "Cerveza",
+        items: [
+          { id: "ah-ce-coronita", n: "Coronita", d: "", p: 6500 },
+          { id: "ah-ce-aguila", n: "Águila", d: "", p: 6500 },
+        ],
+      },
+      {
+        sec: "Gaseosas",
+        items: [
+          { id: "ah-ga-personal", n: "Personal", d: "", p: 4500 },
+          { id: "ah-ga-litro-medio", n: "Litro y medio", d: "", p: 8000 },
+          { id: "ah-ga-3-litros", n: "3 litros", d: "", p: 12000 },
+          { id: "ah-ga-ginger-15", n: "Ginger litro y medio", d: "", p: 7000 },
+          { id: "ah-ga-soda", n: "Soda", d: "", p: 4000 },
+          { id: "ah-ga-hit-caja", n: "Hit caja", d: "", p: 5500 },
+          { id: "ah-ga-hit-personal", n: "Hit personal", d: "", p: 4500 },
+          { id: "ah-ga-pony-personal", n: "Pony personal", d: "", p: 3500 },
+          { id: "ah-ga-pony-mini", n: "Pony mini", d: "", p: 2500 },
+          { id: "ah-ga-speed", n: "Speed", d: "", p: 2500 },
+          { id: "ah-ga-agua", n: "Agua personal", d: "", p: 2500 },
+        ],
+      },
+      {
+        sec: "Micheladas",
+        items: [
+          { id: "ah-mi-maracuya", n: "Maracuyá", d: "Ginger, soda o cerveza.", p: 15000 },
+          { id: "ah-mi-fresa", n: "Fresa", d: "Ginger, soda o cerveza.", p: 15000 },
+          { id: "ah-mi-cereza", n: "Cereza", d: "Ginger, soda o cerveza.", p: 15000 },
+          { id: "ah-mi-mango-biche", n: "Mango biche", d: "Ginger, soda o cerveza.", p: 15000 },
+        ],
+      },
+    ],
+  },
 ];
