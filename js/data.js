@@ -1189,4 +1189,52 @@ const RESTAURANTES = [
       },
     ],
   },
+
+  {
+    id: "que-fresas",
+    nombre: "Qué Fresas",
+    cat: "Heladería y Repostería",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#e11d48",
+    desc: "Heladería y repostería: fresas con crema, granizados, crepes dulces y salados y plátano asado.",
+    logo: "",
+    carta: [
+      {
+        sec: "Fresas",
+        items: [
+          { id: "qf-fr-pequena", n: "Fresas con crema pequeña", d: "Crema casera, fresas frescas, salsas y toppings (1 topping gratis).", p: 13000 },
+          { id: "qf-fr-mediana", n: "Fresas con crema mediana", d: "Crema casera, fresas frescas, salsas y toppings (2 toppings gratis).", p: 15000 },
+          { id: "qf-fr-grande", n: "Fresas con crema grande", d: "Crema casera, fresas frescas, salsas y toppings (3 toppings gratis).", p: 17000 },
+        ],
+      },
+      {
+        sec: "Granizados",
+        items: [
+          { id: "qf-gr-cafe", n: "Café", d: "", p: 11000 },
+          { id: "qf-gr-oreo", n: "Oreo", d: "", p: 11000 },
+          { id: "qf-gr-chocorramo", n: "Chocorramo", d: "", p: 11000 },
+        ],
+      },
+      {
+        sec: "Crepes dulces",
+        items: [
+          { id: "qf-cd-platanazo", n: "Platanazo", d: "Cobertura de chocolate, leche en polvo, gomitas, leche condensada y fruta picada.", p: 12000 },
+        ],
+      },
+      {
+        sec: "Crepes salados",
+        items: [
+          { id: "qf-cs-1", n: "Crepe #1", d: "Pollo o carne desmechada en salsa casera, quesillo, maíz tierno, salsa de maíz.", p: 17000 },
+          { id: "qf-cs-2", n: "Crepe #2", d: "Pollo o carne desmechada en salsa casera, quesillo, maíz tierno, salsa de maíz.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Plátano asado",
+        items: [
+          { id: "qf-pa-platano", n: "Plátano asado", d: "Pollo y carne desmechada en salsa casera, mantequilla, quesillo, tocineta, salchicha parrillera, guacamole artesanal + jugo gratis del día.", p: 23000 },
+        ],
+      },
+    ],
+  },
 ];
