@@ -113,6 +113,8 @@
       titulo: a.titulo ? String(a.titulo) : "Almuerzo del día",
       desc: a.desc ? String(a.desc) : "",
       precio: Number(a.precio) || 0,
+      // Día para el que se publicó (YYYY-MM-DD). Vacío = permanente.
+      fecha: a.fecha ? String(a.fecha) : "",
       grupos: Array.isArray(a.grupos) ? a.grupos.map(function (g) {
         var grupo = {
           nombre: g && g.nombre ? String(g.nombre) : "Opciones",
@@ -124,6 +126,7 @@
           }) : [],
         };
         if (g && g.mostrarSi) grupo.mostrarSi = g.mostrarSi;
+        if (g && g.opcional) grupo.opcional = true;
         return grupo;
       }) : [],
     };

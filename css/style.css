@@ -1460,3 +1460,32 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .confirm__text { color: var(--text-2); max-width: 36ch; margin: 0 0 10px; }
 .confirm .btn-whatsapp { width: 100%; max-width: 320px; }
 .confirm .btn-copy { width: 100%; max-width: 320px; }
+
+/* ------------------- Almuerzos corrientes de hoy ------------------- */
+.alm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.alm-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.alm-card__head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.alm-card__rest { font-weight: 700; color: var(--text-2); font-size: 0.88rem; }
+.alm-card__precio { color: var(--primary); font-weight: 800; font-size: 1.1rem; white-space: nowrap; }
+.alm-card__titulo { font-family: var(--font-title); font-weight: 800; font-size: 1.15rem; }
+.alm-card__desc { color: var(--text-2); font-size: 0.9rem; margin: 0; }
+.alm-card__ops { margin: 0; padding-left: 18px; font-size: 0.88rem; color: var(--text); }
+.alm-card__ops li { margin-bottom: 3px; }
+.alm-card__foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-top: auto; padding-top: 6px;
+}
+.alm-card__foot .add-btn { white-space: nowrap; flex: 0 0 auto; }

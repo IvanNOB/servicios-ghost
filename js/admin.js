@@ -31,6 +31,18 @@
   var elEditorBody = $("#editorBody");
   var elEditorTitle = $("#editorTitle");
 
+  // Fecha de hoy YYYY-MM-DD (hora local).
+  function hoyISO() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
+    var dd = String(d.getDate()); if (dd.length < 2) dd = "0" + dd;
+    return d.getFullYear() + "-" + m + "-" + dd;
+  }
+  function almuerzoHoy(r) {
+    var a = r && r.almuerzo;
+    return !!(a && a.activo && (!a.fecha || a.fecha === hoyISO()));
+  }
+
   var restaurantes = [];   // copia en memoria
   var editando = null;     // restaurante en edición
   var pedidos = [];        // pedidos en memoria
@@ -102,6 +114,7 @@
   async function recargarLista() {
     restaurantes = await window.Store.listar();
     pintarLista();
+    pintarAlmuerzos();
   }
 
   function pintarLista() {
@@ -121,7 +134,7 @@
           '<div class="admin-card__info">' +
             '<div class="admin-card__name">' + esc(r.nombre) + "</div>" +
             '<div class="admin-card__meta">' + esc(r.cat) + " · " + (r.abierto ? "Abierto" : "Cerrado") +
-              " · " + contarPlatos(r) + " platos</div>" +
+              " · " + contarPlatos(r) + " platos" + (almuerzoHoy(r) ? " · 🍲 almuerzo hoy" : "") + "</div>" +
           "</div>" +
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
@@ -173,6 +186,7 @@
     }
 
     elEditorBody.innerHTML =
+      importadorHTML(r) +
       '<div class="foto-preview" id="fotoPreview" ' + cover + ">" +
         (r.logo ? "" : "Portada (opcional)") + "</div>" +
       '<div class="inline-actions" style="margin-bottom:14px">' +
@@ -204,6 +218,110 @@
       "</div>";
 
     enlazarEditor();
+  }
+
+  // Caja "Pegar carta": convierte texto en carta automáticamente.
+  function importadorHTML(r) {
+    var abierto = r._esNuevo || r._importTexto || r._importMsg;
+    return (
+      '<details class="importar"' + (abierto ? " open" : "") + ">" +
+        '<summary class="importar__summary">📋 Pegar carta (se llena sola)</summary>' +
+        '<div class="importar__body">' +
+          '<ol class="importar__pasos muted">' +
+            "<li>Toca <strong>“Copiar prompt”</strong> y pégalo en ChatGPT junto con la foto del menú.</li>" +
+            "<li>Copia lo que te responda y pégalo aquí abajo (también sirve una lista simple: <code>Plato - 15000</code>).</li>" +
+            "<li>Toca <strong>“Llenar carta”</strong>, revisa y pulsa <strong>Guardar cambios</strong>.</li>" +
+          "</ol>" +
+          '<textarea class="field__textarea importar__texto" id="importTexto" rows="9" placeholder="NOMBRE: …&#10;CATEGORÍA: …&#10;&#10;[Hamburguesas]&#10;Sencilla | Carne, queso y vegetales | 12000&#10;Doble carne || 15000">' +
+            esc(r._importTexto || "") + "</textarea>" +
+          '<div class="inline-actions">' +
+            '<button type="button" class="btn-primary" data-import="reemplazar">✨ Llenar carta</button>' +
+            (r.carta && r.carta.length
+              ? '<button type="button" class="btn-copy" data-import="agregar">+ Agregar a la carta actual</button>' : "") +
+            '<button type="button" class="btn-copy" data-copiar-prompt>📄 Copiar prompt para ChatGPT</button>' +
+          "</div>" +
+          '<div class="importar__msg" id="importMsg">' + (r._importMsg || "") + "</div>" +
+        "</div>" +
+      "</details>"
+    );
+  }
+
+  // Lee el texto pegado y llena el restaurante en edición.
+  function importarCarta(modo) {
+    leerEditor();
+    var r = editando;
+    var texto = r._importTexto || "";
+    if (!texto.trim()) { toast("Primero pega el texto de la carta", true); return; }
+    if (!window.Importar) { toast("No se cargó el importador. Recarga la página.", true); return; }
+
+    // 1ª pasada para conocer el nombre (y así armar ids con prefijo del restaurante)
+    var previo = window.Importar.parsearCarta(texto, "r").datos;
+    var prefijo = r.id || slug(previo.nombre || r.nombre || "rest");
+    var res = window.Importar.parsearCarta(texto, prefijo);
+    var d = res.datos;
+    var nPlatos = 0;
+    d.carta.forEach(function (s) { nPlatos += s.items.length; });
+
+    if (!nPlatos && !d.almuerzo && !d.nombre) {
+      toast("No encontré platos en el texto. Revisa el formato.", true);
+      return;
+    }
+    if (modo === "reemplazar" && r.carta && r.carta.length && nPlatos &&
+        !confirm("Esto reemplazará la carta actual (" + contarPlatos(r) + " platos) por la nueva (" + nPlatos + " platos). ¿Continuar?")) {
+      return;
+    }
+
+    // Datos generales: en "reemplazar" mandan los del texto; en "agregar" solo llenan vacíos.
+    ["nombre", "cat", "tiempo", "desc"].forEach(function (k) {
+      if (d[k] && (modo === "reemplazar" || !r[k])) r[k] = d[k];
+    });
+    if (typeof d.abierto === "boolean") r.abierto = d.abierto;
+
+    if (modo === "agregar") {
+      var usados = {};
+      (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { usados[it.id] = true; }); });
+      d.carta.forEach(function (s) {
+        s.items.forEach(function (it) {
+          var base = it.id, k = 2;
+          while (usados[it.id]) it.id = base + "-" + (k++);
+          usados[it.id] = true;
+        });
+      });
+      r.carta = (r.carta || []).concat(d.carta);
+    } else if (nPlatos) {
+      r.carta = d.carta;
+    }
+    if (d.almuerzo) { d.almuerzo.fecha = hoyISO(); r.almuerzo = d.almuerzo; }
+
+    var msg = "✅ Listo: " + d.carta.length + " secciones y " + nPlatos + " platos" +
+      (d.almuerzo ? " + almuerzo del día" : "") + ". Revisa abajo y pulsa <strong>Guardar cambios</strong>.";
+    if (res.avisos.length) {
+      msg += '<div class="importar__avisos">⚠️ Revisa:<ul>' +
+        res.avisos.slice(0, 10).map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("") +
+        (res.avisos.length > 10 ? "<li>… y " + (res.avisos.length - 10) + " más</li>" : "") + "</ul></div>";
+    }
+    r._importTexto = "";
+    r._importMsg = msg;
+    pintarEditor();
+    toast("Carta cargada: " + nPlatos + " platos ✓");
+  }
+
+  // Copia el prompt de ChatGPT al portapapeles.
+  function copiarPrompt() {
+    var texto = window.Importar ? window.Importar.PROMPT : "";
+    function ok() { toast("Prompt copiado ✓ Pégalo en ChatGPT con la foto del menú"); }
+    function respaldo() {
+      var ta = document.createElement("textarea");
+      ta.value = texto; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); ok(); } catch (e) { toast("No se pudo copiar", true); }
+      ta.remove();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(ok, respaldo);
+    } else {
+      respaldo();
+    }
   }
 
   // Editor del "almuerzo del día": activar, precio, grupos y opciones (con agotados).
@@ -249,6 +367,9 @@
           '<label class="agotado-check"><input type="checkbox" id="almActivo"' +
             (activo ? " checked" : "") + " /> Ofrece almuerzo</label>" +
         "</div>" +
+        '<p class="muted" style="font-size:.85rem;margin:0 0 10px">Para publicar lo de cada día usa la pestaña ' +
+          "<strong>🍲 Almuerzos del día</strong>." +
+          (a.fecha ? " Última publicación: <strong>" + esc(a.fecha) + "</strong>." : "") + "</p>" +
         '<div class="grid-2">' +
           '<div class="field"><label class="field__label">Título</label>' +
             '<input class="field__input" id="almTitulo" value="' + esc(a.titulo || "Almuerzo del día") + '" /></div>' +
@@ -301,7 +422,7 @@
 
   function platoHTML(it, si, pi) {
     return (
-      '<div class="plato-row" data-plato="' + si + "-" + pi + '">' +
+      '<div class="plato-row" data-plato="' + si + "-" + pi + '" data-plato-id="' + esc(it.id || "") + '">' +
         '<div class="plato-row__top">' +
           '<input class="field__input" data-plato-n="' + si + "-" + pi + '" value="' + esc(it.n || "") +
             '" placeholder="Nombre del plato" />' +
@@ -327,6 +448,9 @@
     });
     var ab = $("#campoAbierto");
     r.abierto = ab ? ab.checked : true;
+    var imp = $("#importTexto");
+    if (imp) r._importTexto = imp.value;
+    var usadosIds = {};
 
     // Secciones y platos
     var nuevasSecs = [];
@@ -342,8 +466,12 @@
         var ag = pEl.querySelector('[data-plato-ag="' + key + '"]');
         var nombre = n ? n.value.trim() : "";
         if (!nombre) return;
+        // Conservar el id existente (así los carritos de clientes no se rompen).
+        var idPlato = pEl.getAttribute("data-plato-id") || "";
+        if (!idPlato || usadosIds[idPlato]) idPlato = slug(nombre) + "-" + Math.random().toString(36).slice(2, 6);
+        usadosIds[idPlato] = true;
         items.push({
-          id: slug(nombre) + "-" + Math.random().toString(36).slice(2, 6),
+          id: idPlato,
           n: nombre,
           d: d ? d.value.trim() : "",
           p: p ? Number(p.value) || 0 : 0,
@@ -355,6 +483,7 @@
     r.carta = nuevasSecs;
 
     // Leer configuración del almuerzo
+    var anterior = r.almuerzo || {};
     var almActivo = $("#almActivo");
     var grupos = [];
     elEditorBody.querySelectorAll("[data-alm-g]").forEach(function (gEl) {
@@ -373,13 +502,19 @@
         if (precioOp > 0) opObj.precio = precioOp;
         opciones.push(opObj);
       });
-      grupos.push({ nombre: gn ? gn.value.trim() : "Opciones", tipo: "unico", opciones: opciones });
+      // Conservar propiedades que el formulario no muestra (tipo, condición, opcional).
+      var previo = (anterior.grupos || [])[Number(gi)] || {};
+      var grupo = { nombre: gn ? gn.value.trim() : "Opciones", tipo: previo.tipo || "unico", opciones: opciones };
+      if (previo.mostrarSi) grupo.mostrarSi = previo.mostrarSi;
+      if (previo.opcional) grupo.opcional = true;
+      grupos.push(grupo);
     });
     r.almuerzo = {
       activo: almActivo ? almActivo.checked : false,
       titulo: ($("#almTitulo") && $("#almTitulo").value.trim()) || "Almuerzo del día",
       desc: ($("#almDesc") && $("#almDesc").value.trim()) || "",
       precio: ($("#almPrecio") && Number($("#almPrecio").value)) || 0,
+      fecha: anterior.fecha || "",
       grupos: grupos,
     };
   }
@@ -407,6 +542,152 @@
     }
   }
 
+  /* --------------------- Almuerzos del día ------------------------ */
+  var elListaAlm = $("#listaAlmuerzos");
+  var elAlmSheet = $("#almSheet");
+  var elAlmBody = $("#almSheetBody");
+  var almEditando = null; // restaurante cuyo almuerzo se está publicando
+
+  function pintarAlmuerzos() {
+    if (!elListaAlm) return;
+    if (!restaurantes.length) {
+      elListaAlm.innerHTML = '<p class="muted">Aún no hay restaurantes.</p>';
+      return;
+    }
+    // Primero los publicados hoy, luego los que tienen almuerzo, luego el resto.
+    var lista = restaurantes.slice().sort(function (a, b) {
+      function peso(r) { return almuerzoHoy(r) ? 0 : (r.almuerzo && r.almuerzo.grupos ? 1 : 2); }
+      return peso(a) - peso(b);
+    });
+    var html = "";
+    for (var i = 0; i < lista.length; i++) {
+      var r = lista[i];
+      var a = r.almuerzo || {};
+      var hoy = almuerzoHoy(r);
+      var estado = hoy
+        ? '<span class="estado-badge estado-badge--entregado">✅ Publicado hoy</span>'
+        : (a.fecha ? '<span class="estado-badge estado-badge--cancelado">Último: ' + esc(a.fecha) + "</span>"
+                   : '<span class="estado-badge estado-badge--preparando">Sin publicar</span>');
+      var resumen = hoy
+        ? esc((a.titulo || "Almuerzo") + (a.precio ? " · " + money(a.precio) : "")) : "";
+      html +=
+        '<div class="admin-card">' +
+          '<div class="admin-card__info">' +
+            '<div class="admin-card__name">' + esc(r.nombre) + "</div>" +
+            '<div class="admin-card__meta">' + estado + (resumen ? " " + resumen : "") + "</div>" +
+          "</div>" +
+          '<div class="admin-card__actions">' +
+            '<button type="button" class="btn-primary btn-sm" data-alm-publicar="' + esc(r.id) + '">' +
+              (hoy ? "Editar hoy" : "Publicar hoy") + "</button>" +
+            (hoy ? '<button type="button" class="btn-danger btn-sm" data-alm-quitar="' + esc(r.id) + '">Quitar</button>' : "") +
+          "</div>" +
+        "</div>";
+    }
+    elListaAlm.innerHTML = html;
+  }
+
+  function abrirPublicarAlmuerzo(id) {
+    var r = restaurantes.filter(function (x) { return x.id === id; })[0];
+    if (!r) return;
+    almEditando = JSON.parse(JSON.stringify(r));
+    var a = almEditando.almuerzo || {};
+    var opciones = window.Importar ? window.Importar.opcionesATexto(a.grupos || []) : "";
+    $("#almSheetTitle").textContent = "Almuerzo de hoy · " + r.nombre;
+    elAlmBody.innerHTML =
+      '<p class="muted" style="margin-bottom:12px">Hoy es <strong>' + esc(hoyISO()) + "</strong>. " +
+        "Lo de ayer ya viene cargado: solo cambia lo que sea distinto y pulsa Publicar.</p>" +
+      '<div class="grid-2">' +
+        '<div class="field"><label class="field__label" for="pubTitulo">Título</label>' +
+          '<input class="field__input" id="pubTitulo" value="' + esc(a.titulo || "Almuerzo del día") + '" /></div>' +
+        '<div class="field"><label class="field__label" for="pubPrecio">Precio</label>' +
+          '<input class="field__input" id="pubPrecio" type="number" min="0" step="500" value="' +
+            esc(a.precio || "") + '" placeholder="Ej: 13000" /></div>' +
+      "</div>" +
+      '<div class="field"><label class="field__label" for="pubDesc">¿Qué incluye? (opcional)</label>' +
+        '<input class="field__input" id="pubDesc" value="' + esc(a.desc || "") +
+        '" placeholder="Ej: Sopa, arroz, principio, proteína, ensalada y jugo" /></div>' +
+      '<div class="field"><label class="field__label" for="pubOpciones">Opciones de hoy (una línea por grupo)</label>' +
+        '<textarea class="field__textarea" id="pubOpciones" rows="7" placeholder="Sopa: Sancocho, Ajiaco&#10;Proteína: Pollo frito, Res, Cerdo (agotado)&#10;Principio: Fríjol, Lenteja&#10;Bebida: Limonada, Jugo de mango">' +
+          esc(opciones) + "</textarea>" +
+        '<p class="muted" style="font-size:.82rem;margin-top:6px">Formato: <code>Grupo: opción, opción</code>. ' +
+          "Marca <code>(agotado)</code> si se acabó, o <code>(precio=10000)</code> si esa opción cambia el precio " +
+          "(ej. <code>Sin sopa (precio=10000)</code>). Si no hay opciones, déjalo vacío.</p>" +
+      "</div>" +
+      '<div class="actions">' +
+        '<button type="button" class="btn-primary" id="btnPublicarAlm">✅ Publicar para hoy</button>' +
+      "</div>";
+    elAlmSheet.hidden = false;
+    document.body.classList.add("no-scroll");
+  }
+
+  function cerrarPublicarAlmuerzo() {
+    elAlmSheet.hidden = true;
+    document.body.classList.remove("no-scroll");
+    almEditando = null;
+  }
+
+  async function guardarRestauranteAlm(r, msgOk) {
+    if (typeof r.orden !== "number") r.orden = restaurantes.length;
+    await window.Store.guardar(r);
+    toast(msgOk);
+    await recargarLista();
+  }
+
+  async function publicarAlmuerzo() {
+    var r = almEditando;
+    if (!r) return;
+    var anterior = r.almuerzo || {};
+    var grupos = window.Importar.parsearOpciones($("#pubOpciones").value);
+    // Conservar condiciones (ej. "Sopa" solo si eligen "Con sopa") de grupos con el mismo nombre.
+    grupos.forEach(function (g) {
+      (anterior.grupos || []).forEach(function (p) {
+        if (p.nombre && p.nombre.toLowerCase() === g.nombre.toLowerCase()) {
+          if (p.mostrarSi) g.mostrarSi = p.mostrarSi;
+          if (p.tipo) g.tipo = p.tipo;
+          if (p.opcional) g.opcional = true;
+        }
+      });
+    });
+    var precio = Number($("#pubPrecio").value) || 0;
+    var hayPrecioOpcion = grupos.some(function (g) {
+      return (g.opciones || []).some(function (o) { return o.precio > 0; });
+    });
+    if (!precio && !hayPrecioOpcion) { toast("Ponle precio al almuerzo", true); return; }
+
+    r.almuerzo = {
+      activo: true,
+      titulo: $("#pubTitulo").value.trim() || "Almuerzo del día",
+      desc: $("#pubDesc").value.trim(),
+      precio: precio,
+      fecha: hoyISO(),
+      grupos: grupos,
+    };
+    var btn = $("#btnPublicarAlm");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Publicando…';
+    try {
+      await guardarRestauranteAlm(r, "Almuerzo publicado para hoy ✓");
+      cerrarPublicarAlmuerzo();
+    } catch (ex) {
+      toast(mensajeErrorGuardar(ex), true);
+      btn.disabled = false;
+      btn.textContent = "✅ Publicar para hoy";
+    }
+  }
+
+  async function quitarAlmuerzo(id) {
+    var r = restaurantes.filter(function (x) { return x.id === id; })[0];
+    if (!r || !r.almuerzo) return;
+    if (!confirm("¿Quitar el almuerzo de hoy de " + r.nombre + "?")) return;
+    var copia = JSON.parse(JSON.stringify(r));
+    copia.almuerzo.activo = false;
+    try {
+      await guardarRestauranteAlm(copia, "Almuerzo quitado");
+    } catch (ex) {
+      toast(mensajeErrorGuardar(ex), true);
+    }
+  }
+
   /* ------------------- Delegación de eventos ---------------------- */
   document.addEventListener("click", function (e) {
     var t = e.target;
@@ -417,6 +698,26 @@
 
     // Nuevo restaurante
     if (t.closest("#btnNuevo")) { abrirEditor(nuevoRestaurante()); return; }
+
+    // Pegar carta automática / copiar prompt
+    var imp = t.closest("[data-import]");
+    if (imp) { importarCarta(imp.getAttribute("data-import")); return; }
+    if (t.closest("[data-copiar-prompt]")) { copiarPrompt(); return; }
+
+    // Almuerzos del día
+    if (t.closest("[data-alm-close]")) { cerrarPublicarAlmuerzo(); return; }
+    var pub = t.closest("[data-alm-publicar]");
+    if (pub) { abrirPublicarAlmuerzo(pub.getAttribute("data-alm-publicar")); return; }
+    var qui = t.closest("[data-alm-quitar]");
+    if (qui) { quitarAlmuerzo(qui.getAttribute("data-alm-quitar")); return; }
+    if (t.closest("#btnPublicarAlm")) { publicarAlmuerzo(); return; }
+    if (t.closest("#btnNuevoLugarAlm")) {
+      var nl = nuevoRestaurante();
+      nl.cat = "Almuerzos corrientes";
+      nl.almuerzo = { activo: false, titulo: "Almuerzo del día", desc: "", precio: 0, grupos: [] };
+      abrirEditor(nl);
+      return;
+    }
 
     // Pestañas
     var tab = t.closest("[data-tab]");
@@ -511,6 +812,7 @@
   });
 
   document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && elAlmSheet && !elAlmSheet.hidden) { cerrarPublicarAlmuerzo(); return; }
     if (e.key === "Escape" && !elEditorSheet.hidden) cerrarEditor();
   });
 
@@ -580,9 +882,12 @@
       t.classList.toggle("tab--active", t.getAttribute("data-tab") === cual);
     });
     var r = document.getElementById("tabRestaurantes");
+    var al = document.getElementById("tabAlmuerzos");
     var p = document.getElementById("tabPedidos");
     if (r) r.hidden = cual !== "restaurantes";
+    if (al) al.hidden = cual !== "almuerzos";
     if (p) p.hidden = cual !== "pedidos";
+    if (cual === "almuerzos") pintarAlmuerzos();
     if (cual === "pedidos") recargarPedidos();
   }
 

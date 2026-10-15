@@ -68,6 +68,25 @@
     return null;
   }
 
+  // Fecha de hoy en formato YYYY-MM-DD (hora local del teléfono).
+  function hoyISO() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1); if (m.length < 2) m = "0" + m;
+    var dd = String(d.getDate()); if (dd.length < 2) dd = "0" + dd;
+    return d.getFullYear() + "-" + m + "-" + dd;
+  }
+
+  // ¿El restaurante tiene almuerzo publicado para HOY?
+  // - Si el almuerzo tiene "fecha", solo vale ese día (se publica a diario
+  //   desde el panel admin → pestaña "Almuerzos del día").
+  // - Si no tiene fecha (datos antiguos), se considera permanente.
+  function almuerzoVigente(r) {
+    var a = r && r.almuerzo;
+    if (!a || !a.activo) return false;
+    if (a.fecha && a.fecha !== hoyISO()) return false;
+    return true;
+  }
+
   // Registro de almuerzos armados por el cliente (items dinámicos que no
   // están en la carta fija). Clave = id del item de almuerzo.
   var almuerzosArmados = {};
@@ -201,7 +220,7 @@
   function categorias() {
     var cats = ["Todos"];
     // Si algún restaurante ofrece almuerzo, añadimos la categoría especial.
-    var hayAlmuerzo = DATA.some(function (r) { return r.almuerzo && r.almuerzo.activo; });
+    var hayAlmuerzo = DATA.some(almuerzoVigente);
     if (hayAlmuerzo) cats.push("🍽️ Almuerzos");
     for (var i = 0; i < DATA.length; i++) {
       if (cats.indexOf(DATA[i].cat) === -1) cats.push(DATA[i].cat);
@@ -241,7 +260,7 @@
     return DATA.filter(function (r) {
       var catOk;
       if (filtroCategoria === "🍽️ Almuerzos") {
-        catOk = !!(r.almuerzo && r.almuerzo.activo);
+        catOk = almuerzoVigente(r);
       } else {
         catOk = filtroCategoria === "Todos" || r.cat === filtroCategoria;
       }
@@ -273,7 +292,7 @@
           '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
       // Enlace de acción: La Arepazo (con almuerzo) invita a armar almuerzo.
-      var tieneAlmuerzo = r.almuerzo && r.almuerzo.activo;
+      var tieneAlmuerzo = almuerzoVigente(r);
       var enlace = tieneAlmuerzo ? "Armar almuerzo →" : "Ver carta →";
 
       html +=
@@ -383,10 +402,10 @@
 
   // Devuelve el HTML del armador de almuerzo, o "" si el restaurante no lo tiene.
   function almuerzoHTML(r) {
+    if (!almuerzoVigente(r)) return "";
     var a = r.almuerzo;
-    if (!a || !a.activo) return "";
+    // Puede no tener grupos: un almuerzo fijo ("lo que hay hoy") con su precio.
     var grupos = Array.isArray(a.grupos) ? a.grupos : [];
-    if (!grupos.length) return "";
 
     var gruposHTML = "";
     for (var gi = 0; gi < grupos.length; gi++) {
@@ -484,7 +503,7 @@
   // Lee las opciones escogidas y agrega el almuerzo armado al carrito.
   function agregarAlmuerzo() {
     var r = findRest(vistaActual);
-    if (!r || !r.almuerzo || !r.almuerzo.activo) return;
+    if (!r || !almuerzoVigente(r)) return;
     var box = document.getElementById("almuerzoBox");
     var err = document.getElementById("almError");
     if (!box) return;
@@ -534,7 +553,7 @@
     var resumen = elecciones.map(function (e) { return e.valores.join(", "); }).join(" · ");
     var almItem = {
       id: "almuerzo-" + Date.now().toString(36),
-      n: (r.almuerzo.titulo || "Almuerzo") + " (" + resumen + ")",
+      n: (r.almuerzo.titulo || "Almuerzo") + (resumen ? " (" + resumen + ")" : ""),
       d: "",
       p: precioFinal,
       _almuerzo: true,
@@ -928,6 +947,15 @@
     // --- Agregar almuerzo armado ---
     if (t.closest("[data-alm-add]")) { agregarAlmuerzo(); return; }
 
+    // --- Tarjeta de "Almuerzos de hoy": abre la carta en el almuerzo ---
+    var almVer = t.closest("[data-alm-ver]");
+    if (almVer) {
+      abrirCarta(almVer.getAttribute("data-alm-ver"));
+      var box = document.getElementById("almuerzoBox");
+      if (box && box.scrollIntoView) box.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
     // --- Fila del escaparate: abre la carta de ese restaurante ---
     var escRow = t.closest(".esc__row");
     if (escRow) { abrirCarta(escRow.getAttribute("data-rest")); return; }
@@ -1047,6 +1075,51 @@
     }
   }
 
+  /* --------------------- Almuerzos corrientes de hoy -------------- */
+  // Sección propia en el inicio con todos los almuerzos publicados HOY.
+  function renderAlmuerzosHoy() {
+    var cont = document.getElementById("gridAlmuerzos");
+    var vacio = document.getElementById("almuerzosVacio");
+    if (!cont) return;
+    var lista = DATA.filter(almuerzoVigente);
+    if (!lista.length) {
+      cont.innerHTML = "";
+      if (vacio) vacio.hidden = false;
+      return;
+    }
+    if (vacio) vacio.hidden = true;
+
+    var html = "";
+    for (var i = 0; i < lista.length; i++) {
+      var r = lista[i];
+      var a = r.almuerzo;
+      // Resumen corto de las opciones: "Proteína: Pollo, Res, Cerdo"
+      var resumen = "";
+      var grupos = Array.isArray(a.grupos) ? a.grupos : [];
+      for (var g = 0; g < grupos.length && g < 4; g++) {
+        var ops = (grupos[g].opciones || [])
+          .filter(function (o) { return !o.agotado; })
+          .map(function (o) { return o.n; });
+        if (!ops.length) continue;
+        resumen += '<li><strong>' + esc(grupos[g].nombre) + ":</strong> " + esc(ops.join(", ")) + "</li>";
+      }
+      html +=
+        '<article class="alm-card">' +
+          '<div class="alm-card__head">' +
+            '<span class="alm-card__rest">' + esc(r.nombre) + "</span>" +
+            (a.precio ? '<span class="alm-card__precio">' + esc(money(a.precio)) + "</span>" : "") +
+          "</div>" +
+          '<div class="alm-card__titulo">🍲 ' + esc(a.titulo || "Almuerzo del día") + "</div>" +
+          (a.desc ? '<p class="alm-card__desc">' + esc(a.desc) + "</p>" : "") +
+          (resumen ? '<ul class="alm-card__ops">' + resumen + "</ul>" : "") +
+          '<div class="alm-card__foot">' + estadoHTML(r.abierto) +
+            '<button type="button" class="add-btn" data-alm-ver="' + esc(r.id) + '">Pedir almuerzo →</button>' +
+          "</div>" +
+        "</article>";
+    }
+    cont.innerHTML = html;
+  }
+
   /* -------------------------- Promociones ------------------------- */
   function renderPromos() {
     var cont = document.getElementById("promos");
@@ -1088,6 +1161,7 @@
   conectarEnlacesWa();
   renderPromos();
   renderChips();
+  renderAlmuerzosHoy();
   renderGrid();
   iniciarEscaparate();
   refreshCart();
@@ -1100,6 +1174,7 @@
         if (Array.isArray(lista) && lista.length) {
           DATA = lista;
           renderChips();
+          renderAlmuerzosHoy();
           renderGrid();
           iniciarEscaparate();
           refreshCart();

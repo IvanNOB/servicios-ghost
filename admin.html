@@ -67,7 +67,23 @@
       <!-- Pestañas: Restaurantes / Pedidos -->
       <div class="tabs" role="tablist">
         <button type="button" class="tab tab--active" data-tab="restaurantes" role="tab">🍽️ Restaurantes</button>
+        <button type="button" class="tab" data-tab="almuerzos" role="tab">🍲 Almuerzos del día</button>
         <button type="button" class="tab" data-tab="pedidos" role="tab">📋 Pedidos</button>
+      </div>
+
+      <!-- Pestaña Almuerzos del día -->
+      <div id="tabAlmuerzos" class="tab-panel" hidden>
+        <div class="panel__row">
+          <h2 class="panel__title">Almuerzos del día</h2>
+          <div class="inline-actions">
+            <button type="button" class="btn-copy" id="btnNuevoLugarAlm">+ Nuevo lugar de almuerzos</button>
+          </div>
+        </div>
+        <p class="muted" style="margin-bottom:14px">
+          Cada día toca <strong>“Publicar hoy”</strong> y escribe lo que hay. El almuerzo se muestra
+          en la sección <em>“Almuerzos corrientes de hoy”</em> de la tienda y se oculta solo al día siguiente.
+        </p>
+        <div id="listaAlmuerzos" class="admin-grid" aria-live="polite"></div>
       </div>
 
       <!-- Pestaña Restaurantes -->
@@ -115,12 +131,24 @@
     </div>
   </div>
 
+  <!-- Hoja: publicar el almuerzo del día -->
+  <div class="sheet" id="almSheet" hidden>
+    <div class="sheet__backdrop" data-alm-close></div>
+    <div class="sheet__panel sheet__panel--wide" role="dialog" aria-modal="true" aria-labelledby="almSheetTitle">
+      <div class="sheet__head">
+        <h2 class="sheet__title" id="almSheetTitle">Almuerzo del día</h2>
+        <button type="button" class="icon-btn" data-alm-close aria-label="Cerrar">✕</button>
+      </div>
+      <div class="sheet__body" id="almSheetBody"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Carga anti-caché: añade la hora actual para descargar siempre lo último. -->
   <script>
     (function () {
       var v = "?t=" + Date.now();
-      var archivos = ["js/data.js", "js/supabase-config.js", "js/store.js", "js/admin.js"];
+      var archivos = ["js/data.js", "js/supabase-config.js", "js/store.js", "js/importar.js", "js/admin.js"];
       archivos.forEach(function (src) {
         document.write('<scr' + 'ipt src="' + src + v + '"></scr' + 'ipt>');
       });

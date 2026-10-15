@@ -333,3 +333,28 @@ code {
   margin-bottom: 8px;
 }
 .alm-op-row .field__input { flex: 1; }
+
+/* ---------------------- Pegar carta (importador) ---------------------- */
+.importar {
+  border: 1px dashed var(--primary);
+  border-radius: var(--radius);
+  background: rgba(212, 175, 55, 0.06);
+  margin-bottom: 18px;
+}
+.importar__summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  font-weight: 700;
+  color: var(--primary);
+  list-style: none;
+}
+.importar__summary::-webkit-details-marker { display: none; }
+.importar__summary::after { content: " ▾"; }
+.importar[open] .importar__summary::after { content: " ▴"; }
+.importar__body { padding: 0 14px 14px; display: grid; gap: 10px; }
+.importar__pasos { margin: 0; padding-left: 18px; font-size: 0.86rem; display: grid; gap: 3px; }
+.importar__texto { min-height: 170px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; }
+.importar__msg { font-size: 0.9rem; }
+.importar__msg:empty { display: none; }
+.importar__avisos { margin-top: 6px; color: #fcd34d; font-size: 0.84rem; }
+.importar__avisos ul { margin: 4px 0 0; padding-left: 18px; }
