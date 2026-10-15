@@ -466,7 +466,7 @@
     if (addPlato) {
       leerEditor();
       var si = Number(addPlato.getAttribute("data-add-plato"));
-      editando.carta[si].items.push({ n: "", d: "", p: 0 });
+      editando.carta[si].items.push({ n: "", d: "", p: 0, agotado: false });
       pintarEditor(); return;
     }
     var delPlato = t.closest("[data-del-plato]");
@@ -528,6 +528,8 @@
     if (!r.nombre.trim()) { toast("Ponle un nombre al restaurante", true); return; }
     if (!r.cat.trim()) { toast("Ponle una categoría", true); return; }
     if (!r.id) r.id = slug(r.nombre);
+    // Si se edita un restaurante de data.js sin "orden", darle uno coherente.
+    if (typeof r.orden !== "number") r.orden = restaurantes.length;
 
     var btn = $("#btnGuardar");
     btn.disabled = true;
@@ -539,10 +541,27 @@
       cerrarEditor();
       await recargarLista();
     } catch (ex) {
-      toast("No se pudo guardar: " + (ex && ex.message ? ex.message : "error"), true);
+      toast(mensajeErrorGuardar(ex), true);
       btn.disabled = false;
       btn.textContent = "Guardar cambios";
     }
+  }
+
+  // Traduce errores comunes de Supabase a algo accionable para el admin.
+  function mensajeErrorGuardar(ex) {
+    var msg = (ex && ex.message) ? String(ex.message) : "";
+    var code = ex && ex.code ? String(ex.code) : "";
+    // Columna inexistente (p. ej. falta "almuerzo" en la tabla) → 400 PGRST204 / 42703
+    if (code === "PGRST204" || code === "42703" || /column .* does not exist/i.test(msg) ||
+        /Could not find the '.*' column/i.test(msg)) {
+      return "Falta una columna en la base de datos. Ejecuta el SQL de supabase-setup.sql " +
+             "(o el ALTER TABLE de la columna almuerzo) en Supabase y vuelve a intentar.";
+    }
+    // Sesión caducada / sin permisos → RLS
+    if (code === "42501" || /row-level security|JWT|not authorized|permission denied/i.test(msg)) {
+      return "Tu sesión caducó o no tienes permisos. Cierra sesión y vuelve a entrar.";
+    }
+    return "No se pudo guardar: " + (msg || "error desconocido");
   }
 
   async function borrar(id) {

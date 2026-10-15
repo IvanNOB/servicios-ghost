@@ -85,6 +85,50 @@
   /* ---------------- Operaciones de administración ----------------- */
   /* Requieren sesión iniciada; las políticas RLS las protegen.        */
 
+  // Normaliza la carta: array de secciones con items válidos.
+  function normalizarCarta(carta) {
+    if (!Array.isArray(carta)) return [];
+    return carta.map(function (sec) {
+      return {
+        sec: (sec && sec.sec ? String(sec.sec) : "Sección"),
+        items: Array.isArray(sec && sec.items) ? sec.items.map(function (it) {
+          return {
+            id: it.id || (String(it.n || "plato").toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" +
+                 Math.random().toString(36).slice(2, 6)),
+            n: String(it.n || ""),
+            d: String(it.d || ""),
+            p: Number(it.p) || 0,
+            agotado: !!it.agotado,
+          };
+        }) : [],
+      };
+    });
+  }
+
+  // Normaliza el almuerzo del día (o devuelve null si no está activo/definido).
+  function normalizarAlmuerzo(a) {
+    if (!a || typeof a !== "object") return null;
+    return {
+      activo: !!a.activo,
+      titulo: a.titulo ? String(a.titulo) : "Almuerzo del día",
+      desc: a.desc ? String(a.desc) : "",
+      precio: Number(a.precio) || 0,
+      grupos: Array.isArray(a.grupos) ? a.grupos.map(function (g) {
+        var grupo = {
+          nombre: g && g.nombre ? String(g.nombre) : "Opciones",
+          tipo: g && g.tipo ? String(g.tipo) : "unico",
+          opciones: Array.isArray(g && g.opciones) ? g.opciones.map(function (op) {
+            var o = { n: String(op.n || ""), agotado: !!op.agotado };
+            if (Number(op.precio) > 0) o.precio = Number(op.precio);
+            return o;
+          }) : [],
+        };
+        if (g && g.mostrarSi) grupo.mostrarSi = g.mostrarSi;
+        return grupo;
+      }) : [],
+    };
+  }
+
   // Crea o actualiza un restaurante (upsert por id).
   async function guardar(rest) {
     var sb = client();
@@ -98,8 +142,8 @@
       color: rest.color || "#3b82f6",
       descripcion: rest.desc || "",
       logo: rest.logo || "",
-      carta: rest.carta || [],
-      almuerzo: rest.almuerzo || null,
+      carta: normalizarCarta(rest.carta),
+      almuerzo: normalizarAlmuerzo(rest.almuerzo),
       orden: typeof rest.orden === "number" ? rest.orden : 0,
     };
     var res = await sb.from("restaurantes").upsert(fila, { onConflict: "id" }).select();
