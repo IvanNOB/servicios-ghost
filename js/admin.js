@@ -526,7 +526,7 @@
             (activo ? " checked" : "") + " /> Ofrece almuerzo</label>" +
         "</div>" +
         '<p class="muted" style="font-size:.85rem;margin:0 0 10px">Para publicar lo de cada día usa la pestaña ' +
-          "<strong>🍲 Almuerzos del día</strong>." +
+          "<strong>🍳🍲 Menú del día</strong> (ahí también publicas el desayuno)." +
           (a.fecha ? " Última publicación: <strong>" + esc(a.fecha) + "</strong>." : "") + "</p>" +
         '<div class="grid-2">' +
           '<div class="field"><label class="field__label">Título</label>' +
@@ -1073,7 +1073,7 @@
     if (imp) { importarCarta(imp.getAttribute("data-import")); return; }
     if (t.closest("[data-copiar-prompt]")) { copiarPrompt(); return; }
 
-    // Almuerzos del día
+    // Menú del día (desayunos y almuerzos)
     if (t.closest("[data-alm-close]")) { cerrarPublicarAlmuerzo(); return; }
     var pub = t.closest("[data-alm-publicar]");
     if (pub) { abrirPublicarAlmuerzo(pub.getAttribute("data-alm-publicar")); return; }

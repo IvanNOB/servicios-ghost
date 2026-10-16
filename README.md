@@ -12,7 +12,7 @@ Hecho con **HTML, CSS y JavaScript puro** (sin frameworks ni build).
 ```
 index.html             Tienda / marketplace de restaurantes (inicio)
 admin.html             Panel de administración (solo para ti)
-css/style.css          Estilos de la tienda (Montserrat, premium negro/dorado)
+css/style.css          Estilos de la tienda (negro, dorado y plata)
 css/admin.css          Estilos del panel de admin
 js/data.js             Datos de respaldo (si Supabase no está configurado)
 js/supabase-config.js  👈 Tus credenciales de Supabase
@@ -25,7 +25,9 @@ supabase-mejoras.sql   SQL de horarios, ajustes, seguimiento y aliados (ejecutar
 js/importar.js         "Pegar carta": convierte texto de ChatGPT en carta
 manifest.webmanifest   App instalable (ícono, nombre, colores)
 sw.js                  Service worker: la app abre aunque la señal esté mala
-assets/icon-*.png      Íconos de la app · assets/og.jpg: vista previa al compartir
+assets/icon-*.png      Íconos de la app · assets/logo-sm.png: logo flotante
+assets/og.jpg          Vista previa al compartir el enlace (WhatsApp, Facebook)
+sitemap.xml            Mapa del sitio para Google (Search Console)
 ```
 
 ## ⚡ Activar las mejoras (una sola vez)

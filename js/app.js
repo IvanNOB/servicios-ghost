@@ -174,7 +174,6 @@
     return true;
   }
   function almuerzoVigente(r) { return menuVigente(r, "almuerzo"); }
-  function algunMenuVigente(r) { return menuVigente(r, "desayuno") || menuVigente(r, "almuerzo"); }
 
   // Registro de almuerzos armados por el cliente (items dinámicos que no
   // están en la carta fija). Clave = id del item de almuerzo.
@@ -798,7 +797,6 @@
 
     if (faltan.length) {
       if (err) { err.classList.remove("almuerzo__error--ok"); err.textContent = "Falta escoger: " + faltan.join(", ") + "."; }
-      var primero = box.querySelector(".alm-grupo:not([hidden])");
       return false;
     }
     if (err) err.textContent = "";
@@ -1592,8 +1590,6 @@
         "</article>";
     }).join("");
   }
-  // Nombre anterior (lo usan otras partes del código).
-  function renderAlmuerzosHoy() { renderMenuDia(); }
 
   /* ----------------------- Recomendado (al azar) ----------------------- */
   // Un solo plato con foto, a pantalla completa en su sección. Se elige al

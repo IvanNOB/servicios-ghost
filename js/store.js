@@ -446,7 +446,6 @@
 
   window.Store = {
     supabaseDisponible: supabaseDisponible,
-    client: client,
     listar: listar,
     guardar: guardar,
     eliminar: eliminar,
@@ -474,7 +473,5 @@
     listarAliados: listarAliados,
     asignarAliado: asignarAliado,
     quitarAliado: quitarAliado,
-    normalizarHorario: normalizarHorario,
-    DIAS: DIAS,
   };
 })();

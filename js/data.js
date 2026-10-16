@@ -45,6 +45,14 @@ const NOMBRE_NEGOCIO = "Servicios Ghost";
                              n  -> nombre del plato.
                              d  -> descripción corta.
                              p  -> precio en pesos (número, sin puntos).
+                             foto     -> URL de la foto (opcional).
+                             opciones -> lo que elige el cliente (opcional), ej.
+                               [{ nombre: "Tamaño", opciones: [{ n: "Personal" },
+                                 { n: "Grande", precio: 5000 }] }]
+                               (precio = lo que SUMA esa opción).
+
+   Lo más fácil: pegar la carta en el panel (“Pegar carta”) en vez de
+   escribirla aquí. Lo guardado en el panel tiene prioridad sobre este archivo.
 --------------------------------------------------------------------- */
 
 /* ---------------------------------------------------------------------

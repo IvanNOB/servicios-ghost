@@ -126,7 +126,7 @@
     return String(texto || "").split(/\r?\n/).map(parsearLineaGrupo).filter(Boolean);
   }
 
-  // Grupos → texto editable (para la pestaña "Almuerzos del día").
+  // Grupos → texto editable (para la pestaña "Menú del día").
   function opcionesATexto(grupos) {
     return (grupos || []).map(function (g) {
       return g.nombre + ": " + (g.opciones || []).map(function (o) {
