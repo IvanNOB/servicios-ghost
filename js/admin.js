@@ -190,6 +190,12 @@
       return;
     }
     var html = "";
+    var nuevas = esAliado() ? [] : restaurantes.filter(cartaNueva);
+    if (nuevas.length) {
+      html += '<div class="aviso-sql" style="grid-column:1/-1">🆕 <strong>Hay cartas nuevas que la tienda aún no muestra:</strong> ' +
+        esc(nuevas.map(function (r) { return r.nombre; }).join(", ")) +
+        '. La tienda usa la copia guardada en la base de datos. Toca <strong>“Usar carta nueva”</strong> en cada una para actualizarla.</div>';
+    }
     for (var i = 0; i < restaurantes.length; i++) {
       var r = restaurantes[i];
       var cover = r.logo
@@ -208,6 +214,7 @@
           "</div>" +
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
+            (!esAliado() && cartaNueva(r) ? '<button type="button" class="btn-primary btn-sm" data-sincronizar="' + esc(r.id) + '" title="Hay una versión nueva de esta carta: actualízala sin perder fotos, horario ni menús del día">🆕 Usar carta nueva</button>' : "") +
             (esAliado() ? "" : '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>') +
           "</div>" +
         "</div>";
@@ -614,6 +621,66 @@
     );
   }
 
+  /* ------------- Carta nueva en el código (data.js) vs. la guardada ------------- */
+  // La tienda muestra la copia de Supabase. Si en data.js hay una carta
+  // distinta para el mismo restaurante, ofrecemos pasarla a Supabase.
+  function huellaCarta(carta) {
+    return JSON.stringify((carta || []).map(function (s) {
+      return [s.sec, (s.items || []).map(function (it) {
+        return [it.id, it.n, it.d || "", Number(it.p) || 0, JSON.stringify((it.opciones || []).map(function (g) {
+          return [g.nombre, (g.opciones || []).map(function (o) { return [o.n, Number(o.precio) || 0]; })];
+        }))];
+      })];
+    }));
+  }
+  function cartaDelCodigo(id) {
+    var base = typeof RESTAURANTES !== "undefined" ? RESTAURANTES : [];
+    for (var i = 0; i < base.length; i++) if (base[i].id === id) return base[i];
+    return null;
+  }
+  function cartaNueva(r) {
+    if (!r || !r._nube) return false;
+    var c = cartaDelCodigo(r.id);
+    return !!c && huellaCarta(c.carta) !== huellaCarta(r.carta);
+  }
+
+  async function sincronizarCarta(id, boton) {
+    var r = restaurantes.filter(function (x) { return x.id === id; })[0];
+    var c = cartaDelCodigo(id);
+    if (!r || !c) return;
+    var nPlatos = c.carta.reduce(function (n, s) { return n + (s.items || []).length; }, 0);
+    if (!confirm("Se va a cambiar la carta de " + r.nombre + " por la versión nueva (" + nPlatos + " productos).\n\n" +
+        "Se conservan: fotos de los platos que sigan existiendo, horario, foto de portada, menús del día y si está abierto o cerrado.\n¿Continuar?")) return;
+    // Fotos y agotados de la copia actual, por id de plato.
+    var previos = {};
+    (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { previos[it.id] = it; }); });
+    var nueva = JSON.parse(JSON.stringify(c.carta));
+    nueva.forEach(function (s) {
+      (s.items || []).forEach(function (it) {
+        var p = previos[it.id];
+        if (p && p.foto && !it.foto) it.foto = p.foto;
+        if (p && p.agotado) it.agotado = true;
+      });
+    });
+    var copia = JSON.parse(JSON.stringify(r));
+    copia.carta = nueva;
+    copia.nombre = c.nombre; copia.cat = c.cat; copia.tiempo = c.tiempo; copia.desc = c.desc;
+    if (!copia.color) copia.color = c.color;
+    delete copia._nube;
+    var texto = boton.textContent;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner"></span>Actualizando…';
+    try {
+      await window.Store.guardar(copia);
+      toast("Carta de " + c.nombre + " actualizada ✓ (" + nPlatos + " productos)");
+      await recargarLista();
+    } catch (ex) {
+      toast(mensajeErrorGuardar(ex), true);
+      boton.disabled = false;
+      boton.textContent = texto;
+    }
+  }
+
   function contarConFoto(r) {
     var n = 0;
     (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (it.foto) n++; }); });
@@ -1013,6 +1080,8 @@
       if (r) abrirEditor(r);
       return;
     }
+    var sinc = t.closest("[data-sincronizar]");
+    if (sinc) { sincronizarCarta(sinc.getAttribute("data-sincronizar"), sinc); return; }
     var bo = t.closest("[data-borrar]");
     if (bo) { borrar(bo.getAttribute("data-borrar")); return; }
 

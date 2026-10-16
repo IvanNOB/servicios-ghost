@@ -50,6 +50,7 @@
   // Convierte una fila de la tabla "restaurantes" al formato de la app.
   function filaARestaurante(row) {
     return {
+      _nube: true,  // viene de Supabase (no de data.js)
       id: row.id,
       nombre: row.nombre,
       cat: row.cat,
