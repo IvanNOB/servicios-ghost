@@ -30,7 +30,7 @@
     "     con el precio MÁS BAJO y agrega al final las opciones. Si una opción sube el precio, pon cuánto suma:\n" +
     "     Arroz paisa | Cerdo, pollo y maduro | 25000 | Tamaño: Personal, Mediano (precio=5000), Grande (precio=15000)\n" +
     "     Alitas x6 | Con papas | 16000 | Salsa: BBQ, Miel mostaza, Maracuyá\n" +
-    "4. Si hay almuerzo del día con opciones, agrégalo al final así:\n" +
+    "4. Si hay almuerzo o desayuno del día con opciones, agrégalo al final así (DESAYUNO: igual que ALMUERZO:):\n" +
     "   ALMUERZO: precio=12000 | desc=Incluye sopa, principio y bebida\n" +
     "   Grupo: Proteína > Pollo, Res, Cerdo\n" +
     "   Grupo: Bebida > Jugo de mango, Lulo\n" +
@@ -161,7 +161,7 @@
     var datos = { carta: [] };
     var avisos = [];
     var seccion = null;
-    var enAlmuerzo = false;
+    var enAlmuerzo = false;   // false | "almuerzo" | "desayuno" (bloque en curso)
     var usados = {};
     var pref = slug(prefijoId || "p").slice(0, 12).replace(/-+$/, "");
 
@@ -190,12 +190,13 @@
       var l = limpiar(raw);
       if (!l || /^```/.test(l) || /^-{3,}$/.test(l)) continue;
 
-      // Inicio del bloque de almuerzo: "ALMUERZO: precio=12000 | desc=..."
-      var ma = l.match(/^almuerzo(?: del dia| del día)?\s*:?\s*(.*)$/i);
-      if (ma && (/^\s*$/.test(ma[1]) || /=/.test(ma[1]) || /^\(/.test(ma[1]))) {
-        enAlmuerzo = true;
-        datos.almuerzo = datos.almuerzo || { activo: true, titulo: "Almuerzo del día", desc: "", precio: 0, grupos: [] };
-        parsearCabeceraAlmuerzo(ma[1], datos.almuerzo);
+      // Inicio de un menú del día: "ALMUERZO: precio=12000 | desc=..." o "DESAYUNO: ..."
+      var ma = l.match(/^(almuerzo|desayuno)(?: del dia| del día)?\s*:?\s*(.*)$/i);
+      if (ma && (/^\s*$/.test(ma[2]) || /=/.test(ma[2]) || /^\(/.test(ma[2]))) {
+        var tipoM = ma[1].toLowerCase();
+        enAlmuerzo = tipoM;
+        datos[tipoM] = datos[tipoM] || { activo: true, titulo: tipoM === "desayuno" ? "Desayuno del día" : "Almuerzo del día", desc: "", precio: 0, grupos: [] };
+        parsearCabeceraAlmuerzo(ma[2], datos[tipoM]);
         continue;
       }
 
@@ -214,9 +215,9 @@
 
       // Dentro del bloque ALMUERZO
       if (enAlmuerzo) {
-        if (/^precio\s*=|^desc\s*=/i.test(l)) { parsearCabeceraAlmuerzo(l, datos.almuerzo); continue; }
+        if (/^precio\s*=|^desc\s*=/i.test(l)) { parsearCabeceraAlmuerzo(l, datos[enAlmuerzo]); continue; }
         var g = parsearLineaGrupo(l);
-        if (g) { datos.almuerzo.grupos.push(g); continue; }
+        if (g) { datos[enAlmuerzo].grupos.push(g); continue; }
       }
 
       // Sección: [Nombre]  /  ## Nombre  /  "Nombre:" sin precio

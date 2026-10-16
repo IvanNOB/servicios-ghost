@@ -35,6 +35,7 @@
 
   // Columnas que la base de datos dijo no tener (para avisar en el admin).
   var columnasFaltantes = {};
+  var columnasTabla = null; // columnas vistas al leer restaurantes
 
   // ¿El error de Supabase significa "esa función / tabla / columna no existe"?
   function esNoExiste(err) {
@@ -59,6 +60,7 @@
       logo: row.logo || "",
       carta: Array.isArray(row.carta) ? row.carta : [],
       almuerzo: row.almuerzo || null,
+      desayuno: row.desayuno || null,
       horario: normalizarHorario(row.horario),
       orden: typeof row.orden === "number" ? row.orden : 0,
     };
@@ -78,6 +80,8 @@
         .order("orden", { ascending: true })
         .order("nombre", { ascending: true });
       if (res.error) throw res.error;
+      // Qué columnas tiene la tabla (para avisar en el panel si falta alguna nueva).
+      if (res.data && res.data[0]) columnasTabla = Object.keys(res.data[0]);
       var nube = (res.data || []).map(filaARestaurante);
       var idsNube = {};
       for (var i = 0; i < nube.length; i++) idsNube[nube[i].id] = true;
@@ -136,6 +140,7 @@
       desc: a.desc ? String(a.desc) : "",
       precio: Number(a.precio) || 0,
       fecha: a.fecha ? String(a.fecha) : "",
+      foto: a.foto ? String(a.foto) : "",
       grupos: Array.isArray(a.grupos) ? a.grupos.map(function (g) {
         var grupo = {
           nombre: g && g.nombre ? String(g.nombre) : "Opciones",
@@ -210,6 +215,7 @@
       logo: rest.logo || "",
       carta: normalizarCarta(rest.carta),
       almuerzo: normalizarAlmuerzo(rest.almuerzo),
+      desayuno: normalizarAlmuerzo(rest.desayuno),
       horario: normalizarHorario(rest.horario),
       orden: typeof rest.orden === "number" ? rest.orden : 0,
     };
@@ -447,7 +453,13 @@
     guardarAjuste: guardarAjuste,
     ajustesDisponibles: function () { return ajustesDisponibles; },
     _ajustesCache: function () { return _ajustes || {}; },
-    columnasFaltantes: function () { return Object.keys(columnasFaltantes); },
+    columnasFaltantes: function () {
+      var faltan = Object.keys(columnasFaltantes);
+      if (columnasTabla) ["horario", "desayuno"].forEach(function (c) {
+        if (columnasTabla.indexOf(c) === -1 && faltan.indexOf(c) === -1) faltan.push(c);
+      });
+      return faltan;
+    },
     nuevoCodigo: nuevoCodigo,
     crearPedido: crearPedido,
     listarPedidos: listarPedidos,

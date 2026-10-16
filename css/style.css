@@ -1687,3 +1687,82 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .cart-bar__total { white-space: nowrap; flex: 0 0 auto; }
 @media (max-width: 420px) { .cart-bar { font-size: 0.92rem; gap: 10px; } }
 @media (max-width: 420px) { .cart-bar__prod { display: none; } }
+
+/* =====================================================================
+   Menú del día (desayunos y almuerzos), recomendado y fotos
+   ===================================================================== */
+
+/* Botones grandes del inicio */
+.hero__menus { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 12px; max-width: 480px; }
+.menu-btn {
+  display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text);
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--border));
+  border-radius: 16px; padding: 12px 14px; transition: border-color .15s ease, transform .15s ease, background .15s ease;
+}
+.menu-btn:hover { border-color: var(--primary); transform: translateY(-2px); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
+.menu-btn__ico { font-size: 1.7rem; line-height: 1; }
+.menu-btn strong { display: block; font-size: 1rem; }
+.menu-btn small { display: block; color: var(--text-2); font-size: 0.78rem; }
+.hero__actions--sec { margin-top: 0; }
+
+/* Pestañas Desayunos / Almuerzos */
+.bloque__head--menu { flex-wrap: wrap; gap: 12px; align-items: center; }
+.menu-tabs { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 4px; gap: 4px; }
+.menu-tab {
+  border: 0; background: transparent; color: var(--text-2); font: inherit; font-weight: 700; font-size: 0.92rem;
+  padding: 8px 16px; border-radius: var(--radius-pill); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.menu-tab:hover { color: var(--text); }
+.menu-tab--on { background: var(--primary); color: var(--text-oscuro); }
+.menu-tab__n { font-size: 0.72rem; background: color-mix(in srgb, currentColor 18%, transparent); border-radius: 999px; padding: 1px 7px; }
+#almuerzosVacio .btn-link { padding: 0 4px; }
+
+/* Tarjetas del menú con foto */
+.alm-card--foto { padding-top: 0; overflow: hidden; }
+.alm-card__foto { width: calc(100% + 32px); margin: 0 -16px 4px; aspect-ratio: 16 / 9; object-fit: cover; display: block; background: var(--surface-2); }
+.alm-card--cerrado { opacity: 0.7; }
+
+/* Armador (en la carta y en la ventana) */
+.almuerzo__foto { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 14px; margin-bottom: 12px; display: block; cursor: zoom-in; background: var(--surface-2); }
+.almuerzo--ventana { border: 0; padding: 0; background: transparent; margin: 0; }
+.almuerzo__rest { margin: -2px 0 10px; font-size: 0.88rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.menu-ver-carta { display: block; margin: 14px auto 0; }
+
+/* Recomendado: un solo plato a todo lo ancho */
+.reco-wrap { transition: opacity .22s ease; }
+.reco-wrap--cambio { opacity: 0; }
+.reco {
+  position: relative; display: block; width: 100%; padding: 0; border: 0; cursor: pointer; color: #fff; text-align: left;
+  border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-2);
+  aspect-ratio: 4 / 3; box-shadow: 0 18px 40px rgba(0,0,0,.45);
+}
+@media (min-width: 700px) { .reco { aspect-ratio: 21 / 9; } }
+.reco__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 6s ease; }
+.reco:hover .reco__img { transform: scale(1.05); }
+.reco__capa {
+  position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;
+  padding: clamp(16px, 4vw, 32px);
+  background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,.55) 65%, rgba(0,0,0,.88) 100%);
+}
+.reco__etq {
+  align-self: flex-start; font-size: 0.75rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  background: var(--primary); color: var(--text-oscuro); padding: 4px 10px; border-radius: var(--radius-pill); margin-bottom: 6px;
+}
+.reco__plato { font-family: var(--font-title); font-weight: 800; font-size: clamp(1.4rem, 4.5vw, 2.4rem); line-height: 1.1; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
+.reco__rest { color: rgba(255,255,255,.85); font-size: 0.95rem; }
+.reco__pie { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 10px; }
+.reco__precio { color: var(--gold-soft); font-weight: 800; font-size: 1.2rem; }
+.reco__cta { background: var(--primary); color: var(--text-oscuro); font-weight: 800; padding: 10px 18px; border-radius: var(--radius-pill); }
+
+/* Fotos de platos: se pueden ampliar */
+.dish__foto { cursor: zoom-in; }
+.visor { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; }
+.visor__fondo { position: absolute; inset: 0; background: rgba(0,0,0,.88); }
+.visor__fig { position: relative; margin: 0; max-width: min(92vw, 900px); }
+.visor__fig img { display: block; max-width: 100%; max-height: 78vh; border-radius: 16px; object-fit: contain; margin: 0 auto; }
+.visor__fig figcaption { color: #fff; text-align: center; margin-top: 10px; font-weight: 700; }
+.visor__x { position: absolute; top: 16px; right: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reco__img, .reco-wrap { transition: none; }
+}

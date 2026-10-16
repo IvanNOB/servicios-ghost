@@ -44,7 +44,7 @@ funciones nuevas que necesitan la base de datos.
 | Pestaña | Para qué |
 |---|---|
 | 🍽️ Restaurantes | Cartas, fotos de platos, **horario** (se abre/cierra solo, hora de Colombia), opciones por plato (salsa, tamaño), "Pegar carta". |
-| 🍲 Almuerzos del día | Publicar cada día el almuerzo de cada lugar. Se oculta solo al día siguiente. |
+| 🍳🍲 Menú del día | Publicar cada día el **desayuno** y/o el **almuerzo** de cada lugar, con opciones y foto. El cliente arma el suyo. Se oculta solo al día siguiente. |
 | 📋 Pedidos | Cambiar estado (el cliente lo ve en "Seguir mi pedido"). Contador de pedidos nuevos. |
 | 📊 Ventas | Ventas **entregadas**, comisión, por restaurante, platos más vendidos, horas pico, descarga **CSV** (Excel). Al abrirla se actualiza "Lo más pedido" en la tienda. |
 | ⚙️ Ajustes | **Domicilio por barrio**, promociones del inicio, % de comisión y **cuentas de aliados**. |
@@ -60,7 +60,10 @@ funciones nuevas que necesitan la base de datos.
 - Estado real de cada restaurante: "Abierto · Hasta las 10 pm", "Cerrado · Abre mañana 11 am".
 - Al pedir, elige su barrio y ve **domicilio y total a pagar**. La web recuerda sus datos.
 - Cada pedido tiene un **código** (GH-XXXXXX) y un enlace para **seguir el pedido**.
-- **Repetir mi último pedido**, sección **🔥 Lo más pedido**, fotos de platos.
+- Botones **🍳 Desayunos** y **🍲 Almuerzos** en el inicio y sección **Menú del día** donde arma el suyo.
+- **⭐ Recomendado**: un plato con foto a todo lo ancho, elegido al azar (cambia solo). Solo usa platos que tengan foto.
+- Las fotos de los platos se pueden tocar para verlas en grande.
+- **Repetir mi último pedido**, sección **🔥 Lo más pedido**.
 - Se puede **instalar como app** (botón "📲 Instalar app" en Android; en iPhone: Compartir → Agregar a inicio).
 
 > **¿Cómo funciona?** Si configuras Supabase, los restaurantes viven en la

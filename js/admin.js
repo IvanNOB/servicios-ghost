@@ -167,7 +167,15 @@
     var faltan = [];
     if (perfil && perfil.legado) faltan.push("cuentas para aliados");
     if (window.Store.ajustesDisponibles() === false) faltan.push("domicilio por barrio, promociones y lo más pedido");
-    if (window.Store.columnasFaltantes().indexOf("horario") !== -1) faltan.push("horarios automáticos");
+    var colsFalt = window.Store.columnasFaltantes();
+    if (colsFalt.indexOf("horario") !== -1) faltan.push("horarios automáticos");
+    if (colsFalt.indexOf("desayuno") !== -1 && !(perfil && perfil.legado) && faltan.length === 0) {
+      el.hidden = false;
+      el.innerHTML = "<strong>⚡ Un paso para activar los desayunos:</strong> en Supabase → <em>SQL Editor</em>, ejecuta esta línea y recarga:<br>" +
+        "<code class=\"sql-linea\">alter table public.restaurantes add column if not exists desayuno jsonb default null;</code>";
+      return;
+    }
+    if (colsFalt.indexOf("desayuno") !== -1) faltan.push("desayunos del día");
     if (perfil && perfil.legado) faltan.push("seguimiento del pedido para clientes");
     if (!faltan.length) { el.hidden = true; return; }
     el.hidden = false;
@@ -193,7 +201,8 @@
           '<div class="admin-card__info">' +
             '<div class="admin-card__name">' + esc(r.nombre) + "</div>" +
             '<div class="admin-card__meta">' + esc(r.cat) + " · " + (r.abierto ? "Abierto" : "Cerrado") +
-              " · " + contarPlatos(r) + " platos" + (almuerzoHoy(r) ? " · 🍲 almuerzo hoy" : "") +
+              " · " + contarPlatos(r) + " platos" + (contarConFoto(r) ? " · 📷 " + contarConFoto(r) + "/" + contarPlatos(r) : "") +
+              (menuHoy(r, "desayuno") ? " · 🍳 desayuno hoy" : "") + (almuerzoHoy(r) ? " · 🍲 almuerzo hoy" : "") +
               (contarSinPrecio(r) ? ' · <span class="falta-precio">⚠️ ' + contarSinPrecio(r) + " sin precio</span>" : "") +
               "</div>" +
           "</div>" +
@@ -403,7 +412,7 @@
     var nPlatos = 0;
     d.carta.forEach(function (s) { nPlatos += s.items.length; });
 
-    if (!nPlatos && !d.almuerzo && !d.nombre) {
+    if (!nPlatos && !d.almuerzo && !d.desayuno && !d.nombre) {
       toast("No encontré platos en el texto. Revisa el formato.", true);
       return;
     }
@@ -433,9 +442,10 @@
       r.carta = d.carta;
     }
     if (d.almuerzo) { d.almuerzo.fecha = hoyISO(); r.almuerzo = d.almuerzo; }
+    if (d.desayuno) { d.desayuno.fecha = hoyISO(); r.desayuno = d.desayuno; }
 
     var msg = "✅ Listo: " + d.carta.length + " secciones y " + nPlatos + " platos" +
-      (d.almuerzo ? " + almuerzo del día" : "") + ". Revisa abajo y pulsa <strong>Guardar cambios</strong>.";
+      (d.almuerzo ? " + almuerzo del día" : "") + (d.desayuno ? " + desayuno del día" : "") + ". Revisa abajo y pulsa <strong>Guardar cambios</strong>.";
     if (res.avisos.length) {
       msg += '<div class="importar__avisos">⚠️ Revisa:<ul>' +
         res.avisos.slice(0, 10).map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("") +
@@ -604,6 +614,12 @@
     );
   }
 
+  function contarConFoto(r) {
+    var n = 0;
+    (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (it.foto) n++; }); });
+    return n;
+  }
+
   function contarSinPrecio(r) {
     var n = 0;
     (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (!(it.p > 0)) n++; }); });
@@ -699,6 +715,7 @@
       desc: ($("#almDesc") && $("#almDesc").value.trim()) || "",
       precio: ($("#almPrecio") && Number($("#almPrecio").value)) || 0,
       fecha: anterior.fecha || "",
+      foto: anterior.foto || "",
       grupos: grupos,
     };
   }
@@ -726,36 +743,60 @@
     }
   }
 
-  /* --------------------- Almuerzos del día ------------------------ */
+  /* --------------------- Menú del día (desayuno / almuerzo) ------------------------ */
   var elListaAlm = $("#listaAlmuerzos");
   var elAlmSheet = $("#almSheet");
   var elAlmBody = $("#almSheetBody");
-  var almEditando = null; // restaurante cuyo almuerzo se está publicando
+  var almEditando = null; // restaurante cuyo menú se está publicando
+  var MENUS_ADM = {
+    desayuno: { campo: "desayuno", titulo: "Desayuno del día", emoji: "🍳", nombre: "desayuno",
+      ejemploDesc: "Ej: Calentado, huevos al gusto, arepa y bebida caliente",
+      ejemploOpc: "Huevos: Pericos, Revueltos, Fritos&#10;Acompañante: Arepa, Pan, Calentado&#10;Bebida: Chocolate, Café con leche, Jugo de naranja (precio=9000)",
+      ejemploPrecio: "Ej: 8000" },
+    almuerzo: { campo: "almuerzo", titulo: "Almuerzo del día", emoji: "🍲", nombre: "almuerzo",
+      ejemploDesc: "Ej: Sopa, arroz, principio, proteína, ensalada y jugo",
+      ejemploOpc: "Sopa: Sancocho, Ajiaco&#10;Proteína: Pollo frito, Res, Cerdo (agotado)&#10;Principio: Fríjol, Lenteja&#10;Bebida: Limonada, Jugo de mango",
+      ejemploPrecio: "Ej: 13000" },
+  };
+  var tipoAdm = "almuerzo";
+  try { tipoAdm = localStorage.getItem("ghost_admin_tipo_menu") === "desayuno" ? "desayuno" : "almuerzo"; } catch (e) { /* nada */ }
+
+  function menuHoy(r, tipo) {
+    var a = r && r[MENUS_ADM[tipo].campo];
+    return !!(a && a.activo && (!a.fecha || a.fecha === hoyISO()));
+  }
 
   function pintarAlmuerzos() {
     if (!elListaAlm) return;
+    var tabs = $("#menuTiposAdm");
+    if (tabs) {
+      tabs.innerHTML = ["desayuno", "almuerzo"].map(function (t) {
+        var M = MENUS_ADM[t];
+        var n = restaurantes.filter(function (r) { return menuHoy(r, t); }).length;
+        return '<button type="button" class="tab-mini' + (t === tipoAdm ? " tab-mini--on" : "") + '" data-tipo-menu="' + t + '">' +
+          M.emoji + " " + (t === "desayuno" ? "Desayunos" : "Almuerzos") + (n ? " · " + n + " hoy" : "") + "</button>";
+      }).join("");
+    }
     if (!restaurantes.length) {
       elListaAlm.innerHTML = '<p class="muted">Aún no hay restaurantes.</p>';
       return;
     }
-    // Primero los publicados hoy, luego los que tienen almuerzo, luego el resto.
+    var M = MENUS_ADM[tipoAdm];
+    // Primero los publicados hoy, luego los que ya lo han ofrecido, luego el resto.
     var lista = restaurantes.slice().sort(function (a, b) {
-      function peso(r) { return almuerzoHoy(r) ? 0 : (r.almuerzo && r.almuerzo.grupos ? 1 : 2); }
+      function peso(r) { return menuHoy(r, tipoAdm) ? 0 : (r[M.campo] && r[M.campo].grupos ? 1 : 2); }
       return peso(a) - peso(b);
     });
-    var html = "";
-    for (var i = 0; i < lista.length; i++) {
-      var r = lista[i];
-      var a = r.almuerzo || {};
-      var hoy = almuerzoHoy(r);
+    elListaAlm.innerHTML = lista.map(function (r) {
+      var a = r[M.campo] || {};
+      var hoy = menuHoy(r, tipoAdm);
       var estado = hoy
         ? '<span class="estado-badge estado-badge--entregado">✅ Publicado hoy</span>'
         : (a.fecha ? '<span class="estado-badge estado-badge--cancelado">Último: ' + esc(a.fecha) + "</span>"
                    : '<span class="estado-badge estado-badge--preparando">Sin publicar</span>');
-      var resumen = hoy
-        ? esc((a.titulo || "Almuerzo") + (a.precio ? " · " + money(a.precio) : "")) : "";
-      html +=
-        '<div class="admin-card">' +
+      var resumen = hoy ? esc((a.titulo || M.titulo) + (a.precio ? " · " + money(a.precio) : "")) : "";
+      return '<div class="admin-card">' +
+          (a.foto ? '<div class="admin-card__cover" style="background-image:url(\'' + esc(a.foto) + '\')"></div>' : "") +
           '<div class="admin-card__info">' +
             '<div class="admin-card__name">' + esc(r.nombre) + "</div>" +
             '<div class="admin-card__meta">' + estado + (resumen ? " " + resumen : "") + "</div>" +
@@ -766,42 +807,76 @@
             (hoy ? '<button type="button" class="btn-danger btn-sm" data-alm-quitar="' + esc(r.id) + '">Quitar</button>' : "") +
           "</div>" +
         "</div>";
-    }
-    elListaAlm.innerHTML = html;
+    }).join("");
+  }
+
+  function cambiarTipoMenu(t) {
+    tipoAdm = t === "desayuno" ? "desayuno" : "almuerzo";
+    try { localStorage.setItem("ghost_admin_tipo_menu", tipoAdm); } catch (e) { /* nada */ }
+    pintarAlmuerzos();
   }
 
   function abrirPublicarAlmuerzo(id) {
     var r = restaurantes.filter(function (x) { return x.id === id; })[0];
     if (!r) return;
+    var M = MENUS_ADM[tipoAdm];
     almEditando = JSON.parse(JSON.stringify(r));
-    var a = almEditando.almuerzo || {};
+    almEditando._tipoMenu = tipoAdm;
+    var a = almEditando[M.campo] || {};
     var opciones = window.Importar ? window.Importar.opcionesATexto(a.grupos || []) : "";
-    $("#almSheetTitle").textContent = "Almuerzo de hoy · " + r.nombre;
+    $("#almSheetTitle").textContent = M.emoji + " " + (tipoAdm === "desayuno" ? "Desayuno" : "Almuerzo") + " de hoy · " + r.nombre;
+    var faltaColumna = tipoAdm === "desayuno" && window.Store.columnasFaltantes().indexOf("desayuno") !== -1;
     elAlmBody.innerHTML =
+      (faltaColumna ? '<p class="aviso-sql aviso-sql--inline">Para guardar desayunos falta un paso en Supabase: mira el aviso amarillo de arriba.</p>' : "") +
       '<p class="muted" style="margin-bottom:12px">Hoy es <strong>' + esc(hoyISO()) + "</strong>. " +
-        "Lo de ayer ya viene cargado: solo cambia lo que sea distinto y pulsa Publicar.</p>" +
+        "Lo de la última vez ya viene cargado: solo cambia lo que sea distinto y pulsa Publicar.</p>" +
+      '<div class="pub-foto" id="pubFotoBox">' + pubFotoHTML(a.foto) + "</div>" +
       '<div class="grid-2">' +
         '<div class="field"><label class="field__label" for="pubTitulo">Título</label>' +
-          '<input class="field__input" id="pubTitulo" value="' + esc(a.titulo || "Almuerzo del día") + '" /></div>' +
+          '<input class="field__input" id="pubTitulo" value="' + esc(a.titulo || M.titulo) + '" /></div>' +
         '<div class="field"><label class="field__label" for="pubPrecio">Precio</label>' +
           '<input class="field__input" id="pubPrecio" type="number" min="0" step="500" value="' +
-            esc(a.precio || "") + '" placeholder="Ej: 13000" /></div>' +
+            esc(a.precio || "") + '" placeholder="' + M.ejemploPrecio + '" /></div>' +
       "</div>" +
       '<div class="field"><label class="field__label" for="pubDesc">¿Qué incluye? (opcional)</label>' +
         '<input class="field__input" id="pubDesc" value="' + esc(a.desc || "") +
-        '" placeholder="Ej: Sopa, arroz, principio, proteína, ensalada y jugo" /></div>' +
-      '<div class="field"><label class="field__label" for="pubOpciones">Opciones de hoy (una línea por grupo)</label>' +
-        '<textarea class="field__textarea" id="pubOpciones" rows="7" placeholder="Sopa: Sancocho, Ajiaco&#10;Proteína: Pollo frito, Res, Cerdo (agotado)&#10;Principio: Fríjol, Lenteja&#10;Bebida: Limonada, Jugo de mango">' +
+        '" placeholder="' + M.ejemploDesc + '" /></div>' +
+      '<div class="field"><label class="field__label" for="pubOpciones">Opciones que elige el cliente (una línea por grupo)</label>' +
+        '<textarea class="field__textarea" id="pubOpciones" rows="7" placeholder="' + M.ejemploOpc + '">' +
           esc(opciones) + "</textarea>" +
         '<p class="muted" style="font-size:.82rem;margin-top:6px">Formato: <code>Grupo: opción, opción</code>. ' +
-          "Marca <code>(agotado)</code> si se acabó, o <code>(precio=10000)</code> si esa opción cambia el precio " +
-          "(ej. <code>Sin sopa (precio=10000)</code>). Si no hay opciones, déjalo vacío.</p>" +
+          "Marca <code>(agotado)</code> si se acabó, o <code>(precio=10000)</code> si esa opción cambia el precio. " +
+          "Si no hay opciones, déjalo vacío.</p>" +
       "</div>" +
+      '<input type="hidden" id="pubFoto" value="' + esc(a.foto || "") + '" />' +
       '<div class="actions">' +
         '<button type="button" class="btn-primary" id="btnPublicarAlm">✅ Publicar para hoy</button>' +
       "</div>";
     elAlmSheet.hidden = false;
     document.body.classList.add("no-scroll");
+  }
+
+  function pubFotoHTML(foto) {
+    return (foto ? '<img src="' + esc(foto) + '" alt="" />' : '<div class="pub-foto__vacia">📷 Foto del plato de hoy (opcional)<br><small>Con foto se vende más y puede salir en “Recomendado”.</small></div>') +
+      '<div class="inline-actions">' +
+        '<label class="btn-copy btn-sm" style="cursor:pointer"><span id="pubFotoTxt">' + (foto ? "📷 Cambiar foto" : "📷 Subir foto") + "</span>" +
+          '<input type="file" accept="image/*" hidden id="pubFotoInput" /></label>' +
+        (foto ? '<button type="button" class="btn-danger btn-sm" data-pub-foto-quitar>Quitar foto</button>' : "") +
+      "</div>";
+  }
+
+  async function subirFotoMenu(file) {
+    var txt = $("#pubFotoTxt");
+    if (txt) txt.innerHTML = '<span class="spinner"></span>Subiendo…';
+    try {
+      var url = await subirFotoComprimida(file, "menus", 1200);
+      $("#pubFoto").value = url;
+      $("#pubFotoBox").innerHTML = pubFotoHTML(url);
+      toast("Foto lista ✓ (pulsa Publicar)");
+    } catch (ex) {
+      toast("No se pudo subir la foto: " + (ex && ex.message ? ex.message : "error"), true);
+      if (txt) txt.textContent = "📷 Subir foto";
+    }
   }
 
   function cerrarPublicarAlmuerzo() {
@@ -812,15 +887,22 @@
 
   async function guardarRestauranteAlm(r, msgOk) {
     if (typeof r.orden !== "number") r.orden = restaurantes.length;
+    delete r._tipoMenu;
     await window.Store.guardar(r, { soloActualizar: esAliado() });
-    toast(msgOk);
+    var faltan = window.Store.columnasFaltantes();
+    if (faltan.indexOf("desayuno") !== -1 && r.desayuno && r.desayuno.activo) {
+      toast("⚠️ El desayuno no se guardó: falta ejecutar la línea de SQL del aviso amarillo.", true);
+    } else {
+      toast(msgOk);
+    }
     await recargarLista();
   }
 
   async function publicarAlmuerzo() {
     var r = almEditando;
     if (!r) return;
-    var anterior = r.almuerzo || {};
+    var tipo = r._tipoMenu || tipoAdm, M = MENUS_ADM[tipo];
+    var anterior = r[M.campo] || {};
     var grupos = window.Importar.parsearOpciones($("#pubOpciones").value);
     // Conservar condiciones (ej. "Sopa" solo si eligen "Con sopa") de grupos con el mismo nombre.
     grupos.forEach(function (g) {
@@ -836,21 +918,22 @@
     var hayPrecioOpcion = grupos.some(function (g) {
       return (g.opciones || []).some(function (o) { return o.precio > 0; });
     });
-    if (!precio && !hayPrecioOpcion) { toast("Ponle precio al almuerzo", true); return; }
+    if (!precio && !hayPrecioOpcion) { toast("Ponle precio al " + M.nombre, true); return; }
 
-    r.almuerzo = {
+    r[M.campo] = {
       activo: true,
-      titulo: $("#pubTitulo").value.trim() || "Almuerzo del día",
+      titulo: $("#pubTitulo").value.trim() || M.titulo,
       desc: $("#pubDesc").value.trim(),
       precio: precio,
       fecha: hoyISO(),
+      foto: $("#pubFoto").value || "",
       grupos: grupos,
     };
     var btn = $("#btnPublicarAlm");
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Publicando…';
     try {
-      await guardarRestauranteAlm(r, "Almuerzo publicado para hoy ✓");
+      await guardarRestauranteAlm(r, M.emoji + " " + (tipo === "desayuno" ? "Desayuno" : "Almuerzo") + " publicado para hoy ✓");
       cerrarPublicarAlmuerzo();
     } catch (ex) {
       toast(mensajeErrorGuardar(ex), true);
@@ -860,13 +943,14 @@
   }
 
   async function quitarAlmuerzo(id) {
+    var M = MENUS_ADM[tipoAdm];
     var r = restaurantes.filter(function (x) { return x.id === id; })[0];
-    if (!r || !r.almuerzo) return;
-    if (!confirm("¿Quitar el almuerzo de hoy de " + r.nombre + "?")) return;
+    if (!r || !r[M.campo]) return;
+    if (!confirm("¿Quitar el " + M.nombre + " de hoy de " + r.nombre + "?")) return;
     var copia = JSON.parse(JSON.stringify(r));
-    copia.almuerzo.activo = false;
+    copia[M.campo].activo = false;
     try {
-      await guardarRestauranteAlm(copia, "Almuerzo quitado");
+      await guardarRestauranteAlm(copia, (tipoAdm === "desayuno" ? "Desayuno" : "Almuerzo") + " quitado");
     } catch (ex) {
       toast(mensajeErrorGuardar(ex), true);
     }
@@ -895,6 +979,9 @@
     var qui = t.closest("[data-alm-quitar]");
     if (qui) { quitarAlmuerzo(qui.getAttribute("data-alm-quitar")); return; }
     if (t.closest("#btnPublicarAlm")) { publicarAlmuerzo(); return; }
+    var tm = t.closest("[data-tipo-menu]");
+    if (tm) { cambiarTipoMenu(tm.getAttribute("data-tipo-menu")); return; }
+    if (t.closest("[data-pub-foto-quitar]")) { $("#pubFoto").value = ""; $("#pubFotoBox").innerHTML = pubFotoHTML(""); return; }
     if (t.closest("#btnNuevoLugarAlm")) {
       var nl = nuevoRestaurante();
       nl.cat = "Almuerzos corrientes";
@@ -1051,6 +1138,8 @@
         .forEach(function (x) { x.disabled = !t.checked; });
       return;
     }
+
+    if (t.id === "pubFotoInput" && t.files && t.files[0]) { subirFotoMenu(t.files[0]); return; }
 
     // Foto de un plato
     var key = t.getAttribute && t.getAttribute("data-plato-foto-input");
@@ -1342,7 +1431,7 @@
           R.ventas += Number(it.subtotal) || 0;
           if (!restEnPedido[rid]) { R.pedidos++; restEnPedido[rid] = true; }
         }
-        if (/^almuerzo-/.test(it.plato_id || "")) return; // el almuerzo cambia cada día
+        if (/^(almuerzo|desayuno)-/.test(it.plato_id || "")) return; // el menú del día cambia cada día
         var kb = rid + "::" + idBase(it.plato_id);
         var P = r.porPlato[kb] || (r.porPlato[kb] = { rest: rid, item: idBase(it.plato_id), restNombre: it.restaurante,
           nombre: String(it.plato || "").replace(/\s*\(.*\)\s*$/, ""), unidades: 0, ventas: 0 });

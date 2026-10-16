@@ -442,3 +442,14 @@ code {
 
 /* Lo que está oculto (atributo hidden) nunca se muestra, aunque otra regla le dé display. */
 [hidden] { display: none !important; }
+
+/* Menú del día: selector desayunos / almuerzos y foto del plato de hoy */
+.tabs-mini { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; }
+.tab-mini { border: 0; background: transparent; color: var(--text-2); font: inherit; font-weight: 700; font-size: 0.9rem; padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+.tab-mini:hover { color: var(--text); }
+.tab-mini--on { background: var(--primary); color: #0b0b0b; }
+.pub-foto { display: grid; gap: 8px; margin-bottom: 14px; }
+.pub-foto img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 14px; border: 1px solid var(--border); }
+.pub-foto__vacia { border: 1px dashed var(--border-fuerte, #4a4a4a); border-radius: 14px; padding: 18px; text-align: center; color: var(--text-2); }
+.pub-foto__vacia small { font-size: 0.8rem; }
+.sql-linea { display: block; margin-top: 8px; padding: 8px 10px; background: rgba(0,0,0,.35); border-radius: 8px; user-select: all; word-break: break-all; }

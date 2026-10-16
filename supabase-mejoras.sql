@@ -25,6 +25,7 @@
 -- 1) Columnas de restaurantes -----------------------------------------
 alter table public.restaurantes add column if not exists horario  jsonb default null;
 alter table public.restaurantes add column if not exists almuerzo jsonb default null;
+alter table public.restaurantes add column if not exists desayuno jsonb default null;
 
 -- 2) Perfiles y permisos ----------------------------------------------
 create table if not exists public.perfiles (

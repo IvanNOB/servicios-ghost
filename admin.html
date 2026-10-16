@@ -70,7 +70,7 @@
 
       <div class="tabs" role="tablist">
         <button type="button" class="tab tab--active" data-tab="restaurantes" role="tab">🍽️ Restaurantes</button>
-        <button type="button" class="tab" data-tab="almuerzos" role="tab">🍲 Almuerzos del día</button>
+        <button type="button" class="tab" data-tab="almuerzos" role="tab">🍳🍲 Menú del día</button>
         <button type="button" class="tab" data-tab="pedidos" role="tab" data-solo-admin>📋 Pedidos <span class="tab__badge" id="badgePedidos" hidden>0</span></button>
         <button type="button" class="tab" data-tab="ventas" role="tab" data-solo-admin>📊 Ventas</button>
         <button type="button" class="tab" data-tab="ajustes" role="tab" data-solo-admin>⚙️ Ajustes</button>
@@ -103,14 +103,15 @@
       <!-- Pestaña Almuerzos del día -->
       <div id="tabAlmuerzos" class="tab-panel" hidden>
         <div class="panel__row">
-          <h2 class="panel__title">Almuerzos del día</h2>
+          <h2 class="panel__title">Menú del día</h2>
           <div class="inline-actions">
             <button type="button" class="btn-copy" id="btnNuevoLugarAlm">+ Nuevo lugar de almuerzos</button>
           </div>
         </div>
+        <div class="tabs-mini" id="menuTiposAdm" role="group" aria-label="Desayunos o almuerzos"></div>
         <p class="muted" style="margin-bottom:14px">
-          Cada día toca <strong>“Publicar hoy”</strong> y escribe lo que hay. El almuerzo se muestra
-          en la sección <em>“Almuerzos corrientes de hoy”</em> de la tienda y se oculta solo al día siguiente.
+          Elige <strong>Desayunos</strong> o <strong>Almuerzos</strong>, toca <strong>“Publicar hoy”</strong> y escribe lo que hay
+          (puedes subir una foto). Sale en <em>“Menú del día”</em> de la tienda, el cliente arma el suyo, y se oculta solo al día siguiente.
         </p>
         <div id="listaAlmuerzos" class="admin-grid" aria-live="polite"></div>
       </div>
