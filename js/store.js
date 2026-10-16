@@ -59,6 +59,8 @@
       color: row.color || "#3b82f6",
       desc: row.descripcion || "",
       logo: row.logo || "",
+      logoAjuste: row.logo_ajuste === "logo" ? "logo" : "foto",
+      visible: row.visible !== false,
       carta: Array.isArray(row.carta) ? row.carta : [],
       almuerzo: row.almuerzo || null,
       desayuno: row.desayuno || null,
@@ -214,6 +216,8 @@
       color: rest.color || "#3b82f6",
       descripcion: rest.desc || "",
       logo: rest.logo || "",
+      logo_ajuste: rest.logoAjuste === "logo" ? "logo" : "foto",
+      visible: rest.visible !== false,
       carta: normalizarCarta(rest.carta),
       almuerzo: normalizarAlmuerzo(rest.almuerzo),
       desayuno: normalizarAlmuerzo(rest.desayuno),
@@ -455,7 +459,7 @@
     _ajustesCache: function () { return _ajustes || {}; },
     columnasFaltantes: function () {
       var faltan = Object.keys(columnasFaltantes);
-      if (columnasTabla) ["horario", "desayuno"].forEach(function (c) {
+      if (columnasTabla) ["horario", "desayuno", "visible", "logo_ajuste"].forEach(function (c) {
         if (columnasTabla.indexOf(c) === -1 && faltan.indexOf(c) === -1) faltan.push(c);
       });
       return faltan;

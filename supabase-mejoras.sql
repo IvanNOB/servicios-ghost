@@ -26,6 +26,10 @@
 alter table public.restaurantes add column if not exists horario  jsonb default null;
 alter table public.restaurantes add column if not exists almuerzo jsonb default null;
 alter table public.restaurantes add column if not exists desayuno jsonb default null;
+-- visible = false: el negocio está organizando su carta y aún no sale en la tienda.
+alter table public.restaurantes add column if not exists visible boolean not null default true;
+-- Cómo se muestra la foto de perfil: 'foto' (llena el espacio) o 'logo' (completa, sin recortes).
+alter table public.restaurantes add column if not exists logo_ajuste text default 'foto';
 
 -- 2) Perfiles y permisos ----------------------------------------------
 create table if not exists public.perfiles (

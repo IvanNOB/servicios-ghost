@@ -2406,6 +2406,8 @@ const RESTAURANTES = [
   {
     id: "atemporal",
     nombre: "Atemporal",
+    // Oculto: Atemporal va a organizar su propia carta desde su panel y la publica cuando esté lista.
+    visible: false,
     cat: "Bebidas y Postres",
     tiempo: "30-45 min",
     abierto: true,

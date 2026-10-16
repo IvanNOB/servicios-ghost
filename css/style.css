@@ -1539,3 +1539,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 @media (prefers-reduced-motion: reduce) {
   .reco__img, .reco-wrap { transition: none; }
 }
+
+/* Foto de perfil en modo "logo": completa, sin recortes, sobre el color del negocio */
+.portada--logo {
+  background-size: contain !important;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  background-position: center;
+  padding: 12px;
+}
+.card__cover.portada--logo { padding: 16px; }
+.rest-head__cover.portada--logo { padding: 20px; }
+.esc__img.portada--logo { padding: 3px; }
+
+/* Carta: volver + compartir, y aviso de vista previa */
+.rest-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rest-nav .back-btn { margin-bottom: 0; }
+.rest-nav { margin-bottom: 16px; }
+.previa-aviso {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
+  border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.9rem;
+}

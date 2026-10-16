@@ -147,6 +147,9 @@
     var aliado = esAliado();
     document.body.classList.toggle("modo-aliado", aliado);
     document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado; });
+    var tag = document.querySelector(".admin-header .logo__tag"); if (tag) tag.textContent = aliado ? "Mi negocio" : "Admin";
+    var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR && aliado) tabR.textContent = "🏪 Mi negocio";
+    var titR = document.querySelector("#tabRestaurantes .panel__title"); if (titR) titR.textContent = aliado ? "Mi negocio" : "Restaurantes";
     ["#btnNuevo", "#btnNuevoLugarAlm"].forEach(function (s) { var el = $(s); if (el) el.hidden = aliado; });
   }
 
@@ -176,6 +179,7 @@
       return;
     }
     if (colsFalt.indexOf("desayuno") !== -1) faltan.push("desayunos del día");
+    if (colsFalt.indexOf("visible") !== -1 || colsFalt.indexOf("logo_ajuste") !== -1) faltan.push("ocultar negocios mientras organizan su carta y mostrar logos completos");
     if (perfil && perfil.legado) faltan.push("seguimiento del pedido para clientes");
     if (!faltan.length) { el.hidden = true; return; }
     el.hidden = false;
@@ -189,7 +193,7 @@
       elListaRest.innerHTML = '<p class="muted">Aún no hay restaurantes. Toca “+ Nuevo restaurante”.</p>';
       return;
     }
-    var html = "";
+    var html = esAliado() && restaurantes[0] ? bienvenidaAliadoHTML(restaurantes[0]) : "";
     var nuevas = esAliado() ? [] : restaurantes.filter(cartaNueva);
     if (nuevas.length) {
       html += '<div class="aviso-sql" style="grid-column:1/-1">🆕 <strong>Estas cartas son distintas a la versión que me pasaste por el chat:</strong> ' +
@@ -198,14 +202,13 @@
     }
     for (var i = 0; i < restaurantes.length; i++) {
       var r = restaurantes[i];
-      var cover = r.logo
-        ? 'style="background-image:url(\'' + esc(r.logo) + '\')"'
-        : 'style="background:' + esc(r.color || "#3b82f6") + '"';
+      var cover = estiloPortada(r);
       html +=
-        '<div class="admin-card">' +
-          '<div class="admin-card__cover" ' + cover + '>' + (r.logo ? "" : esc(iniciales(r.nombre))) + "</div>" +
+        '<div class="admin-card' + (r.visible === false ? " admin-card--oculto" : "") + '">' +
+          '<div class="admin-card__cover' + claseLogo(r) + '" ' + cover + '>' + (r.logo ? "" : esc(iniciales(r.nombre))) + "</div>" +
           '<div class="admin-card__info">' +
-            '<div class="admin-card__name">' + esc(r.nombre) + "</div>" +
+            '<div class="admin-card__name">' + esc(r.nombre) +
+              (r.visible === false ? ' <span class="estado-badge estado-badge--preparando">🙈 Oculto</span>' : "") + "</div>" +
             '<div class="admin-card__meta">' + esc(r.cat) + " · " + (r.abierto ? "Abierto" : "Cerrado") +
               " · " + contarPlatos(r) + " platos" + (contarConFoto(r) ? " · 📷 " + contarConFoto(r) + "/" + contarPlatos(r) : "") +
               (menuHoy(r, "desayuno") ? " · 🍳 desayuno hoy" : "") + (almuerzoHoy(r) ? " · 🍲 almuerzo hoy" : "") +
@@ -222,6 +225,39 @@
     elListaRest.innerHTML = html;
   }
 
+  // Lista de pasos para el negocio aliado cuando entra al panel.
+  function bienvenidaAliadoHTML(r) {
+    var tieneHorario = r.horario && Object.keys(r.horario).some(function (k) { return r.horario[k]; });
+    var pasos = [
+      [!!r.logo, "Sube tu foto de perfil (logo o foto del local)"],
+      [contarPlatos(r) > 0 && !contarSinPrecio(r), "Revisa tu carta: nombres, descripciones y precios" + (contarSinPrecio(r) ? " (" + contarSinPrecio(r) + " sin precio)" : "")],
+      [contarConFoto(r) > 0, "Agrega fotos a tus productos más vendidos (" + contarConFoto(r) + " de " + contarPlatos(r) + ")"],
+      [!!tieneHorario, "Pon tu horario de atención"],
+      [r.visible !== false, "Publica tu negocio en la tienda"],
+    ];
+    var hechos = pasos.filter(function (p) { return p[0]; }).length;
+    return '<section class="bienvenida" style="grid-column:1/-1">' +
+        "<h3>👋 ¡Bienvenidos, " + esc(r.nombre) + "!</h3>" +
+        '<p class="muted">Este es el panel de tu negocio. Aquí organizas tu carta como quieras; los cambios se ven en la tienda al pulsar <strong>Guardar cambios</strong>.</p>' +
+        '<ol class="bienvenida__pasos">' + pasos.map(function (p) {
+          return '<li class="' + (p[0] ? "hecho" : "") + '">' + (p[0] ? "✅ " : "⬜ ") + esc(p[1]) + "</li>";
+        }).join("") + "</ol>" +
+        '<div class="inline-actions">' +
+          '<button type="button" class="btn-primary" data-editar="' + esc(r.id) + '">✏️ Editar mi carta</button>' +
+          '<a class="btn-copy" href="' + esc(urlVistaPrevia(r.id)) + '" target="_blank" rel="noopener">👁️ Ver cómo se ve</a>' +
+        "</div>" +
+        '<details class="bienvenida__ayuda"><summary>💡 ¿Productos con tamaños o con/sin chantilly?</summary>' +
+          "<p>Deja <strong>un solo producto</strong> con el precio más bajo y, en <em>⚙️ Opciones que elige el cliente</em>, escribe una línea por cada cosa que elige. " +
+          "<code>(precio=3000)</code> es lo que <strong>suma</strong> esa opción:</p>" +
+          "<pre>Tamaño: 12 oz, 16 oz (precio=3000), 24 oz (precio=6000)\nChantilly: Sin chantilly, Con chantilly (precio=2000)</pre>" +
+          "<p>Si los precios no se suman así, usa una sola línea con cada versión y su diferencia:</p>" +
+          "<pre>Presentación: 12 oz sin chantilly, 12 oz con chantilly (precio=2000), 16 oz sin chantilly (precio=3000), 16 oz con chantilly (precio=5000)</pre>" +
+          "<p>El cliente ve el precio final de cada opción.</p>" +
+        "</details>" +
+        (hechos === pasos.length ? '<p class="bienvenida__ok">🎉 ¡Todo listo! Tu negocio está publicado.</p>' : "") +
+      "</section>";
+  }
+
   function contarPlatos(r) {
     var n = 0;
     (r.carta || []).forEach(function (s) { n += (s.items || []).length; });
@@ -232,7 +268,7 @@
   function nuevoRestaurante() {
     return {
       id: "", nombre: "", cat: "", tiempo: "20-30 min", abierto: true,
-      color: "#3b82f6", desc: "", logo: "", carta: [], orden: restaurantes.length,
+      color: "#3b82f6", desc: "", logo: "", logoAjuste: "foto", visible: true, carta: [], orden: restaurantes.length,
       _esNuevo: true,
     };
   }
@@ -252,11 +288,21 @@
     editando = null;
   }
 
+  // Estilo de la foto de perfil (igual que en la tienda).
+  function estiloPortada(r) {
+    if (!r.logo) return 'style="background:' + esc(r.color || "#3b82f6") + '"';
+    return r.logoAjuste === "logo"
+      ? 'style="background-color:' + esc(r.color || "#1e1e1e") + ';background-image:url(\'' + esc(r.logo) + '\')"'
+      : 'style="background-image:url(\'' + esc(r.logo) + '\')"';
+  }
+  function claseLogo(r) { return r.logo && r.logoAjuste === "logo" ? " portada--logo" : ""; }
+  function urlVistaPrevia(id) {
+    return location.href.replace(/admin\.html.*$/, "index.html") + "#r=" + encodeURIComponent(id) + "&previa=1";
+  }
+
   function pintarEditor() {
     var r = editando;
-    var cover = r.logo
-      ? 'style="background-image:url(\'' + esc(r.logo) + '\')"'
-      : "";
+    var cover = r.logo ? estiloPortada(r) : "";
     var seccionesHTML = "";
     for (var si = 0; si < r.carta.length; si++) {
       seccionesHTML += seccionHTML(r.carta[si], si);
@@ -264,11 +310,20 @@
 
     elEditorBody.innerHTML =
       importadorHTML(r) +
-      '<div class="foto-preview" id="fotoPreview" ' + cover + ">" +
-        (r.logo ? "" : "Portada (opcional)") + "</div>" +
+      publicacionHTML(r) +
+      '<h3 class="editor-section__title" style="margin:4px 0 8px">Foto de perfil</h3>' +
+      '<div class="foto-preview' + claseLogo(r) + '" id="fotoPreview" ' + cover + ">" +
+        (r.logo ? "" : "Tu logo o una foto del local (opcional)") + "</div>" +
+      (r.logo
+        ? '<div class="ajuste-foto" role="group" aria-label="Cómo se muestra la foto">' +
+            '<label class="pay__option"><input type="radio" name="logoAjuste" value="logo"' + (r.logoAjuste === "logo" ? " checked" : "") + ' /> 📐 Es un logo: mostrarlo completo</label>' +
+            '<label class="pay__option"><input type="radio" name="logoAjuste" value="foto"' + (r.logoAjuste !== "logo" ? " checked" : "") + ' /> 🖼️ Es una foto: llenar el espacio</label>' +
+          "</div>" +
+          '<p class="muted" style="font-size:.8rem;margin:0 0 8px">Si es un logo, el fondo toma el color que elijas abajo.</p>'
+        : "") +
       '<div class="inline-actions" style="margin-bottom:14px">' +
         '<label class="btn-primary" style="cursor:pointer">' +
-          '<span id="subirTxt">📷 Subir foto</span>' +
+          '<span id="subirTxt">📷 ' + (r.logo ? "Cambiar foto" : "Subir foto") + "</span>" +
           '<input type="file" id="fotoInput" accept="image/*" hidden />' +
         "</label>" +
         (r.logo ? '<button type="button" class="btn-danger" data-quitar-foto>Quitar foto</button>' : "") +
@@ -375,6 +430,18 @@
     // Cada aliado sube a su propia carpeta (las reglas de Supabase lo exigen).
     if (esAliado()) carpeta = "aliados/" + perfil.restaurante_id + "/" + carpeta;
     return window.Store.subirFoto(lista, carpeta);
+  }
+
+  // Publicado o no en la tienda + vista previa.
+  function publicacionHTML(r) {
+    if (r._esNuevo) return "";
+    var visible = r.visible !== false;
+    return '<div class="publicar' + (visible ? " publicar--on" : "") + '">' +
+        '<label class="publicar__switch"><input type="checkbox" id="campoVisible"' + (visible ? " checked" : "") + ' /> ' +
+          "<span><strong>" + (visible ? "✅ Publicado en la tienda" : "🙈 Oculto: aún no sale en la tienda") + "</strong>" +
+          "<small>" + (visible ? "Los clientes ven este negocio y pueden pedir." : "Organiza tu carta con calma. Cuando esté lista, marca esta casilla y pulsa Guardar.") + "</small></span></label>" +
+        '<a class="btn-copy btn-sm" href="' + esc(urlVistaPrevia(r.id)) + '" target="_blank" rel="noopener">👁️ Ver cómo se ve</a>' +
+      "</div>";
   }
 
   // Caja "Pegar carta": convierte texto en carta automáticamente.
@@ -616,7 +683,7 @@
         "<summary>⚙️ Opciones que elige el cliente" + (texto ? " (" + it.opciones.length + ")" : "") + "</summary>" +
         '<textarea class="field__textarea" rows="2" data-plato-opc="' + key + '" placeholder="Salsa: BBQ, Miel mostaza, Maracuyá&#10;Tamaño: Personal, Mediano (precio=5000), Grande (precio=15000)">' +
           esc(texto) + "</textarea>" +
-        '<p class="muted plato-opc__ayuda">Una línea por grupo. <code>(precio=5000)</code> suma ese valor al precio del plato.</p>' +
+        '<p class="muted plato-opc__ayuda">Una línea por cada cosa que elige el cliente. <code>(precio=5000)</code> <strong>suma</strong> ese valor al precio del plato. Ej. con/sin chantilly: <code>Chantilly: Sin chantilly, Con chantilly (precio=2000)</code>. Marca <code>(agotado)</code> si se acabó.</p>' +
       "</details>"
     );
   }
@@ -737,6 +804,10 @@
     });
     var ab = $("#campoAbierto");
     r.abierto = ab ? ab.checked : true;
+    var vis = $("#campoVisible");
+    if (vis) r.visible = vis.checked;
+    var aj = elEditorBody.querySelector("input[name=logoAjuste]:checked");
+    if (aj) r.logoAjuste = aj.value;
     var imp = $("#importTexto");
     if (imp) r._importTexto = imp.value;
     if (elEditorBody.querySelector("[data-hor]")) r.horario = leerHorario();
@@ -1243,6 +1314,14 @@
     }
 
     if (t.id === "pubFotoInput" && t.files && t.files[0]) { subirFotoMenu(t.files[0]); return; }
+
+    // Foto de perfil (logo/foto) y publicar: repintar para ver el resultado al instante
+    if ((t.name === "logoAjuste" || t.id === "campoVisible" || t.getAttribute("data-campo") === "color") && editando) {
+      var y = elEditorBody.scrollTop;
+      leerEditor(); pintarEditor();
+      elEditorBody.scrollTop = y;
+      return;
+    }
 
     // Foto de un plato
     var key = t.getAttribute && t.getAttribute("data-plato-foto-input");

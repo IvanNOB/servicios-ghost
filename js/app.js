@@ -59,6 +59,10 @@
 
   // Estilo de portada: imagen si existe, si no un degradado del color.
   function coverStyle(r) {
+    if (r.logo && esLogo(r)) {
+      // Logo: se ve completo, sin recortes, sobre el color del negocio.
+      return "background-color:" + esc(r.color || "#1e1e1e") + ";background-image:url('" + esc(r.logo) + "')";
+    }
     if (r.logo) {
       return "background-image:url('" + esc(r.logo) + "')";
     }
@@ -66,12 +70,27 @@
     return "background-image:linear-gradient(135deg, " + c + ", " + c + "99)";
   }
 
-  // Busca un restaurante por id.
+  // ¿La foto de perfil es un logo (se muestra completa) o una foto (llena el espacio)?
+  function esLogo(r) { return r && r.logoAjuste === "logo"; }
+  function claseLogo(r) { return r && r.logo && esLogo(r) ? " portada--logo" : ""; }
+
+  // Busca un restaurante por id (incluye el que se está viendo en vista previa).
   function findRest(id) {
     for (var i = 0; i < DATA.length; i++) {
       if (DATA[i].id === id) return DATA[i];
     }
+    if (PREVIA && PREVIA.id === id) return PREVIA;
     return null;
+  }
+
+  // Solo se muestran en la tienda los negocios publicados (visible !== false).
+  // Los ocultos están organizando su carta: se pueden ver con su enlace de vista previa.
+  var TODOS = [];
+  var PREVIA = null;
+  function cargarRestaurantes(lista) {
+    TODOS = lista.slice();
+    DATA = TODOS.filter(function (r) { return r.visible !== false; });
+    if (PREVIA) PREVIA = TODOS.filter(function (r) { return r.id === PREVIA.id; })[0] || null;
   }
 
   /* --------------------------- Horarios --------------------------- */
@@ -211,7 +230,8 @@
 
   // Lista de restaurantes en memoria. Se llena desde el Store al arrancar
   // (Supabase si está configurado, o data.js como respaldo).
-  var DATA = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES.slice() : []);
+  var DATA = [];
+  cargarRestaurantes(typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []);
 
   // Ajustes del negocio (domicilios, promociones, lo más pedido). Se llenan desde la nube.
   var AJUSTES = {};
@@ -442,7 +462,7 @@
     for (var i = 0; i < lista.length; i++) {
       var r = lista[i];
       var cover = r.logo
-        ? '<div class="card__cover" style="background-image:url(\'' + esc(r.logo) + '\')"></div>'
+        ? '<div class="card__cover' + claseLogo(r) + '" style="' + coverStyle(r) + '"></div>'
         : '<div class="card__cover">' +
           '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
@@ -474,7 +494,7 @@
     vistaActual = restId;
 
     var cover = r.logo
-      ? '<div class="rest-head__cover" style="' + coverStyle(r) + '"></div>'
+      ? '<div class="rest-head__cover' + claseLogo(r) + '" style="' + coverStyle(r) + '"></div>'
       : '<div class="rest-head__cover" style="' + coverStyle(r) + '">' +
         '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
@@ -494,7 +514,11 @@
     }
 
     elVistaCarta.innerHTML =
-      '<button type="button" class="back-btn" data-back>← Todos los restaurantes</button>' +
+      (r.visible === false
+        ? '<div class="previa-aviso">👁️ <strong>Vista previa.</strong> Este negocio aún no está publicado: los clientes no lo ven en la tienda. Se publica desde el panel.</div>'
+        : "") +
+      '<div class="rest-nav"><button type="button" class="back-btn" data-back>← Todos los restaurantes</button>' +
+      (r.visible === false ? "" : '<button type="button" class="btn-link" data-compartir="' + esc(r.id) + '">🔗 Compartir</button>') + "</div>" +
       '<div class="rest-head">' + cover +
         "<div>" +
           '<h1 class="rest-head__name">' + esc(r.nombre) + "</h1>" +
@@ -844,6 +868,8 @@
 
   function irAInicio() {
     vistaActual = null;
+    PREVIA = null;
+    if (/^#r=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
     elVistaCarta.hidden = true;
     elVistaCarta.innerHTML = "";
     elVistaInicio.hidden = false;
@@ -1339,6 +1365,8 @@
 
     // --- Volver desde la carta ---
     if (t.closest("[data-back]")) { irAInicio(); return; }
+    var comp = t.closest("[data-compartir]");
+    if (comp) { compartirNegocio(comp.getAttribute("data-compartir")); return; }
 
     // --- Copiar pedido ---
     if (t.closest("[data-copy]")) { copiarPedido(); return; }
@@ -1499,7 +1527,7 @@
       var inicial = esc(iniciales(p.rest.nombre));
       var fotoMini = p.item.foto || p.rest.logo;
       var mini = fotoMini
-        ? '<span class="esc__img" style="background-image:url(\'' + esc(fotoMini) + '\')"></span>'
+        ? '<span class="esc__img' + (p.item.foto ? "" : claseLogo(p.rest)) + '" style="' + (p.item.foto ? "background-image:url(\'" + esc(fotoMini) + "\')" : coverStyle(p.rest)) + '"></span>'
         : '<span class="esc__img esc__img--ini">' + inicial + "</span>";
       html +=
         '<button type="button" class="esc__row" data-rest="' + esc(p.rest.id) + '" aria-label="Ver ' + esc(p.rest.nombre) + '">' +
@@ -1960,7 +1988,27 @@
   function revisarHash() {
     // "#pedido=" vacío (atajo de la app instalada) abre con el último pedido.
     var m = location.hash.match(/^#pedido=([A-Za-z0-9-]*)/);
-    if (m) abrirSeguimiento(decodeURIComponent(m[1]));
+    if (m) { abrirSeguimiento(decodeURIComponent(m[1])); return; }
+    // Enlace propio de cada negocio: .../#r=atemporal
+    var mr = location.hash.match(/^#r=([a-z0-9-]+)(&previa=1)?/i);
+    if (mr) {
+      var id = mr[1].toLowerCase();
+      var oculto = TODOS.filter(function (r) { return r.id === id && r.visible === false; })[0];
+      PREVIA = oculto && mr[2] ? oculto : null;
+      if (findRest(id)) { if (vistaActual !== id) abrirCarta(id); }
+    }
+  }
+  function enlaceNegocio(id) { return location.origin + location.pathname + "#r=" + encodeURIComponent(id); }
+  async function compartirNegocio(id) {
+    var r = findRest(id);
+    if (!r) return;
+    var url = enlaceNegocio(id);
+    var datos = { title: r.nombre + " · Servicios Ghost", text: "Mira la carta de " + r.nombre + " y pide a domicilio 🛵", url: url };
+    try {
+      if (navigator.share) { await navigator.share(datos); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(url); toast("Enlace copiado ✓ Pégalo en WhatsApp"); }
+    catch (e) { prompt("Copia este enlace:", url); }
   }
   window.addEventListener("hashchange", revisarHash);
 
@@ -2076,7 +2124,8 @@
     window.Store.listar()
       .then(function (lista) {
         if (Array.isArray(lista) && lista.length) {
-          DATA = lista;
+          cargarRestaurantes(lista);
+          if (/^#r=/.test(location.hash)) revisarHash();
           // Con la lista definitiva ya cargada, quitamos del carrito lo que no existe.
           limpiarHuerfanos();
           pintarTodo();
