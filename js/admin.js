@@ -192,9 +192,9 @@
     var html = "";
     var nuevas = esAliado() ? [] : restaurantes.filter(cartaNueva);
     if (nuevas.length) {
-      html += '<div class="aviso-sql" style="grid-column:1/-1">🆕 <strong>Hay cartas nuevas que la tienda aún no muestra:</strong> ' +
+      html += '<div class="aviso-sql" style="grid-column:1/-1">🆕 <strong>Estas cartas son distintas a la versión que me pasaste por el chat:</strong> ' +
         esc(nuevas.map(function (r) { return r.nombre; }).join(", ")) +
-        '. La tienda usa la copia guardada en la base de datos. Toca <strong>“Usar carta nueva”</strong> en cada una para actualizarla.</div>';
+        '. La tienda muestra la copia guardada en el panel. Toca <strong>“Revisar carta nueva”</strong> para ver qué cambia en cada una; si la diferencia son correcciones que hiciste tú en el panel, toca Cancelar y no pasa nada.</div>';
     }
     for (var i = 0; i < restaurantes.length; i++) {
       var r = restaurantes[i];
@@ -214,7 +214,7 @@
           "</div>" +
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
-            (!esAliado() && cartaNueva(r) ? '<button type="button" class="btn-primary btn-sm" data-sincronizar="' + esc(r.id) + '" title="Hay una versión nueva de esta carta: actualízala sin perder fotos, horario ni menús del día">🆕 Usar carta nueva</button>' : "") +
+            (!esAliado() && cartaNueva(r) ? '<button type="button" class="btn-primary btn-sm" data-sincronizar="' + esc(r.id) + '" title="La carta que me pasaste por el chat es distinta a la guardada. Toca para ver qué cambia antes de aplicarla.">🆕 Revisar carta nueva</button>' : "") +
             (esAliado() ? "" : '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>') +
           "</div>" +
         "</div>";
@@ -644,13 +644,47 @@
     return !!c && huellaCarta(c.carta) !== huellaCarta(r.carta);
   }
 
+  // Qué cambia entre la carta guardada (panel) y la del código (lo que pegaste en el chat).
+  function diferenciasCarta(guardada, codigo) {
+    function mapa(carta) {
+      var m = {};
+      (carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { m[it.id] = it; }); });
+      return m;
+    }
+    var a = mapa(guardada), b = mapa(codigo), d = { nuevos: [], quitados: [], precios: [], textos: 0 };
+    Object.keys(b).forEach(function (k) {
+      if (!a[k]) { d.nuevos.push(b[k].n); return; }
+      if ((Number(a[k].p) || 0) !== (Number(b[k].p) || 0)) d.precios.push({ n: b[k].n, de: Number(a[k].p) || 0, a: Number(b[k].p) || 0 });
+      else if (a[k].n !== b[k].n || (a[k].d || "") !== (b[k].d || "")) d.textos++;
+    });
+    Object.keys(a).forEach(function (k) { if (!b[k]) d.quitados.push(a[k].n); });
+    return d;
+  }
+  function lista(arr, n) { return arr.slice(0, n).join(", ") + (arr.length > n ? " y " + (arr.length - n) + " más" : ""); }
+
   async function sincronizarCarta(id, boton) {
     var r = restaurantes.filter(function (x) { return x.id === id; })[0];
     var c = cartaDelCodigo(id);
     if (!r || !c) return;
     var nPlatos = c.carta.reduce(function (n, s) { return n + (s.items || []).length; }, 0);
-    if (!confirm("Se va a cambiar la carta de " + r.nombre + " por la versión nueva (" + nPlatos + " productos).\n\n" +
-        "Se conservan: fotos de los platos que sigan existiendo, horario, foto de portada, menús del día y si está abierto o cerrado.\n¿Continuar?")) return;
+    var df = diferenciasCarta(r.carta, c.carta);
+    var bajanACero = df.precios.filter(function (x) { return x.de > 0 && x.a === 0; });
+    var lineas = ["Carta de " + r.nombre.toUpperCase() + " (solo este restaurante).", ""];
+    if (df.nuevos.length) lineas.push("➕ Se agregan " + df.nuevos.length + ": " + lista(df.nuevos, 4));
+    if (df.precios.length) lineas.push("💲 Cambian " + df.precios.length + " precios: " + lista(df.precios.map(function (x) {
+      return x.n + " " + (x.de ? money(x.de) : "$0") + " → " + (x.a ? money(x.a) : "$0"); }), 4));
+    if (df.textos) lineas.push("✏️ Cambian nombres o descripciones de " + df.textos + " productos");
+    if (df.quitados.length) lineas.push("➖ Se QUITAN " + df.quitados.length + ": " + lista(df.quitados, 4));
+    if (!df.nuevos.length && !df.precios.length && !df.textos && !df.quitados.length) lineas.push("Solo cambian secciones u opciones.");
+    lineas.push("");
+    if (df.quitados.length || bajanACero.length) {
+      lineas.push("⚠️ OJO: la copia del panel tiene productos o precios que la carta nueva no tiene. " +
+        "Si los agregaste o corregiste tú desde el panel, se perderán. En ese caso toca Cancelar.");
+      lineas.push("");
+    }
+    lineas.push("Se conservan: fotos, agotados, horario, portada, menús del día y si está abierto.");
+    lineas.push("¿Usar la carta nueva?");
+    if (!confirm(lineas.join("\n"))) return;
     // Fotos y agotados de la copia actual, por id de plato.
     var previos = {};
     (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { previos[it.id] = it; }); });
