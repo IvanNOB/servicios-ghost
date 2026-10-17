@@ -2404,6 +2404,55 @@ const RESTAURANTES = [
   },
 
   {
+    id: "chaira-gourmet",
+    nombre: "Chairá Gourmet",
+    cat: "Almuerzos y Comida casera",
+    tiempo: "30-45 min",
+    abierto: true,
+    color: "#b45309",
+    desc: "Comidas para toda ocasión. Barrio Primavera, a una cuadra de la Clínica Chairá (esquina antiguo Herbalife).",
+    logo: "",
+    carta: [],
+    // Menú del día: solo se muestra en la fecha indicada. Los días siguientes se publica desde el panel.
+    almuerzo: {
+      activo: true,
+      fecha: "2026-10-17",
+      titulo: "Menú del día",
+      desc: "Acompañado de arroz, ensalada, maduro cocido y limonada.",
+      precio: 13000,
+      foto: "",
+      grupos: [
+        {
+          nombre: "Plato",
+          tipo: "unico",
+          opciones: [
+            { n: "Menú del día", precio: 13000 },
+            { n: "⭐ Especial del día: Churrasquillo", precio: 16000 },
+          ],
+        },
+        { nombre: "Sopa", tipo: "unico", opciones: [{ n: "Ajiaco" }] },
+        { nombre: "Principio", tipo: "unico", opciones: [{ n: "Arveja" }, { n: "Macarrón" }] },
+        {
+          nombre: "Proteína",
+          tipo: "unico",
+          mostrarSi: { grupo: "Plato", valor: "Menú del día" },
+          opciones: [
+            { n: "Carne en bistec" },
+            { n: "Cerdo a la plancha" },
+            { n: "Cerdo BBQ" },
+            { n: "Pollo en salsa criolla" },
+            { n: "Pechuga a la plancha" },
+            { n: "Pechuga en salsa de maracuyá" },
+            { n: "Pechuga BBQ" },
+            { n: "Pechuga en salsa mielmostaza" },
+            { n: "Pechuga en salsa de naranja" },
+          ],
+        },
+      ],
+    },
+  },
+
+  {
     id: "atemporal",
     nombre: "Atemporal",
     // Oculto: Atemporal va a organizar su propia carta desde su panel y la publica cuando esté lista.
