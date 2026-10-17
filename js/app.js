@@ -227,6 +227,14 @@
   /* ------------------------- Estado global ------------------------ */
 
   var LS_KEY = "ghost_cart_v1";
+  // Notas del cliente para el restaurante, por producto del pedido ("sin cebolla").
+  var LS_NOTAS = "ghost_notas_v1";
+  var notasCart = (function () { try { return JSON.parse(localStorage.getItem(LS_NOTAS) || "{}") || {}; } catch (e) { return {}; } })();
+  function notaDe(key) { return String(notasCart[key] || "").trim(); }
+  function guardarNotas() {
+    for (var k in notasCart) if (!cart[k] || !String(notasCart[k] || "").trim()) delete notasCart[k];
+    try { localStorage.setItem(LS_NOTAS, JSON.stringify(notasCart)); } catch (e) { /* sin almacenamiento */ }
+  }
   var LS_ARMADOS = "ghost_armados_v1";
   var cart = loadCart();          // { "restId::itemId": qty }
   almuerzosArmados = loadArmados();
@@ -256,6 +264,7 @@
   function saveCart() {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(cart));
+      guardarNotas();
       // Las combinaciones (salsa, tamaño, almuerzo armado) se guardan aparte:
       // sin ellas, al recargar la página el carrito no sabría qué eran.
       var usados = {};
@@ -319,6 +328,7 @@
   // Vacía el carrito por completo (tras enviar un pedido).
   function vaciarCarrito() {
     cart = {};
+    notasCart = {};
     almuerzosArmados = {};
     saveCart();
   }
@@ -1452,6 +1462,7 @@
       for (var i = 0; i < g.items.length; i++) {
         var item = g.items[i].item;
         var qty = g.items[i].qty;
+        var kNota = cartKey(g.rest.id, item.id), nota = notaDe(kNota);
         lineas +=
           '<div class="cart-line">' +
             '<div class="cart-line__info">' +
@@ -1461,6 +1472,14 @@
             '<div class="cart-line__right">' +
               stepperHTML(g.rest.id, item, qty) +
               '<span class="cart-line__sub">' + esc(item.p > 0 ? money(item.p * qty) : "—") + "</span>" +
+            "</div>" +
+            // Nota para el restaurante (opcional)
+            '<div class="cart-nota' + (nota ? " cart-nota--abierta" : "") + '">' +
+              '<button type="button" class="cart-nota__btn" data-nota-abrir' + (nota ? " hidden" : "") + ">✏️ Pedir algo especial (ej. sin cebolla)</button>" +
+              '<label class="cart-nota__campo"' + (nota ? "" : " hidden") + ">" +
+                '<span>✏️ Nota para ' + esc(g.rest.nombre) + "</span>" +
+                '<input class="field__input" data-nota="' + esc(kNota) + '" maxlength="120" value="' + esc(nota) + '" placeholder="Ej: sin cebolla, la carne bien asada, salsa aparte" enterkeyhint="done" />' +
+              "</label>" +
             "</div>" +
           "</div>";
       }
@@ -1590,6 +1609,7 @@
           precio_unit: x.item.p,
           cantidad: x.qty,
           subtotal: x.item.p * x.qty,
+          nota: notaDe(cartKey(g.rest.id, x.item.id)) || undefined,
         });
       });
     });
@@ -1645,6 +1665,8 @@
         var qty = g.items[i].qty;
         lines.push("- " + qty + " x " + item.n + " = " +
           (item.p > 0 ? money(item.p * qty) : "precio a confirmar"));
+        var notaLinea = notaDe(cartKey(g.rest.id, item.id));
+        if (notaLinea) lines.push("   > Nota: " + notaLinea);
       }
       lines.push("Subtotal: " + money(g.subtotal));
       lines.push("");
@@ -1833,6 +1855,28 @@
 
   // Un solo listener para toda la app (incluye lo que se repinta).
   document.addEventListener("click", onClick);
+
+  // Nota del cliente en un producto del pedido
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-nota-abrir]");
+    if (!b) return;
+    var box = b.closest(".cart-nota");
+    b.hidden = true;
+    var campo = box.querySelector(".cart-nota__campo");
+    campo.hidden = false;
+    box.classList.add("cart-nota--abierta");
+    var inp = campo.querySelector("input");
+    if (inp) inp.focus();
+  });
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (!t || !t.hasAttribute || !t.hasAttribute("data-nota")) return;
+    notasCart[t.getAttribute("data-nota")] = t.value.slice(0, 120);
+    guardarNotas();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target && e.target.hasAttribute && e.target.hasAttribute("data-nota")) { e.preventDefault(); e.target.blur(); }
+  });
 
   // Cuando cambia una opción del almuerzo, actualizamos los grupos condicionales
   // (ej: mostrar/ocultar "Sopa" según se elija "Completo" o "Sin sopa").
@@ -2371,7 +2415,8 @@
           : '<ol class="tpasos">' + pasos + "</ol>") +
         (items.length ? '<details class="track-items"><summary>Ver productos (' + items.length + ")</summary><ul>" +
           items.map(function (x) {
-            return "<li>" + esc(x.cantidad) + " × " + esc(x.plato) + ' <span class="muted">· ' + esc(x.restaurante) + "</span></li>";
+            return "<li>" + esc(x.cantidad) + " × " + esc(x.plato) + ' <span class="muted">· ' + esc(x.restaurante) + "</span>" +
+              (x.nota ? '<br><span class="muted">✏️ ' + esc(x.nota) + "</span>" : "") + "</li>";
           }).join("") + "</ul>" +
           (p.total ? '<p class="track-total">Productos: <strong>' + esc(money(p.total)) + "</strong></p>" : "") +
           "</details>" : "") +

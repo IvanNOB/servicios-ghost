@@ -2283,7 +2283,8 @@
     for (var i = 0; i < items.length; i++) {
       var it = items[i];
       lineas += '<li>' + esc(it.cantidad) + " × " + esc(it.plato) +
-        ' <span class="muted">(' + esc(it.restaurante) + ")</span> — " + esc(money(it.subtotal)) + "</li>";
+        ' <span class="muted">(' + esc(it.restaurante) + ")</span> — " + esc(money(it.subtotal)) +
+        (it.nota ? '<div class="pedido-nota">✏️ <strong>Nota del cliente:</strong> ' + esc(it.nota) + "</div>" : "") + "</li>";
     }
 
     // Botones de cambio de estado

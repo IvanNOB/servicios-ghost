@@ -231,7 +231,8 @@ as $$
       select jsonb_agg(jsonb_build_object(
         'plato', e->>'plato',
         'cantidad', e->'cantidad',
-        'restaurante', e->>'restaurante'))
+        'restaurante', e->>'restaurante',
+        'nota', e->>'nota'))
       from jsonb_array_elements(p.items) e
     ), '[]'::jsonb) else '[]'::jsonb end
   from public.pedidos p
