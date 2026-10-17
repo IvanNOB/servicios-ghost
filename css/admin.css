@@ -583,3 +583,30 @@ code {
 .tablero__portada-img { width: 100%; aspect-ratio: 5 / 2; border-radius: 16px; border: 1px solid var(--border); background: #111; }
 .tablero__portada-img--vacia { display: grid; place-items: center; color: var(--text-2); font-size: 0.9rem; border-style: dashed; }
 .tablero__portada-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 0.88rem; }
+
+/* -------- Opciones del producto y adiciones: casillas en vez de códigos -------- */
+.mini-label { display: block; font-size: 0.76rem; font-weight: 700; color: var(--text-2); margin: 6px 0 -2px; }
+.op-grupo { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px; margin: 8px 0; display: grid; gap: 6px; }
+.op-grupo__head { display: flex; gap: 8px; align-items: center; }
+.op-grupo__n { font-weight: 700; flex: 1; }
+.op-fila { display: grid; grid-template-columns: minmax(0, 1fr) 118px auto auto; gap: 6px; align-items: center; }
+.op-fila__p { position: relative; display: block; }
+.op-fila__p span { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-2); font-size: 0.85rem; pointer-events: none; }
+.op-fila__p input { padding-left: 30px; padding-right: 6px; width: 100%; font-variant-numeric: tabular-nums; min-width: 0; }
+.op-fila__p input::-webkit-inner-spin-button, .op-fila__p input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.op-fila__p input[type=number] { -moz-appearance: textfield; }
+.op-fila__p--grande span { left: 12px; font-weight: 700; }
+.op-fila__p--grande input { padding-left: 26px; }
+.op-fila__ag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--text-2); white-space: nowrap; }
+.op-fila__ag input { accent-color: var(--primary); }
+.op-fila__x { padding: 6px 9px; }
+@media (max-width: 480px) {
+  .op-fila { grid-template-columns: minmax(0, 1fr) 128px auto; }
+  .op-fila__ag { grid-column: 1 / 2; }
+  .op-fila__x { grid-row: 1; grid-column: 3; }
+}
+.op-vista { margin: 2px 0 0; font-size: 0.8rem; color: var(--primary); }
+.op-vista:empty { display: none; }
+.op-plantillas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.op-plantillas .muted { font-size: 0.8rem; }
+.sec-adic .inline-actions { margin-top: 6px; }

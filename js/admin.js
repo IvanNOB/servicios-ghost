@@ -257,12 +257,12 @@
           '<a class="btn-copy" href="' + esc(urlVistaPrevia(r.id)) + '" target="_blank" rel="noopener">👁️ Ver cómo se ve</a>' +
         "</div>" +
         '<details class="bienvenida__ayuda"><summary>💡 ¿Productos con tamaños o con/sin chantilly?</summary>' +
-          "<p>Deja <strong>un solo producto</strong> con el precio más bajo y, en <em>⚙️ Opciones que elige el cliente</em>, escribe una línea por cada cosa que elige. " +
-          "<code>(precio=3000)</code> es lo que <strong>suma</strong> esa opción:</p>" +
-          "<pre>Tamaño: 12 oz, 16 oz (precio=3000), 24 oz (precio=6000)\nChantilly: Sin chantilly, Con chantilly (precio=2000)</pre>" +
-          "<p>Si los precios no se suman así, usa una sola línea con cada versión y su diferencia:</p>" +
-          "<pre>Presentación: 12 oz sin chantilly, 12 oz con chantilly (precio=2000), 16 oz sin chantilly (precio=3000), 16 oz con chantilly (precio=5000)</pre>" +
-          "<p>El cliente ve el precio final de cada opción.</p>" +
+          "<ol>" +
+            "<li>Deja <strong>un solo producto</strong> (ej. “Frappé de caramelo”) con el precio <strong>más bajo</strong>.</li>" +
+            "<li>Debajo del producto toca <strong>⚙️ ¿El cliente elige algo?</strong> y luego <strong>📏 Tamaños</strong> o <strong>🍦 Con / sin chantilly</strong>.</li>" +
+            "<li>Escribe el nombre de cada opción y, en <strong>+ $</strong>, cuánto <strong>más</strong> cuesta (ej. Grande + $3.000). Si cuesta lo mismo, déjalo vacío.</li>" +
+            "<li>Debajo verás <strong>👀 El cliente ve</strong> con el precio final de cada opción. Puedes agregar tamaños y chantilly en el mismo producto.</li>" +
+          "</ol>" +
         "</details>" +
       "</section>";
   }
@@ -885,41 +885,46 @@
 
   // Adiciones de la sección: el cliente puede marcar las que quiera en
   // cualquier plato de esta sección, y cada una suma su precio.
-  function adicionesATexto(lista) {
-    if (!Array.isArray(lista)) return "";
-    return lista.map(function (a) {
-      return a.n + (a.precio > 0 ? " $" + Number(a.precio).toLocaleString("es-CO") : "") + (a.agotado ? " (agotado)" : "");
-    }).join(", ");
-  }
-  function textoAAdiciones(texto) {
-    return window.Importar && window.Importar.parsearAdiciones ? window.Importar.parsearAdiciones(texto) : [];
-  }
   function adicionesSeccionHTML(sec, idx) {
-    var texto = adicionesATexto(sec.adiciones);
-    var n = (sec.adiciones || []).length;
+    var lista = sec.adiciones || [];
+    var n = lista.filter(function (a) { return a.n; }).length;
     return (
-      '<details class="plato-opc sec-adic"' + (n ? " open" : "") + ">" +
-        "<summary>➕ Adiciones de esta sección" + (n ? " (" + n + ")" : "") + "</summary>" +
-        '<textarea class="field__textarea" rows="2" data-sec-adic="' + idx + '" placeholder="Queso extra $2.000, Tocineta $3.000, Huevo $1.500">' + esc(texto) + "</textarea>" +
-        '<p class="muted plato-opc__ayuda">Escríbelas separadas por coma, con lo que <strong>suma</strong> cada una (ej. <code>Queso extra $2.000</code>). ' +
-          'El cliente marca las que quiera en cualquier plato de esta sección. Si una se acaba, ponle <code>(agotado)</code>.</p>' +
-        (n ? '<button type="button" class="btn-copy btn-sm" data-adic-todas="' + idx + '">Usar estas adiciones en todas las secciones</button>' : "") +
+      '<details class="plato-opc sec-adic"' + (lista.length ? " open" : "") + ' data-ad="' + idx + '">' +
+        "<summary>➕ Adiciones de esta sección <span class=\"muted\">(queso extra, tocineta…)</span>" + (n ? " · " + n : "") + "</summary>" +
+        '<p class="muted plato-opc__ayuda" style="margin-top:0">El cliente puede marcar las que quiera en <strong>cualquier producto de esta sección</strong>, y cada una suma su precio.</p>' +
+        lista.map(function (a, oi) { return filaOpcionHTML("data-ad-o", a, 'data-ad-del="' + idx + "|" + oi + '"'); }).join("") +
+        '<div class="inline-actions">' +
+          '<button type="button" class="btn-copy btn-sm" data-ad-add="' + idx + '">+ Agregar adición</button>' +
+          (n ? '<button type="button" class="btn-link btn-sm" data-adic-todas="' + idx + '">Usar en todas las secciones</button>' : "") +
+        "</div>" +
       "</details>"
     );
+  }
+  function leerAdicionesSeccion(secEl) {
+    var out = [];
+    secEl.querySelectorAll("[data-ad-o]").forEach(function (oEl) {
+      var a = { n: (oEl.querySelector("[data-op-n]").value || "").trim(), precio: Number(oEl.querySelector("[data-op-p]").value) || 0 };
+      if (oEl.querySelector("[data-op-ag]").checked) a.agotado = true;
+      out.push(a);
+    });
+    return out;
   }
 
   function platoHTML(it, si, pi) {
     return (
       '<div class="plato-row" data-plato="' + si + "-" + pi + '" data-plato-id="' + esc(it.id || "") + '">' +
+        '<span class="mini-label">Producto</span>' +
         '<div class="plato-row__top">' +
           '<input class="field__input" data-plato-n="' + si + "-" + pi + '" value="' + esc(it.n || "") +
-            '" placeholder="Nombre del plato" />' +
-          '<button type="button" class="btn-danger" data-del-plato="' + si + "-" + pi + '">✕</button>' +
+            '" placeholder="Ej: Frappé de caramelo" aria-label="Nombre del producto" />' +
+          '<button type="button" class="btn-danger" data-del-plato="' + si + "-" + pi + '" title="Quitar este producto">✕</button>' +
         "</div>" +
+        '<span class="mini-label">Descripción <span class="muted">(opcional)</span></span>' +
         '<input class="field__input" data-plato-d="' + si + "-" + pi + '" value="' + esc(it.d || "") +
-          '" placeholder="Descripción" />' +
-        '<input class="field__input" data-plato-p="' + si + "-" + pi + '" type="number" min="0" step="100" value="' +
-          esc(it.p != null ? it.p : "") + '" placeholder="Precio (ej. 12000)" />' +
+          '" placeholder="Ej: Con leche, 354 ml" aria-label="Descripción" />' +
+        '<span class="mini-label">Precio' + (Array.isArray(it.opciones) && it.opciones.length ? ' <span class="muted">(el más bajo)</span>' : "") + "</span>" +
+        '<label class="op-fila__p op-fila__p--grande"><span>$</span><input class="field__input" data-plato-p="' + si + "-" + pi + '" type="number" min="0" step="100" inputmode="numeric" value="' +
+          esc(it.p != null ? it.p : "") + '" placeholder="12000" aria-label="Precio" /></label>' +
         '<label class="agotado-check"><input type="checkbox" data-plato-ag="' + si + "-" + pi + '"' +
           (it.agotado ? " checked" : "") + " /> Agotado</label>" +
         (it.p > 0 || !it.n ? "" : '<span class="falta-precio">⚠️ Falta el precio</span>') +
@@ -937,18 +942,129 @@
     );
   }
 
-  // Opciones que elige el cliente (salsa, tamaño, proteína…), en texto simple.
+  // Opciones que elige el cliente (tamaño, sabor, salsa…): sin códigos, con casillas.
+  var PLANTILLAS_OPC = {
+    tamano: { t: "📏 Tamaños", g: { nombre: "Tamaño", opciones: [{ n: "Pequeño" }, { n: "Mediano" }, { n: "Grande" }] } },
+    chantilly: { t: "🍦 Con / sin chantilly", g: { nombre: "Chantilly", opciones: [{ n: "Sin chantilly" }, { n: "Con chantilly" }] } },
+    salsa: { t: "🥫 Salsas", g: { nombre: "Salsa", opciones: [{ n: "" }, { n: "" }] } },
+    otro: { t: "➕ Otra cosa", g: { nombre: "", opciones: [{ n: "" }, { n: "" }] } },
+  };
+
+  function editarFilasOpciones(btn) {
+    leerEditor();
+    var y = elEditorBody.scrollTop;
+    var plato = function (k) { var p = k.split("-"); return editando.carta[Number(p[0])].items[Number(p[1])]; };
+    var v;
+    if ((v = btn.getAttribute("data-po-plantilla"))) {
+      var pp = v.split("|"), it = plato(pp[0]);
+      it.opciones = (it.opciones || []).concat([JSON.parse(JSON.stringify(PLANTILLAS_OPC[pp[1]].g))]);
+    } else if ((v = btn.getAttribute("data-po-add-o"))) {
+      var pa = v.split("|"); plato(pa[0]).opciones[Number(pa[1])].opciones.push({ n: "" });
+    } else if ((v = btn.getAttribute("data-po-del-o"))) {
+      var pd = v.split("|"); plato(pd[0]).opciones[Number(pd[1])].opciones.splice(Number(pd[2]), 1);
+    } else if ((v = btn.getAttribute("data-po-del-g"))) {
+      var pg = v.split("|"); plato(pg[0]).opciones.splice(Number(pg[1]), 1);
+    } else if ((v = btn.getAttribute("data-ad-add"))) {
+      var sc = editando.carta[Number(v)]; sc.adiciones = (sc.adiciones || []).concat([{ n: "", precio: 0 }]);
+    } else if ((v = btn.getAttribute("data-ad-del"))) {
+      var px = v.split("|"); editando.carta[Number(px[0])].adiciones.splice(Number(px[1]), 1);
+    }
+    pintarEditor();
+    elEditorBody.scrollTop = y;
+    // Poner el cursor en la primera casilla vacía de lo que se agregó.
+    var cont = btn.getAttribute("data-ad-add") != null ? elEditorBody.querySelector('[data-ad="' + btn.getAttribute("data-ad-add") + '"]')
+      : elEditorBody.querySelector('[data-po="' + String(v).split("|")[0] + '"]');
+    var vacio = cont && [].filter.call(cont.querySelectorAll("[data-po-gn],[data-op-n]"), function (i) { return !i.value; }).pop();
+    if (vacio && !btn.hasAttribute("data-po-del-o") && !btn.hasAttribute("data-po-del-g") && !btn.hasAttribute("data-ad-del")) vacio.focus({ preventScroll: true });
+  }
+
+  // "👀 El cliente ve" se actualiza mientras escribe.
+  function refrescarVistaOpc(el) {
+    var pEl = el.closest("[data-plato]");
+    if (!pEl) return;
+    var base = Number((pEl.querySelector("[data-plato-p]") || {}).value) || 0;
+    var grupos = leerOpcionesPlato(pEl);
+    pEl.querySelectorAll("[data-po-g]").forEach(function (gEl, gi) {
+      var v = gEl.querySelector("[data-po-vista]");
+      var txt = vistaOpcTexto(base, grupos[gi] || {});
+      if (v) v.textContent = txt ? "👀 El cliente ve: " + txt : "";
+    });
+  }
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t && t.closest && t.closest("#editorBody") && (t.closest("[data-po-g]") || t.hasAttribute("data-plato-p"))) refrescarVistaOpc(t);
+  });
+
+  function precioTxtAdm(n) { return "$" + Number(n || 0).toLocaleString("es-CO"); }
+
+  // "Así lo ve el cliente: Pequeño $14.000 · Mediano $17.000"
+  function vistaOpcTexto(base, g) {
+    var ops = (g.opciones || []).filter(function (o) { return o.n; });
+    if (!ops.length) return "";
+    return ops.map(function (o) {
+      return o.n + (base > 0 ? " " + precioTxtAdm(base + (Number(o.precio) || 0)) : (o.precio > 0 ? " +" + precioTxtAdm(o.precio) : "")) + (o.agotado ? " (agotado)" : "");
+    }).join(" · ");
+  }
+
+  function filaOpcionHTML(attrs, o, quitar) {
+    return '<div class="op-fila" ' + attrs + ">" +
+        '<input class="field__input op-fila__n" data-op-n value="' + esc(o.n || "") + '" placeholder="Nombre (ej. Grande)" />' +
+        '<label class="op-fila__p"><span>+ $</span><input class="field__input" data-op-p type="number" min="0" step="500" inputmode="numeric" value="' +
+          (Number(o.precio) > 0 ? Number(o.precio) : "") + '" placeholder="0" aria-label="Cuánto más cuesta" /></label>' +
+        '<label class="op-fila__ag" title="Se acabó"><input type="checkbox" data-op-ag' + (o.agotado ? " checked" : "") + " /> Agotado</label>" +
+        '<button type="button" class="btn-danger btn-sm op-fila__x" ' + quitar + ' aria-label="Quitar">✕</button>' +
+      "</div>";
+  }
+
   function platoOpcionesHTML(it, key) {
-    var texto = (window.Importar && Array.isArray(it.opciones))
-      ? window.Importar.opcionesATexto(it.opciones) : "";
-    return (
-      '<details class="plato-opc"' + (texto ? " open" : "") + ">" +
-        "<summary>⚙️ Opciones que elige el cliente" + (texto ? " (" + it.opciones.length + ")" : "") + "</summary>" +
-        '<textarea class="field__textarea" rows="2" data-plato-opc="' + key + '" placeholder="Salsa: BBQ, Miel mostaza, Maracuyá&#10;Tamaño: Personal, Mediano (precio=5000), Grande (precio=15000)">' +
-          esc(texto) + "</textarea>" +
-        '<p class="muted plato-opc__ayuda">Una línea por cada cosa que elige el cliente. <code>(precio=5000)</code> <strong>suma</strong> ese valor al precio del plato. Ej. con/sin chantilly: <code>Chantilly: Sin chantilly, Con chantilly (precio=2000)</code>. Marca <code>(agotado)</code> si se acabó.</p>' +
-      "</details>"
-    );
+    var grupos = Array.isArray(it.opciones) ? it.opciones : [];
+    var base = Number(it.p) || 0;
+    var html = '<details class="plato-opc"' + (grupos.length ? " open" : "") + ' data-po="' + key + '">' +
+      "<summary>⚙️ ¿El cliente elige algo? <span class=\"muted\">(tamaño, sabor, salsa…)</span>" + (grupos.length ? " · " + grupos.length : "") + "</summary>";
+    grupos.forEach(function (g, gi) {
+      var k = key + "|" + gi;
+      html += '<div class="op-grupo" data-po-g="' + k + '">' +
+        '<div class="op-grupo__head">' +
+          '<input class="field__input op-grupo__n" data-po-gn value="' + esc(g.nombre || "") + '" placeholder="¿Qué elige? (ej. Tamaño)" />' +
+          '<button type="button" class="btn-link btn-sm" data-po-del-g="' + k + '">Quitar</button>' +
+        "</div>" +
+        (g.opciones || []).map(function (o, oi) { return filaOpcionHTML("data-po-o", o, 'data-po-del-o="' + k + "|" + oi + '"'); }).join("") +
+        '<button type="button" class="btn-copy btn-sm" data-po-add-o="' + k + '">+ Otra opción</button>' +
+        '<p class="op-vista" data-po-vista>' + (vistaOpcTexto(base, g) ? "👀 El cliente ve: " + esc(vistaOpcTexto(base, g)) : "") + "</p>" +
+      "</div>";
+    });
+    html += '<div class="op-plantillas"><span class="muted">' + (grupos.length ? "Agregar otra:" : "Agregar:") + "</span>" +
+      Object.keys(PLANTILLAS_OPC).map(function (k) {
+        return '<button type="button" class="btn-copy btn-sm" data-po-plantilla="' + key + "|" + k + '">' + PLANTILLAS_OPC[k].t + "</button>";
+      }).join("") + "</div>" +
+      '<p class="muted plato-opc__ayuda">En <strong>+ $</strong> pon cuánto <strong>más</strong> cuesta esa opción (ej. Grande + $3.000). Si cuesta lo mismo, déjalo vacío.</p>' +
+      "</details>";
+    return html;
+  }
+
+  // Lee las opciones de un plato desde las casillas.
+  function leerOpcionesPlato(pEl) {
+    var grupos = [];
+    pEl.querySelectorAll("[data-po-g]").forEach(function (gEl) {
+      var nombre = (gEl.querySelector("[data-po-gn]") || {}).value || "";
+      var ops = [];
+      gEl.querySelectorAll("[data-po-o]").forEach(function (oEl) {
+        var n = (oEl.querySelector("[data-op-n]").value || "").trim();
+        var o = { n: n };
+        var pr = Number(oEl.querySelector("[data-op-p]").value) || 0;
+        if (pr > 0) o.precio = pr;
+        if (oEl.querySelector("[data-op-ag]").checked) o.agotado = true;
+        ops.push(o);
+      });
+      grupos.push({ nombre: nombre.trim(), opciones: ops });
+    });
+    return grupos;
+  }
+  // Al guardar: fuera filas y grupos vacíos.
+  function limpiarOpciones(grupos) {
+    return (grupos || []).map(function (g) {
+      return { nombre: g.nombre || "Opción", opciones: (g.opciones || []).filter(function (o) { return o.n; }) };
+    }).filter(function (g) { return g.opciones.length; });
   }
 
   /* ------------- Carta nueva en el código (data.js) vs. la guardada ------------- */
@@ -1116,18 +1232,12 @@
         var fotoEl = pEl.querySelector('[data-plato-foto="' + key + '"]');
         if (fotoEl && fotoEl.value) plato.foto = fotoEl.value;
         // Opciones del plato (salsa, tamaño…). Antes se perdían al guardar.
-        var opcEl = pEl.querySelector('[data-plato-opc="' + key + '"]');
-        if (opcEl && window.Importar) {
-          var grupos = window.Importar.parsearOpciones(opcEl.value).map(function (g) {
-            return { nombre: g.nombre, opciones: g.opciones };
-          });
-          if (grupos.length) plato.opciones = grupos;
-        }
+        var gruposOpc = leerOpcionesPlato(pEl);
+        if (gruposOpc.length) plato.opciones = gruposOpc;
         items.push(plato);
       });
       var secNueva = { sec: nombreSec ? nombreSec.value.trim() : "Sección", items: items };
-      var adicEl = secEl.querySelector('[data-sec-adic="' + si + '"]');
-      var adic = adicEl ? textoAAdiciones(adicEl.value) : [];
+      var adic = secEl.querySelector("[data-ad]") ? leerAdicionesSeccion(secEl) : [];
       if (adic.length) secNueva.adiciones = adic;
       nuevasSecs.push(secNueva);
     });
@@ -1896,6 +2006,9 @@
       toast("Adiciones copiadas a " + editando.carta.length + " secciones ✓ (falta Guardar cambios)");
       return;
     }
+    // Opciones del plato y adiciones: agregar / quitar filas
+    var po = t.closest("[data-po-plantilla],[data-po-add-o],[data-po-del-o],[data-po-del-g],[data-ad-add],[data-ad-del]");
+    if (po) { editarFilasOpciones(po); return; }
     var addPlato = t.closest("[data-add-plato]");
     if (addPlato) {
       leerEditor();
@@ -2002,6 +2115,13 @@
   async function guardar() {
     leerEditor();
     var r = editando;
+    // Fuera filas vacías (opciones sin nombre, grupos sin opciones, adiciones sin nombre).
+    (r.carta || []).forEach(function (sc) {
+      (sc.items || []).forEach(function (it) {
+        if (it.opciones) { it.opciones = limpiarOpciones(it.opciones); if (!it.opciones.length) delete it.opciones; }
+      });
+      if (sc.adiciones) { sc.adiciones = sc.adiciones.filter(function (a) { return a.n; }); if (!sc.adiciones.length) delete sc.adiciones; }
+    });
     if (!r.nombre.trim()) { toast("Ponle un nombre al restaurante", true); return; }
     if (!r.cat.trim()) { toast("Ponle una categoría", true); return; }
     if (!r.id) r.id = slug(r.nombre);
