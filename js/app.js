@@ -1702,7 +1702,7 @@
     if (t.closest("#cartBtnTop")) { openSheet(); return; }
 
     // --- Logo: volver al inicio ---
-    if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); irAInicio(); return; }
+    if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); if (vistaActual) conTransicion(irAInicio); else irAInicio(); return; }
 
     // --- Chips de categoría ---
     if (t.closest("[data-limpiar-filtros]")) { limpiarFiltros(); return; }
@@ -1710,7 +1710,7 @@
     if (chip) { aplicarFiltro(chip.getAttribute("data-chip")); return; }
 
     // --- Volver desde la carta ---
-    if (t.closest("[data-back]")) { irAInicio(); return; }
+    if (t.closest("[data-back]")) { conTransicion(irAInicio); return; }
     var comp = t.closest("[data-compartir]");
     if (comp) { compartirNegocio(comp.getAttribute("data-compartir")); return; }
 
@@ -1769,7 +1769,12 @@
     if (menuAbrir) { abrirMenuVentana(menuAbrir.getAttribute("data-menu-abrir"), menuAbrir.getAttribute("data-tipo")); return; }
     if (t.closest("[data-menu-close]")) { cerrarMenuVentana(); return; }
     var menuCarta = t.closest("[data-menu-carta]");
-    if (menuCarta) { cerrarMenuVentana(); abrirCarta(menuCarta.getAttribute("data-menu-carta")); return; }
+    if (menuCarta) {
+      cerrarMenuVentana();
+      var idMc = menuCarta.getAttribute("data-menu-carta");
+      conTransicion(function () { abrirCarta(idMc); }, findRest(idMc));
+      return;
+    }
 
     // --- Carta: índice de secciones y buscador ---
     var irSec = t.closest("[data-ir-sec]");
@@ -1791,7 +1796,8 @@
     // --- Abrir carta tocando una tarjeta ---
     var card = t.closest("[data-rest]");
     if (card && card.classList.contains("card")) {
-      abrirCarta(card.getAttribute("data-rest"));
+      var idCard = card.getAttribute("data-rest");
+      conTransicion(function () { abrirCarta(idCard); }, findRest(idCard));
       return;
     }
   }
@@ -2108,10 +2114,45 @@
     }).join("");
   }
 
+  /* ------------- Transición con el fantasma al entrar/salir de una carta -------------
+     Rápida (~0,4 s): aparece el logo, se cambia la vista por detrás y se va. */
+  var _transOcupada = false, elTrans = null;
+  function conTransicion(cambio, rest) {
+    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || _transOcupada) { cambio(); return; }
+    _transOcupada = true;
+    if (!elTrans) {
+      elTrans = document.createElement("div");
+      elTrans.className = "trans";
+      elTrans.setAttribute("aria-hidden", "true");
+      elTrans.innerHTML =
+        '<div class="trans__centro">' +
+          '<span class="trans__logo"><img src="assets/logo-sm.png" alt="" width="96" height="96" /></span>' +
+          '<span class="trans__txt"></span>' +
+        "</div>";
+      document.body.appendChild(elTrans);
+    }
+    elTrans.querySelector(".trans__txt").textContent = rest ? rest.nombre : "Servicios Ghost";
+    elTrans.classList.remove("trans--sale");
+    void elTrans.offsetWidth; // reinicia la animación
+    elTrans.classList.add("trans--entra");
+    setTimeout(function () {
+      try { cambio(); } finally {
+        setTimeout(function () {
+          elTrans.classList.remove("trans--entra");
+          elTrans.classList.add("trans--sale");
+          setTimeout(function () { elTrans.classList.remove("trans--sale"); _transOcupada = false; }, 220);
+        }, 140);
+      }
+    }, 150);
+  }
+
   // Abre la carta de un restaurante y, si se indica, resalta un plato.
   function irAPlato(restId, itemId) {
     if (!findRest(restId)) return;
-    abrirCarta(restId);
+    conTransicion(function () { abrirCarta(restId); resaltarPlato(itemId); }, findRest(restId));
+  }
+  function resaltarPlato(itemId) {
     if (!itemId) return;
     var nodo = elVistaCarta.querySelector('[data-dish][data-item="' + cssId(itemId) + '"]');
     if (!nodo) return;
@@ -2119,7 +2160,7 @@
       if (nodo.scrollIntoView) nodo.scrollIntoView({ behavior: "smooth", block: "center" });
       nodo.classList.add("dish--destacado");
       setTimeout(function () { nodo.classList.remove("dish--destacado"); }, 2200);
-    }, 60);
+    }, 340);
   }
 
   /* ----------------------- Repetir último pedido ------------------ */
@@ -2477,7 +2518,10 @@
   function accionFab(op) {
     var a = op.getAttribute("data-fab");
     if (a === "pedido") openSheet();
-    else if (a === "restaurantes") { irAInicio(); limpiarFiltros(); irASeccionInicio("restaurantes"); }
+    else if (a === "restaurantes") {
+      var ir = function () { irAInicio(); limpiarFiltros(); irASeccionInicio("restaurantes"); };
+      if (vistaActual) conTransicion(ir); else ir();
+    }
     else if (a === "buscar") {
       if (vistaActual) irAInicio();
       window.scrollTo({ top: 0, behavior: "smooth" });

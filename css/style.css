@@ -1697,3 +1697,31 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .almuerzo__nota { font-size: 0.84rem; color: var(--text-2); background: var(--surface-2, #1c1c1c); border-radius: 10px; padding: 8px 12px; margin: 8px 0 4px; }
 .carta-ilus { font-size: 0.8rem; color: var(--text-2); margin: 10px 0 0; }
 .dish__foto[src^="assets/platos/"] { background: transparent; }
+
+/* =====================================================================
+   Transición con el fantasma al entrar o salir de un restaurante
+   ===================================================================== */
+.trans {
+  position: fixed; inset: 0; z-index: 120; pointer-events: none; visibility: hidden;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--primary) 22%, var(--bg)) 0%, var(--bg) 62%);
+  clip-path: circle(0% at 50% 50%);
+}
+.trans--entra, .trans--sale { visibility: visible; pointer-events: auto; }
+.trans--entra { animation: transEntra .15s ease-out forwards; }
+.trans--sale { animation: transSale .22s ease-in forwards; }
+.trans__centro { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.trans__logo {
+  width: 96px; height: 96px; border-radius: 50%; overflow: hidden; background: #f2f2f2;
+  border: 3px solid var(--primary);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--primary) 18%, transparent), 0 14px 40px rgba(0,0,0,.6);
+}
+.trans__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.trans--entra .trans__logo { animation: transFantasma .3s cubic-bezier(.2,1.4,.4,1) both; }
+.trans__txt { font-family: var(--font-title); font-weight: 800; font-size: 1rem; color: var(--primary); letter-spacing: .02em; max-width: 80vw; text-align: center; }
+.trans--entra .trans__txt { animation: transTexto .25s ease-out .05s both; }
+@keyframes transEntra { from { clip-path: circle(0% at 50% 50%); } to { clip-path: circle(75% at 50% 50%); } }
+@keyframes transSale { from { clip-path: circle(75% at 50% 50%); opacity: 1; } to { clip-path: circle(75% at 50% 50%); opacity: 0; } }
+@keyframes transFantasma { from { transform: scale(.4) rotate(-14deg) translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes transTexto { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.trans--sale .trans__logo { transform: scale(1.08) translateY(-6px); transition: transform .22s ease-in; }
