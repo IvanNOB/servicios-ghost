@@ -683,7 +683,11 @@
         "</div>" +
         (r.carta.length > 1 ? '<nav class="carta-nav__chips" id="cartaChips" aria-label="Secciones de la carta">' + indice + "</nav>" : "") +
       "</div>";
-    secciones = navCarta + secciones +
+    // Imágenes de referencia (ilustraciones) mientras el negocio sube sus fotos.
+    var hayIlustraciones = r.carta.some(function (sc) { return (sc.items || []).some(function (it) { return esIlustracion(it.foto); }); });
+    secciones = navCarta +
+      (hayIlustraciones ? '<p class="carta-ilus">🎨 Las imágenes son ilustrativas: el plato real puede verse diferente.</p>' : "") +
+      secciones +
       '<p class="empty" id="cartaVacia" hidden>No encontramos ese plato aquí. <button type="button" class="btn-link" data-limpiar-carta>Ver toda la carta</button></p>';
 
     elVistaCarta.innerHTML =
@@ -812,6 +816,9 @@
       "</div>"
     );
   }
+
+  // ¿La foto es una ilustración de referencia (no una foto real del negocio)?
+  function esIlustracion(url) { return /^assets\/platos\//.test(String(url || "")); }
 
   // Foto del plato (si la subieron en el panel). Carga diferida: no gasta datos
   // hasta que el cliente baja hasta ese plato.

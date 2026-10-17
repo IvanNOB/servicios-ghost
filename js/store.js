@@ -88,6 +88,7 @@
       // Qué columnas tiene la tabla (para avisar en el panel si falta alguna nueva).
       if (res.data && res.data[0]) columnasTabla = Object.keys(res.data[0]);
       var nube = (res.data || []).map(filaARestaurante);
+      completarFotos(nube, base);
       var idsNube = {};
       for (var i = 0; i < nube.length; i++) idsNube[nube[i].id] = true;
       var faltantes = base.filter(function (r) { return !idsNube[r.id]; });
@@ -96,6 +97,24 @@
       console.warn("Supabase no respondió, uso data.js:", e && e.message);
       return base;
     }
+  }
+
+  // Platos guardados en Supabase sin foto: usan la imagen de data.js (si hay)
+  // para el mismo plato. La foto que suba el negocio siempre manda.
+  function completarFotos(nube, base) {
+    var fotos = {};
+    base.forEach(function (r) {
+      (r.carta || []).forEach(function (s) {
+        (s.items || []).forEach(function (it) { if (it.foto) fotos[r.id + "::" + it.id] = it.foto; });
+      });
+    });
+    nube.forEach(function (r) {
+      (r.carta || []).forEach(function (s) {
+        (s.items || []).forEach(function (it) {
+          if (!it.foto && fotos[r.id + "::" + it.id]) it.foto = fotos[r.id + "::" + it.id];
+        });
+      });
+    });
   }
 
   // Ajustes de la foto de perfil (ver js/logo.js).
