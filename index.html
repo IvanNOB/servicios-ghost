@@ -103,10 +103,16 @@
     </div>
   </header>
 
-  <!-- Logo flotante fijo en una esquina (siempre visible) -->
-  <a class="logo-flotante" href="#" aria-label="Servicios Ghost">
-    <img src="assets/logo-sm.png" width="64" height="64" alt="Logo de Servicios Ghost: fantasma chef con una campana de servicio" onerror="this.style.display='none'" />
-  </a>
+  <!-- Fantasma flotante: al tocarlo muestra todo lo que se puede hacer -->
+  <div class="fab" id="fab">
+    <div class="fab__fondo" data-fab-cerrar hidden></div>
+    <div class="fab__menu" id="fabMenu" role="menu" aria-label="¿Qué quieres hacer?" hidden></div>
+    <span class="fab__pista" id="fabPista" hidden>¡Tócame! 👻 Aquí está todo</span>
+    <button type="button" class="logo-flotante" id="fabBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="fabMenu" aria-label="Abrir menú: qué puedo hacer">
+      <img src="assets/logo-sm.png" width="64" height="64" alt="" onerror="this.style.display='none'" />
+      <span class="fab__badge" id="fabBadge" hidden>0</span>
+    </button>
+  </div>
 
   <main class="main" id="main">
     <!-- Vista: inicio -->

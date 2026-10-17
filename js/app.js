@@ -1135,6 +1135,7 @@
       elCartBarProductos.textContent = n === 1 ? "1 producto" : n + " productos";
       elCartBarTotal.textContent = money(totalPesos());
     }
+    actualizarFab();
     // No repintar si la hoja está mostrando la confirmación de envío.
     if (!elSheet.hidden && !_mostrandoConfirmacion) renderSheet();
   }
@@ -2276,6 +2277,138 @@
     }
     if (esIOS) toast("En iPhone: toca el botón Compartir y luego “Agregar a inicio”.", 6000);
   }
+  /* ---------- Fantasma flotante: menú con todo lo que se puede hacer ---------- */
+  var elFab = document.getElementById("fab");
+  var elFabBtn = document.getElementById("fabBtn");
+  var elFabMenu = document.getElementById("fabMenu");
+  var LS_FAB_VISTO = "ghost_fab_visto_v1";
+
+  function fabOpcion(ico, titulo, sub, attrs, clase) {
+    return '<button type="button" role="menuitem" class="fab__op' + (clase ? " " + clase : "") + '" ' + attrs + ">" +
+      '<span class="fab__ico" aria-hidden="true">' + ico + "</span>" +
+      '<span class="fab__txt"><strong>' + titulo + "</strong>" + (sub ? "<small>" + sub + "</small>" : "") + "</span></button>";
+  }
+
+  function fabOpcionesHTML() {
+    var html = "", n = totalProductos();
+    var r = vistaActual ? findRest(vistaActual) : null;
+    var cuenta = function (f) { return DATA.filter(function (x) { return cumpleFiltro(x, f); }).length; };
+
+    // Lo más importante primero: su pedido.
+    if (n > 0) html += fabOpcion("🛒", "Ver mi pedido", (n === 1 ? "1 producto" : n + " productos") + " · " + money(totalPesos()), 'data-fab="pedido"', "fab__op--dorado");
+    else if (ultimoPedido()) html += fabOpcion("🔁", "Repetir mi último pedido", "Lo mismo de la vez pasada", "data-repetir");
+
+    if (r) html += fabOpcion("🍽️", "Ver todos los restaurantes", "Salir de " + esc(r.nombre), 'data-fab="restaurantes"');
+    html += fabOpcion("🔍", "Buscar un plato", "En todos los restaurantes", 'data-fab="buscar"');
+
+    var abiertos = cuenta("abiertos");
+    if (abiertos && abiertos < DATA.length) html += fabOpcion("🟢", "Abiertos ahora", abiertos + " de " + DATA.length + " restaurantes", 'data-fab="filtro" data-f="abiertos"');
+    else if (!r) html += fabOpcion("🍽️", "Ver los restaurantes", abiertos ? "Todos abiertos ahora" : "Ahora están cerrados", 'data-fab="restaurantes"');
+    var alm = cuenta("almuerzo"), des = cuenta("desayuno");
+    if (alm) html += fabOpcion("🍲", "Almuerzos de hoy", alm + (alm === 1 ? " restaurante" : " restaurantes"), 'data-fab="filtro" data-f="almuerzo"');
+    if (des) html += fabOpcion("🍳", "Desayunos de hoy", des + (des === 1 ? " restaurante" : " restaurantes"), 'data-fab="filtro" data-f="desayuno"');
+    var pro = cuenta("promos");
+    if (pro) html += fabOpcion("🔥", "Promociones", pro + (pro === 1 ? " restaurante" : " restaurantes"), 'data-fab="filtro" data-f="promos"');
+
+    html += fabOpcion("📦", "Seguir mi pedido", "¿Cómo va lo que pedí?", 'data-track-open=""');
+    html += '<a role="menuitem" class="fab__op" data-fab="wa" target="_blank" rel="noopener" href="https://wa.me/' + WHATSAPP + "?text=" +
+      encodeURIComponent("Hola " + NOMBRE_NEGOCIO + (r ? ", tengo una pregunta sobre " + r.nombre + "." : ", quiero hacer un pedido.")) + '">' +
+      '<span class="fab__ico" aria-hidden="true">💬</span><span class="fab__txt"><strong>Escribirnos por WhatsApp</strong><small>Te ayudamos con tu pedido</small></span></a>';
+    if (r && r.visible !== false) html += fabOpcion("🔗", "Compartir este restaurante", "Envíale la carta a alguien", 'data-compartir="' + esc(r.id) + '"');
+    if ((_promptInstalar || esIOS) && !yaInstalada) html += fabOpcion("📲", "Instalar la app", "Pide más rápido desde tu pantalla", 'data-fab="instalar"');
+    if (!r) html += fabOpcion("❓", "¿Cómo funciona?", "Pedir en 3 pasos", 'data-fab="como"');
+    if (window.scrollY > 600) html += fabOpcion("⬆️", "Volver arriba", "", 'data-fab="arriba"');
+    return '<div class="fab__cab">👻 ¿Qué quieres hacer?</div>' + html;
+  }
+
+  function abrirFab() {
+    if (!elFab) return;
+    elFabMenu.innerHTML = fabOpcionesHTML();
+    elFabMenu.hidden = false;
+    elFab.querySelector(".fab__fondo").hidden = false;
+    elFab.classList.add("fab--abierto");
+    elFabBtn.setAttribute("aria-expanded", "true");
+    ocultarPistaFab();
+    var primero = elFabMenu.querySelector(".fab__op");
+    if (primero && primero.focus) primero.focus({ preventScroll: true });
+  }
+  function cerrarFab(devolverFoco) {
+    if (!elFab || elFabMenu.hidden) return;
+    elFabMenu.hidden = true;
+    elFab.querySelector(".fab__fondo").hidden = true;
+    elFab.classList.remove("fab--abierto");
+    elFabBtn.setAttribute("aria-expanded", "false");
+    if (devolverFoco) elFabBtn.focus({ preventScroll: true });
+  }
+  function irASeccionInicio(id) {
+    if (vistaActual) irAInicio();
+    var el = document.getElementById(id);
+    var alto = (document.querySelector(".header") || {}).offsetHeight || 0;
+    if (el) setTimeout(function () { window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - alto - 8, behavior: "smooth" }); }, 30);
+  }
+  function accionFab(op) {
+    var a = op.getAttribute("data-fab");
+    if (a === "pedido") openSheet();
+    else if (a === "restaurantes") { irAInicio(); limpiarFiltros(); irASeccionInicio("restaurantes"); }
+    else if (a === "buscar") {
+      if (vistaActual) irAInicio();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setTimeout(function () { elBuscador.focus(); }, 250);
+    } else if (a === "filtro") {
+      var f = op.getAttribute("data-f");
+      if (filtroCategoria !== f) aplicarFiltro(f);
+      else { if (vistaActual) irAInicio(); irAResultados(); }
+    } else if (a === "instalar") instalarApp();
+    else if (a === "como") irASeccionInicio("como-funciona");
+    else if (a === "arriba") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function mostrarPistaFab() {
+    var p = document.getElementById("fabPista");
+    try { if (!p || localStorage.getItem(LS_FAB_VISTO)) return; } catch (e) { return; }
+    p.hidden = false;
+    setTimeout(ocultarPistaFab, 7000);
+  }
+  function ocultarPistaFab() {
+    var p = document.getElementById("fabPista");
+    if (p && !p.hidden) { p.hidden = true; try { localStorage.setItem(LS_FAB_VISTO, "1"); } catch (e) { /* sin almacenamiento */ } }
+  }
+
+  // Número de productos del pedido sobre el fantasma.
+  function actualizarFab() {
+    var b = document.getElementById("fabBadge");
+    if (!b) return;
+    var n = totalProductos();
+    b.hidden = n <= 0;
+    b.textContent = n > 99 ? "99+" : String(n);
+  }
+
+  if (elFab) {
+    elFabBtn.addEventListener("click", function () { if (elFabMenu.hidden) abrirFab(); else cerrarFab(); });
+    elFab.addEventListener("click", function (e) {
+      if (e.target.closest("[data-fab-cerrar]")) { cerrarFab(); return; }
+      var op = e.target.closest(".fab__op");
+      if (!op) return;
+      // Las opciones con data-repetir, data-track-open o data-compartir las
+      // atiende el manejador general; aquí solo cerramos el menú.
+      if (op.hasAttribute("data-fab") && op.getAttribute("data-fab") !== "wa") accionFab(op);
+      cerrarFab();
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") cerrarFab(true); });
+
+    // Se esconde al bajar (para no tapar la carta) y vuelve al subir.
+    var _yFab = window.scrollY;
+    window.addEventListener("scroll", function () {
+      var y = window.scrollY;
+      if (Math.abs(y - _yFab) < 12) return;
+      if (elFabMenu.hidden) elFab.classList.toggle("fab--escondido", y > _yFab && y > 240);
+      _yFab = y;
+    }, { passive: true });
+
+    actualizarFab();
+    setTimeout(mostrarPistaFab, 2500);
+  }
+
   if ("serviceWorker" in navigator && location.protocol === "https:") {
     window.addEventListener("load", function () {
       navigator.serviceWorker.register("sw.js").catch(function () { /* sin app offline */ });
