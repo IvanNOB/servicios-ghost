@@ -937,10 +937,39 @@
           "</label>" +
           (it.foto ? '<button type="button" class="btn-danger btn-sm" data-plato-foto-quitar="' + si + "-" + pi + '">Quitar</button>' : "") +
         "</div>" +
+        platoMensajeHTML(it, si + "-" + pi) +
         platoOpcionesHTML(it, si + "-" + pi) +
       "</div>"
     );
   }
+
+  // Mensaje en el producto: el negocio decide si se muestra o no.
+  var MENSAJES_LISTOS = ["🔥 El más pedido", "⭐ Recomendado", "🆕 Nuevo", "🌶️ Picante", "🌱 Vegetariano", "🏠 Hecho en casa", "⏱️ Tarda un poco más", "🎉 Promoción"];
+  function platoMensajeHTML(it, key) {
+    var m = it.msg && it.msg.texto ? it.msg : null;
+    var on = m ? m.mostrar !== false : true;
+    return '<details class="plato-opc plato-msg"' + (m ? " open" : "") + ' data-msg-box="' + key + '">' +
+        "<summary>🏷️ Mensaje en el producto <span class=\"muted\">(opcional)</span>" +
+          (m ? (on ? ' · <span class="plato-msg__estado plato-msg__estado--on">Se muestra</span>' : ' · <span class="plato-msg__estado">Oculto</span>') : "") + "</summary>" +
+        '<label class="plato-msg__on"><input type="checkbox" data-plato-msg-on' + (on ? " checked" : "") + " /> Mostrarlo a los clientes</label>" +
+        '<input class="field__input" data-plato-msg maxlength="60" value="' + esc(m ? m.texto : "") + '" placeholder="Ej: 🔥 El más pedido · Solo fines de semana · Pídelo bien frío" aria-label="Mensaje en el producto" />' +
+        '<div class="op-plantillas"><span class="muted">Ideas:</span>' +
+          MENSAJES_LISTOS.map(function (t) { return '<button type="button" class="btn-copy btn-sm" data-msg-listo="' + esc(t) + '">' + esc(t) + "</button>"; }).join("") +
+        "</div>" +
+        '<p class="muted plato-opc__ayuda">Sale en la carta junto al producto. Para quitarlo un tiempo sin borrarlo, desmarca “Mostrarlo a los clientes”.</p>' +
+      "</details>";
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-msg-listo]");
+    if (!b) return;
+    var box = b.closest("[data-msg-box]");
+    var inp = box && box.querySelector("[data-plato-msg]");
+    if (!inp) return;
+    inp.value = b.getAttribute("data-msg-listo");
+    var on = box.querySelector("[data-plato-msg-on]");
+    if (on) on.checked = true;
+    inp.focus();
+  });
 
   // Opciones que elige el cliente (tamaño, sabor, salsa…): sin códigos, con casillas.
   var PLANTILLAS_OPC = {
@@ -1128,7 +1157,7 @@
         "Si los agregaste o corregiste tú desde el panel, se perderán. En ese caso toca Cancelar.");
       lineas.push("");
     }
-    lineas.push("Se conservan: fotos, agotados, adiciones, horario, portada, menús del día y si está abierto.");
+    lineas.push("Se conservan: fotos, agotados, mensajes, adiciones, horario, portada, menús del día y si está abierto.");
     lineas.push("¿Usar la carta nueva?");
     if (!confirm(lineas.join("\n"))) return;
     // Fotos y agotados de la copia actual, por id de plato.
@@ -1140,6 +1169,7 @@
         var p = previos[it.id];
         if (p && p.foto && !it.foto) it.foto = p.foto;
         if (p && p.agotado) it.agotado = true;
+        if (p && p.msg && !it.msg) it.msg = p.msg;
       });
     });
     conservarAdiciones(r.carta, nueva);
@@ -1231,6 +1261,11 @@
         };
         var fotoEl = pEl.querySelector('[data-plato-foto="' + key + '"]');
         if (fotoEl && fotoEl.value) plato.foto = fotoEl.value;
+        var msgEl = pEl.querySelector("[data-plato-msg]");
+        if (msgEl && msgEl.value.trim()) {
+          var msgOn = pEl.querySelector("[data-plato-msg-on]");
+          plato.msg = { texto: msgEl.value.trim().slice(0, 60), mostrar: msgOn ? msgOn.checked : true };
+        }
         // Opciones del plato (salsa, tamaño…). Antes se perdían al guardar.
         var gruposOpc = leerOpcionesPlato(pEl);
         if (gruposOpc.length) plato.opciones = gruposOpc;

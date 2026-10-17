@@ -813,6 +813,7 @@
         '<div class="dish dish--opciones' + (it.foto ? ' dish--foto' : '') + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
           fotoHTML(it) +
           '<div class="dish__info">' +
+            msgHTML(it) +
             '<div class="dish__name">' + esc(it.n) + "</div>" +
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
             '<div class="dish__price">' + esc(precioMostrar) + "</div>" +
@@ -825,6 +826,7 @@
       '<div class="dish' + agotadoClase + (it.foto ? ' dish--foto' : '') + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
         fotoHTML(it) +
         '<div class="dish__info">' +
+          msgHTML(it) +
           '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
           (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
         "</div>" +
@@ -834,6 +836,13 @@
         "</div>" +
       "</div>"
     );
+  }
+
+  // Mensaje del negocio en el producto (solo si decidió mostrarlo).
+  function msgHTML(it) {
+    var m = it && it.msg;
+    if (!m || m.mostrar === false || !String(m.texto || "").trim()) return "";
+    return '<span class="dish__msg">' + esc(String(m.texto).trim()) + "</span>";
   }
 
   // ¿La foto es una ilustración de referencia (no una foto real del negocio)?

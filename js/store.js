@@ -154,6 +154,8 @@
             agotado: !!it.agotado,
           };
           if (it.foto) plato.foto = String(it.foto);
+          // Mensaje del negocio en el producto ("🔥 El más pedido"), que puede apagar sin borrarlo.
+          if (it.msg && String(it.msg.texto || "").trim()) plato.msg = { texto: String(it.msg.texto).trim().slice(0, 60), mostrar: it.msg.mostrar !== false };
           if (Array.isArray(it.opciones) && it.opciones.length) plato.opciones = normalizarOpciones(it.opciones);
           return plato;
         }) : [],

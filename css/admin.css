@@ -610,3 +610,7 @@ code {
 .op-plantillas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
 .op-plantillas .muted { font-size: 0.8rem; }
 .sec-adic .inline-actions { margin-top: 6px; }
+.plato-msg__on { display: inline-flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 600; margin: 6px 0; }
+.plato-msg__on input { accent-color: var(--primary); width: 18px; height: 18px; }
+.plato-msg__estado { font-size: 0.74rem; color: var(--text-2); }
+.plato-msg__estado--on { color: var(--success, #10b981); font-weight: 700; }
