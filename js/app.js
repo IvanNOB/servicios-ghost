@@ -1356,18 +1356,29 @@
   }
 
   // Pantalla de confirmación tras enviar el pedido (dentro de la hoja).
-  function mostrarConfirmacion(waUrl, codigo) {
+  function mostrarConfirmacion(destinos, codigo) {
     _mostrandoConfirmacion = true;
+    if (typeof destinos === "string") destinos = [{ url: destinos, nombre: NOMBRE_NEGOCIO, esGhost: true }];
+    var varios = destinos.length > 1;
+    var nombreUno = destinos[0].esGhost ? "nosotros" : destinos[0].nombre;
+    var botones = destinos.map(function (d, i) {
+      return '<a class="btn-whatsapp' + (i === 0 ? " btn-whatsapp--enviado" : "") + '" href="' + esc(d.url) + '" target="_blank" rel="noopener" data-wa-destino>' +
+        (varios ? (i + 1) + ". " : "") + "Enviar a " + esc(d.esGhost ? NOMBRE_NEGOCIO : d.nombre) +
+        '<span class="btn-whatsapp__ok" aria-hidden="true">' + (i === 0 ? " ✓" : "") + "</span></a>";
+    }).join("");
     elSheetBody.innerHTML =
       '<div class="confirm">' +
         '<div class="confirm__ico" aria-hidden="true">' +
           '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>' +
         "</div>" +
         '<h3 class="confirm__title">¡Pedido enviado!</h3>' +
-        '<p class="confirm__text">Abrimos WhatsApp para que confirmes tu pedido con nosotros. ' +
-          "Si no se abrió, toca el botón de abajo.</p>" +
+        (varios
+          ? '<p class="confirm__text">Tu pedido es de varios lugares: <strong>envía un mensaje a cada uno</strong>. ' +
+              "Ya abrimos el primero; cuando lo envíes, vuelve aquí y toca el siguiente.</p>"
+          : '<p class="confirm__text">Abrimos WhatsApp para que confirmes tu pedido con ' + esc(nombreUno) + ". " +
+              "Si no se abrió, toca el botón de abajo.</p>") +
         '<div class="confirm__codigo">Tu código: <strong>' + esc(codigo) + "</strong></div>" +
-        '<a class="btn-whatsapp" href="' + esc(waUrl) + '" target="_blank" rel="noopener">Abrir WhatsApp</a>' +
+        '<div class="confirm__wa">' + botones + "</div>" +
         '<button type="button" class="btn-copy" data-track-open="' + esc(codigo) + '">📦 Seguir mi pedido</button>' +
         '<button type="button" class="btn-link" data-sheet-close>Seguir viendo</button>' +
       "</div>";
@@ -1476,9 +1487,11 @@
             "</div>" +
           "</div>";
       }
+      var directo = window.Store && Store.normalizarWhatsapp && Store.normalizarWhatsapp(g.rest.whatsapp);
       gruposHTML +=
         '<div class="cart-group"><div class="cart-group__name">' +
-        esc(g.rest.nombre) + "</div>" + lineas + "</div>";
+        esc(g.rest.nombre) + (directo ? ' <span class="cart-group__directo">📲 Le llega directo al restaurante</span>' : "") +
+        "</div>" + lineas + "</div>";
     }
 
     var c = leerLS(LS_CLIENTE, {});
@@ -1565,8 +1578,9 @@
       guardarPedidoEnNube(datos, codigo);
       recordarPedido(datos, codigo);
 
-      var url = "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(construirMensaje(datos, codigo));
-      mostrarConfirmacion(url, codigo);
+      var destinos = destinosDelPedido(datos, codigo);
+      var url = destinos[0].url;
+      mostrarConfirmacion(destinos, codigo);
 
       // Vaciar el carrito (la hoja sigue abierta mostrando la confirmación).
       vaciarCarrito();
@@ -1642,8 +1656,10 @@
     }).catch(function (e) { console.warn("No se pudo guardar el pedido en la nube:", e && e.message); });
   }
 
-  function construirMensaje(datos, codigo) {
-    var groups = groupedCart();
+  function construirMensaje(datos, codigo, soloGrupos) {
+    var todos = groupedCart();
+    var groups = soloGrupos || todos;
+    var parcial = soloGrupos && soloGrupos.length < todos.length;
     var lines = [];
     lines.push("NUEVO PEDIDO - " + NOMBRE_NEGOCIO);
     lines.push("Codigo: " + codigo);
@@ -1665,13 +1681,17 @@
       lines.push("");
     }
 
-    var productos = totalPesos();
+    var productos = parcial ? groups.reduce(function (n, g) { return n + g.subtotal; }, 0) : totalPesos();
+    var porConfirmar = groups.some(function (g) { return g.items.some(function (x) { return !(x.item.p > 0); }); });
     lines.push("--------------------------------");
     lines.push("Total productos: " + money(productos) +
-      (hayPorConfirmar() ? " + productos con precio a confirmar" : ""));
-    if (datos.domicilio != null) {
+      (porConfirmar ? " + productos con precio a confirmar" : ""));
+    if (parcial) {
+      // El pedido se repartió entre varios restaurantes: el domicilio se coordina.
+      lines.push("(el cliente pidio tambien en otros restaurantes; el domicilio se coordina)");
+    } else if (datos.domicilio != null) {
       lines.push("Domicilio (" + datos.barrio + "): " + (datos.domicilio > 0 ? money(datos.domicilio) : "gratis"));
-      lines.push("TOTAL A PAGAR: " + money(productos + datos.domicilio) + (hayPorConfirmar() ? " + productos con precio a confirmar" : ""));
+      lines.push("TOTAL A PAGAR: " + money(productos + datos.domicilio) + (porConfirmar ? " + productos con precio a confirmar" : ""));
     } else {
       lines.push("(el domicilio se confirma segun el barrio)");
     }
@@ -1687,6 +1707,23 @@
     lines.push("Sigue tu pedido: " + urlSeguimiento(codigo));
 
     return lines.join("\n");
+  }
+
+  // ¿A qué WhatsApp va cada parte del pedido? Al del restaurante si lo puso;
+  // si no, al de Servicios Ghost (todo lo que no tenga número, en un solo mensaje).
+  function destinosDelPedido(datos, codigo) {
+    var porNumero = {}, orden = [];
+    groupedCart().forEach(function (g) {
+      var num = (window.Store && Store.normalizarWhatsapp ? Store.normalizarWhatsapp(g.rest.whatsapp) : "") || WHATSAPP;
+      if (!porNumero[num]) { porNumero[num] = { numero: num, grupos: [], esGhost: num === WHATSAPP }; orden.push(num); }
+      porNumero[num].grupos.push(g);
+    });
+    return orden.map(function (num) {
+      var d = porNumero[num];
+      d.nombre = d.esGhost ? NOMBRE_NEGOCIO : d.grupos.map(function (g) { return g.rest.nombre; }).join(", ");
+      d.url = "https://wa.me/" + num + "?text=" + encodeURIComponent(construirMensaje(datos, codigo, d.grupos));
+      return d;
+    });
   }
 
   async function copiarPedido() {
@@ -1848,6 +1885,15 @@
 
   // Un solo listener para toda la app (incluye lo que se repinta).
   document.addEventListener("click", onClick);
+
+  // Marca como enviado el WhatsApp que el cliente ya abrió.
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("[data-wa-destino]");
+    if (!a) return;
+    a.classList.add("btn-whatsapp--enviado");
+    var ok = a.querySelector(".btn-whatsapp__ok");
+    if (ok) ok.textContent = " ✓";
+  });
 
   // Nota del cliente en un producto del pedido
   document.addEventListener("click", function (e) {

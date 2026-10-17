@@ -615,3 +615,4 @@ code {
 .plato-msg__estado { font-size: 0.74rem; color: var(--text-2); }
 .plato-msg__estado--on { color: var(--success, #10b981); font-weight: 700; }
 .pedido-nota { margin: 2px 0 4px; padding: 4px 8px; border-left: 3px solid var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); border-radius: 0 6px 6px 0; font-size: 0.86rem; }
+.campo-wa__ayuda { font-size: 0.8rem; margin: 4px 0 0; }

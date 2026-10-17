@@ -1750,3 +1750,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .cart-nota__campo { display: grid; gap: 4px; }
 .cart-nota__campo span { font-size: 0.76rem; color: var(--text-2); font-weight: 700; }
 .cart-nota__campo input { font-size: 0.88rem; padding: 8px 10px; }
+
+/* Pedido repartido: un WhatsApp por cada restaurante con número propio */
+.confirm__wa { display: grid; gap: 8px; width: 100%; }
+.confirm__wa .btn-whatsapp { width: 100%; text-decoration: none; }
+.btn-whatsapp--enviado { background: color-mix(in srgb, var(--success) 55%, var(--surface)); }
+.btn-whatsapp__ok { font-weight: 900; }
+.cart-group__directo { display: inline-block; margin-left: 6px; font-size: 0.72rem; font-weight: 700; color: var(--success); }

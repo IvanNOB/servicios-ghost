@@ -63,6 +63,7 @@
       logoPos: leerLogo(row.logo_ajuste).pos,
       visible: row.visible !== false,
       promo: normalizarPromo(row.promo),
+      whatsapp: normalizarWhatsapp(row.whatsapp),
       carta: Array.isArray(row.carta) ? row.carta : [],
       almuerzo: row.almuerzo || null,
       desayuno: row.desayuno || null,
@@ -168,6 +169,13 @@
     }).filter(function (a) { return a.n; });
   }
 
+  // WhatsApp del negocio: solo números, con el 57 de Colombia ("321 428 6626" → "573214286626").
+  function normalizarWhatsapp(v) {
+    var d = String(v || "").replace(/\D/g, "");
+    if (d.length === 10 && d.charAt(0) === "3") d = "57" + d;
+    return d.length >= 11 && d.length <= 15 ? d : "";
+  }
+
   // Promoción propia del negocio: { texto, hasta: "YYYY-MM-DD" | "" } o null.
   function normalizarPromo(p) {
     if (!p || typeof p !== "object" || !String(p.texto || "").trim()) return null;
@@ -260,6 +268,7 @@
       logo_ajuste: window.LogoGhost ? LogoGhost.guardar(rest.logoAjuste, rest.logoPos) : (rest.logoAjuste === "logo" ? "logo" : "foto"),
       visible: rest.visible !== false,
       promo: normalizarPromo(rest.promo),
+      whatsapp: normalizarWhatsapp(rest.whatsapp) || null,
       carta: normalizarCarta(rest.carta),
       almuerzo: normalizarAlmuerzo(rest.almuerzo),
       desayuno: normalizarAlmuerzo(rest.desayuno),
@@ -505,12 +514,13 @@
     columnasRechazadas: function () { return Object.keys(columnasFaltantes); },
     columnasFaltantes: function () {
       var faltan = Object.keys(columnasFaltantes);
-      if (columnasTabla) ["horario", "desayuno", "visible", "logo_ajuste", "promo"].forEach(function (c) {
+      if (columnasTabla) ["horario", "desayuno", "visible", "logo_ajuste", "promo", "whatsapp"].forEach(function (c) {
         if (columnasTabla.indexOf(c) === -1 && faltan.indexOf(c) === -1) faltan.push(c);
       });
       return faltan;
     },
     nuevoCodigo: nuevoCodigo,
+    normalizarWhatsapp: normalizarWhatsapp,
     crearPedido: crearPedido,
     listarPedidos: listarPedidos,
     actualizarEstadoPedido: actualizarEstadoPedido,

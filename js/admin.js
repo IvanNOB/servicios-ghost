@@ -180,6 +180,7 @@
     }
     if (colsFalt.indexOf("desayuno") !== -1) faltan.push("desayunos del día");
     if (colsFalt.indexOf("visible") !== -1 || colsFalt.indexOf("logo_ajuste") !== -1) faltan.push("ocultar negocios mientras organizan su carta y mostrar logos completos");
+    if (colsFalt.indexOf("whatsapp") !== -1) faltan.push("que cada negocio reciba sus pedidos en su propio WhatsApp");
     if (perfil && perfil.legado) faltan.push("seguimiento del pedido para clientes");
     if (!faltan.length) { el.hidden = true; return; }
     el.hidden = false;
@@ -568,6 +569,13 @@
         campoColor(r.color) +
       "</div>" +
       campoTextarea("Descripción", "desc", r.desc, "Frase corta sobre el restaurante") +
+      // WhatsApp propio para recibir los pedidos (si está vacío, llegan a Servicios Ghost).
+      '<div class="field campo-wa">' +
+        '<label class="field__label" for="campoWhatsapp">📲 WhatsApp para recibir tus pedidos <span class="muted">(opcional)</span></label>' +
+        '<input class="field__input" id="campoWhatsapp" data-campo="whatsapp" type="tel" inputmode="tel" autocomplete="tel" value="' +
+          esc(r.whatsapp ? String(r.whatsapp).replace(/^57(?=3\d{9}$)/, "") : "") + '" placeholder="Ej: 321 428 6626" />' +
+        '<p class="muted campo-wa__ayuda" id="campoWhatsappAyuda">' + ayudaWhatsapp(r.whatsapp) + "</p>" +
+      "</div>" +
       '<label class="pay__option" style="margin:4px 0 6px; max-width:320px">' +
         '<input type="checkbox" id="campoAbierto" ' + (r.abierto ? "checked" : "") + " /> Recibe pedidos</label>" +
       '<p class="muted" style="font-size:.82rem;margin:0 0 14px">Desmárcalo para cerrarlo ya (por ejemplo, si hoy no abre); ' +
@@ -844,6 +852,19 @@
       "</div>"
     );
   }
+
+  function ayudaWhatsapp(v) {
+    var n = window.Store && window.Store.normalizarWhatsapp ? window.Store.normalizarWhatsapp(v) : "";
+    if (n) return "✅ Los pedidos de este negocio le llegan directo a <strong>+" + esc(n.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, "$1 $2 $3 $4")) + "</strong> por WhatsApp.";
+    if (String(v || "").replace(/\D/g, "")) return "⚠️ Ese número no parece válido. Escríbelo con sus 10 dígitos (ej. 321 428 6626).";
+    return "Si lo dejas vacío, los pedidos le llegan a Servicios Ghost y nosotros te avisamos.";
+  }
+  document.addEventListener("input", function (e) {
+    if (e.target && e.target.id === "campoWhatsapp") {
+      var a = document.getElementById("campoWhatsappAyuda");
+      if (a) a.innerHTML = ayudaWhatsapp(e.target.value);
+    }
+  });
 
   function campo(label, key, val, tipo, ph) {
     return '<div class="field"><label class="field__label">' + esc(label) + "</label>" +
@@ -1599,6 +1620,13 @@
     return x ? "Horario de hoy: " + x.abre + " a " + x.cierra : "Según tu horario, hoy no abres";
   }
 
+  function tileWa(r) {
+    var n = window.Store.normalizarWhatsapp(r.whatsapp);
+    return '<button type="button" class="tile' + (n ? " tile--on" : "") + '" data-editar="' + esc(r.id) + '" data-ir-wa>' +
+      '<span class="tile__ico" aria-hidden="true">📲</span><strong>WhatsApp de pedidos</strong><small>' +
+      (n ? "Tus pedidos te llegan al " + esc(n.replace(/^57/, "")) : "Pon tu número y recibe tus pedidos directo") + "</small></button>";
+  }
+
   function tile(ico, titulo, detalle, attr, valor, destacado) {
     return '<button type="button" class="tile' + (destacado ? " tile--on" : "") + '" ' + attr + '="' + esc(valor) + '">' +
       '<span class="tile__ico" aria-hidden="true">' + ico + "</span>" +
@@ -1632,6 +1660,7 @@
           tile("📲", "Compartir mi carta", "Enlace y código QR para redes y mesas", "data-ali-compartir", r.id) +
           tile("🍽️", "Menú del día", hoyMenu ? hoyMenu + "publicado hoy" : "Publica tu desayuno o almuerzo de hoy", "data-tab-ir", "almuerzos", !!hoyMenu) +
           tile("✏️", "Editar mi carta", contarPlatos(r) + " productos · fotos, horario y más", "data-editar", r.id) +
+          tileWa(r) +
         "</div>" +
       "</section>";
   }
@@ -1964,6 +1993,11 @@
       var id = ed.getAttribute("data-editar");
       var r = restaurantes.filter(function (x) { return x.id === id; })[0];
       if (r) abrirEditor(r);
+      // "📲 WhatsApp de pedidos": abre el editor justo en ese campo.
+      if (r && ed.hasAttribute("data-ir-wa")) setTimeout(function () {
+        var w = document.getElementById("campoWhatsapp");
+        if (w) { w.scrollIntoView({ block: "center" }); w.focus({ preventScroll: true }); }
+      }, 80);
       return;
     }
     var sinc = t.closest("[data-sincronizar]");
