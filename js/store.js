@@ -183,6 +183,7 @@
         };
         if (g && g.mostrarSi) grupo.mostrarSi = g.mostrarSi;
         if (g && g.opcional) grupo.opcional = true;
+        if (g && g.obligatorio) grupo.obligatorio = true;
         return grupo;
       }) : [],
     };

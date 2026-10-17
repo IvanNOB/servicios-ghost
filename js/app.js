@@ -1039,6 +1039,7 @@
       var g = grupos[gi];
       var ops = Array.isArray(g.opciones) ? g.opciones : [];
       var multiple = g.tipo === "multiple";
+      var obligatorio = grupoMenuObligatorio(g);
       var opsHTML = "";
       for (var oi = 0; oi < ops.length; oi++) {
         var op = ops[oi];
@@ -1063,7 +1064,8 @@
         '<div class="alm-grupo" data-alm-grupo="' + gi + '" data-tipo="' + (multiple ? "multiple" : "unico") + '"' +
           condAttr + ocultoInicial + ">" +
           '<div class="alm-grupo__nombre">' + esc(g.nombre) +
-            (multiple ? ' <span class="muted">(elige los que quieras)</span>' : ' <span class="muted">(elige 1)</span>') +
+            (obligatorio ? ' <span class="muted">(elige 1)</span>'
+              : ' <span class="muted">(' + (multiple ? "los que quieras" : "elige 1") + " o ninguno)</span>") +
           "</div>" +
           '<div class="alm-ops">' + opsHTML + "</div>" +
         "</div>";
@@ -1079,6 +1081,8 @@
         "</div>" +
         (enVentana ? '<p class="muted almuerzo__rest">' + esc(r.nombre) + " · " + estadoHTML(r) + "</p>" : "") +
         (a.desc ? '<p class="almuerzo__desc">' + esc(a.desc) + "</p>" : "") +
+        (grupos.some(function (g) { return !grupoMenuObligatorio(g); })
+          ? '<p class="almuerzo__nota">💡 ¿No quieres algo? Déjalo sin marcar y no te lo llevamos.</p>' : "") +
         gruposHTML +
         '<button type="button" class="add-btn almuerzo__btn" data-menu-add' + (abierto ? "" : " disabled") + ">" +
           (abierto ? "Agregar " + M.nombre : "Cerrado") +
@@ -1086,6 +1090,14 @@
         '<p class="almuerzo__error" data-menu-msg role="alert"></p>' +
       "</div>"
     );
+  }
+
+  // ¿Hay que escoger sí o sí en este grupo? Solo si define el precio, o si el
+  // restaurante lo marcó como obligatorio. Lo demás el cliente lo puede dejar.
+  function grupoMenuObligatorio(g) {
+    if (!g) return false;
+    if (g.obligatorio) return true;
+    return (g.opciones || []).some(function (o) { return typeof o.precio === "number" && o.precio > 0; });
   }
 
   // Muestra/oculta los grupos condicionales según lo elegido.
@@ -1129,7 +1141,10 @@
       var defOps = Array.isArray(def.opciones) ? def.opciones : [];
       var marcados = gEl.querySelectorAll("input:checked");
       if (!marcados.length) {
-        if (!def.opcional) faltan.push(def.nombre || "una opción");
+        // Lo que el cliente deja sin marcar NO se le lleva ("Sin principio").
+        // Solo es obligatorio lo que define el precio (ej. Menú o Especial).
+        if (grupoMenuObligatorio(def)) faltan.push(def.nombre || "una opción");
+        else elecciones.push({ grupo: def.nombre, valores: [], sin: true });
         continue;
       }
       var vals = [];
@@ -1149,7 +1164,9 @@
     }
     if (err) err.textContent = "";
 
-    var resumen = elecciones.map(function (e) { return e.valores.join(", "); }).join(" · ");
+    var resumen = elecciones.map(function (e) {
+      return e.sin ? "Sin " + String(e.grupo || "").toLowerCase() : e.valores.join(", ");
+    }).join(" · ");
     var item = {
       id: tipo + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
       n: (a.titulo || M.titulo) + (resumen ? " (" + resumen + ")" : ""),

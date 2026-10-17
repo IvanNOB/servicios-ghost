@@ -118,9 +118,14 @@
     if (corte === -1) corte = s.indexOf(":");
     if (corte === -1) return null;
     var nombre = limpiar(s.slice(0, corte));
+    // "Proteína (obligatorio)" o "Proteína*" → el cliente tiene que escoger sí o sí.
+    var obligatorio = /\(\s*obligatori[oa]\s*\)\s*$|\*\s*$/i.test(nombre);
+    nombre = limpiar(nombre.replace(/\(\s*obligatori[oa]\s*\)\s*$|\*\s*$/i, ""));
     var opciones = dividirOpciones(s.slice(corte + 1)).map(parsearOpcion).filter(function (o) { return o.n; });
     if (!nombre || !opciones.length) return null;
-    return { nombre: nombre, tipo: "unico", opciones: opciones };
+    var g = { nombre: nombre, tipo: "unico", opciones: opciones };
+    if (obligatorio) g.obligatorio = true;
+    return g;
   }
 
   // Texto de opciones del almuerzo (una línea por grupo) → array de grupos.
@@ -149,7 +154,7 @@
   // Grupos → texto editable (para la pestaña "Menú del día").
   function opcionesATexto(grupos) {
     return (grupos || []).map(function (g) {
-      return g.nombre + ": " + (g.opciones || []).map(function (o) {
+      return g.nombre + (g.obligatorio ? " (obligatorio)" : "") + ": " + (g.opciones || []).map(function (o) {
         var flags = [];
         if (o.agotado) flags.push("agotado");
         if (o.precio) flags.push("precio=" + o.precio);

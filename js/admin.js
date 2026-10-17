@@ -1155,6 +1155,7 @@
       var grupo = { nombre: gn ? gn.value.trim() : "Opciones", tipo: previo.tipo || "unico", opciones: opciones };
       if (previo.mostrarSi) grupo.mostrarSi = previo.mostrarSi;
       if (previo.opcional) grupo.opcional = true;
+      if (previo.obligatorio) grupo.obligatorio = true;
       grupos.push(grupo);
     });
     r.almuerzo = {
@@ -1296,6 +1297,9 @@
         '<p class="muted" style="font-size:.82rem;margin-top:6px">Formato: <code>Grupo: opción, opción</code>. ' +
           "Marca <code>(agotado)</code> si se acabó, o <code>(precio=10000)</code> si esa opción cambia el precio. " +
           "Si no hay opciones, déjalo vacío.</p>" +
+        '<p class="muted" style="font-size:.82rem;margin-top:4px">👌 El cliente puede <strong>dejar sin marcar</strong> lo que no quiera ' +
+          "(ej. sin principio) y en el pedido sale “Sin principio”. Si un grupo se debe escoger sí o sí, escribe " +
+          "<code>(obligatorio)</code> después del nombre: <code>Proteína (obligatorio): Pollo, Res</code>.</p>" +
       "</div>" +
       '<input type="hidden" id="pubFoto" value="' + esc(a.foto || "") + '" />' +
       '<div class="actions">' +
