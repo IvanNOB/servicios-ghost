@@ -61,6 +61,7 @@
       logo: row.logo || "",
       logoAjuste: row.logo_ajuste === "logo" ? "logo" : "foto",
       visible: row.visible !== false,
+      promo: normalizarPromo(row.promo),
       carta: Array.isArray(row.carta) ? row.carta : [],
       almuerzo: row.almuerzo || null,
       desayuno: row.desayuno || null,
@@ -132,6 +133,12 @@
         }) : [],
       };
     });
+  }
+
+  // Promoción propia del negocio: { texto, hasta: "YYYY-MM-DD" | "" } o null.
+  function normalizarPromo(p) {
+    if (!p || typeof p !== "object" || !String(p.texto || "").trim()) return null;
+    return { texto: String(p.texto).trim().slice(0, 40), hasta: /^\d{4}-\d{2}-\d{2}$/.test(p.hasta || "") ? p.hasta : "" };
   }
 
   // Almuerzo del día (o null).
@@ -218,6 +225,7 @@
       logo: rest.logo || "",
       logo_ajuste: rest.logoAjuste === "logo" ? "logo" : "foto",
       visible: rest.visible !== false,
+      promo: normalizarPromo(rest.promo),
       carta: normalizarCarta(rest.carta),
       almuerzo: normalizarAlmuerzo(rest.almuerzo),
       desayuno: normalizarAlmuerzo(rest.desayuno),
@@ -446,6 +454,8 @@
   function asignarAliado(email, restauranteId) {
     return rpcAdmin("asignar_aliado", { p_email: email, p_restaurante: restauranteId });
   }
+  // Ventas del negocio aliado con sesión (solo totales, sin datos de clientes).
+  function misVentas(desdeISO) { return rpcAdmin("mis_ventas", { p_desde: desdeISO || null }).then(function (d) { return d || {}; }); }
   function quitarAliado(email) { return rpcAdmin("quitar_aliado", { p_email: email }); }
 
   window.Store = {
@@ -457,9 +467,11 @@
     guardarAjuste: guardarAjuste,
     ajustesDisponibles: function () { return ajustesDisponibles; },
     _ajustesCache: function () { return _ajustes || {}; },
+    // Solo las que la base de datos rechazó al guardar (seguro).
+    columnasRechazadas: function () { return Object.keys(columnasFaltantes); },
     columnasFaltantes: function () {
       var faltan = Object.keys(columnasFaltantes);
-      if (columnasTabla) ["horario", "desayuno", "visible", "logo_ajuste"].forEach(function (c) {
+      if (columnasTabla) ["horario", "desayuno", "visible", "logo_ajuste", "promo"].forEach(function (c) {
         if (columnasTabla.indexOf(c) === -1 && faltan.indexOf(c) === -1) faltan.push(c);
       });
       return faltan;
@@ -477,5 +489,6 @@
     listarAliados: listarAliados,
     asignarAliado: asignarAliado,
     quitarAliado: quitarAliado,
+    misVentas: misVentas,
   };
 })();

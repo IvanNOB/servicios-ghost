@@ -193,7 +193,7 @@
       elListaRest.innerHTML = '<p class="muted">Aún no hay restaurantes. Toca “+ Nuevo restaurante”.</p>';
       return;
     }
-    var html = esAliado() && restaurantes[0] ? bienvenidaAliadoHTML(restaurantes[0]) : "";
+    var html = esAliado() && restaurantes[0] ? tableroAliadoHTML(restaurantes[0]) + bienvenidaAliadoHTML(restaurantes[0]) : "";
     var nuevas = esAliado() ? [] : restaurantes.filter(cartaNueva);
     if (nuevas.length) {
       html += '<div class="aviso-sql" style="grid-column:1/-1">🆕 <strong>Estas cartas son distintas a la versión que me pasaste por el chat:</strong> ' +
@@ -217,6 +217,7 @@
           "</div>" +
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
+            '<button type="button" class="btn-copy btn-sm" data-ali-disp="' + esc(r.id) + '" title="Marcar agotados y cambiar precios rápido">⚡ Disponibilidad</button>' +
             (!esAliado() && cartaNueva(r) ? '<button type="button" class="btn-primary btn-sm" data-sincronizar="' + esc(r.id) + '" title="La carta que me pasaste por el chat es distinta a la guardada. Toca para ver qué cambia antes de aplicarla.">🆕 Revisar carta nueva</button>' : "") +
             (esAliado() ? "" : '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>') +
           "</div>" +
@@ -236,8 +237,13 @@
       [r.visible !== false, "Publica tu negocio en la tienda"],
     ];
     var hechos = pasos.filter(function (p) { return p[0]; }).length;
+    if (hechos === pasos.length) {
+      return '<p class="bienvenida__ok" style="grid-column:1/-1">🎉 ¡Todo listo! ' + esc(r.nombre) + ' está publicado. Usa las herramientas de arriba en tu día a día.</p>';
+    }
     return '<section class="bienvenida" style="grid-column:1/-1">' +
         "<h3>👋 ¡Bienvenidos, " + esc(r.nombre) + "!</h3>" +
+        '<div class="progreso" aria-label="Avance"><span style="width:' + Math.round(hechos / pasos.length * 100) + '%"></span></div>' +
+        '<p class="muted" style="margin:4px 0 0;font-size:.85rem">' + hechos + " de " + pasos.length + " pasos listos</p>" +
         '<p class="muted">Este es el panel de tu negocio. Aquí organizas tu carta como quieras; los cambios se ven en la tienda al pulsar <strong>Guardar cambios</strong>.</p>' +
         '<ol class="bienvenida__pasos">' + pasos.map(function (p) {
           return '<li class="' + (p[0] ? "hecho" : "") + '">' + (p[0] ? "✅ " : "⬜ ") + esc(p[1]) + "</li>";
@@ -254,7 +260,6 @@
           "<pre>Presentación: 12 oz sin chantilly, 12 oz con chantilly (precio=2000), 16 oz sin chantilly (precio=3000), 16 oz con chantilly (precio=5000)</pre>" +
           "<p>El cliente ve el precio final de cada opción.</p>" +
         "</details>" +
-        (hechos === pasos.length ? '<p class="bienvenida__ok">🎉 ¡Todo listo! Tu negocio está publicado.</p>' : "") +
       "</section>";
   }
 
@@ -1127,6 +1132,353 @@
       toast(mensajeErrorGuardar(ex), true);
     }
   }
+
+  /* ================== Herramientas del negocio (tablero del aliado) ================== */
+  // Disponibilidad rápida, abrir/cerrar, promoción propia, mis ventas y compartir con QR.
+  var elAli = $("#aliSheet");
+  var elAliBody = $("#aliBody");
+  var dispCopia = null, dispTimer = null, dispGuardando = null;
+
+  function restPorId(id) { return restaurantes.filter(function (x) { return x.id === id; })[0]; }
+  function enlaceTienda(id) { return location.href.replace(/admin\.html.*$/, "index.html") + "#r=" + encodeURIComponent(id); }
+  function promoVigente(r) { var p = r && r.promo; return !!(p && p.texto && (!p.hasta || p.hasta >= hoyISO())); }
+  function fechaBonita(iso) {
+    try { return new Date(iso + "T12:00:00-05:00").toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "short" }); }
+    catch (e) { return iso; }
+  }
+  function reemplazarEnMemoria(copia) {
+    for (var i = 0; i < restaurantes.length; i++) {
+      if (restaurantes[i].id === copia.id) { restaurantes[i] = JSON.parse(JSON.stringify(copia)); return; }
+    }
+  }
+
+  function abrirAli(titulo, html) {
+    $("#aliTitle").textContent = titulo;
+    elAliBody.innerHTML = html;
+    elAli.hidden = false;
+    elAliBody.scrollTop = 0;
+    document.body.classList.add("no-scroll");
+  }
+  async function cerrarAli() {
+    if (!elAli || elAli.hidden) return;
+    if (dispTimer) { clearTimeout(dispTimer); dispTimer = null; await guardarDisp(); }
+    if (dispGuardando) await dispGuardando;
+    elAli.hidden = true;
+    elAliBody.innerHTML = "";
+    dispCopia = null;
+    document.body.classList.remove("no-scroll");
+    pintarLista();
+  }
+
+  function horarioHoyTexto(r) {
+    var h = r.horario;
+    if (!h || !Object.keys(h).some(function (k) { return h[k]; })) return "Sin horario: abierto mientras recibas pedidos";
+    var dia = ["dom", "lun", "mar", "mie", "jue", "vie", "sab"][new Date(hoyISO() + "T12:00:00-05:00").getDay()];
+    var x = h[dia];
+    return x ? "Horario de hoy: " + x.abre + " a " + x.cierra : "Según tu horario, hoy no abres";
+  }
+
+  function tile(ico, titulo, detalle, attr, valor, destacado) {
+    return '<button type="button" class="tile' + (destacado ? " tile--on" : "") + '" ' + attr + '="' + esc(valor) + '">' +
+      '<span class="tile__ico" aria-hidden="true">' + ico + "</span>" +
+      "<strong>" + esc(titulo) + "</strong><small>" + esc(detalle) + "</small></button>";
+  }
+
+  function tableroAliadoHTML(r) {
+    var abierto = r.abierto !== false;
+    var agotados = 0;
+    (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (it.agotado) agotados++; }); });
+    var hoyMenu = (menuHoy(r, "desayuno") ? "🍳 " : "") + (almuerzoHoy(r) ? "🍲 " : "");
+    return '<section class="tablero" style="grid-column:1/-1">' +
+        '<div class="tablero__estado' + (abierto ? " tablero__estado--on" : "") + '">' +
+          "<div><strong>" + (abierto ? "🟢 Recibiendo pedidos" : "🔴 Cerrado temporalmente") + "</strong>" +
+            "<small>" + esc(horarioHoyTexto(r)) + (r.visible === false ? " · 🙈 Aún no publicado en la tienda" : "") + "</small></div>" +
+          '<button type="button" class="' + (abierto ? "btn-danger" : "btn-primary") + '" data-ali-abrir="' + esc(r.id) + '">' +
+            (abierto ? "⏸️ Cerrar ahora" : "▶️ Abrir ahora") + "</button>" +
+        "</div>" +
+        '<div class="tablero__grid">' +
+          tile("⚡", "Disponibilidad rápida", agotados ? agotados + " agotado(s) · toca para cambiar" : "Marca agotados y ajusta precios en segundos", "data-ali-disp", r.id, agotados > 0) +
+          tile("🔥", "Mi promoción", promoVigente(r) ? "“" + r.promo.texto + "”" + (r.promo.hasta ? " · hasta " + fechaBonita(r.promo.hasta) : "") : "Destaca una oferta en tu tarjeta", "data-ali-promo", r.id, promoVigente(r)) +
+          tile("📊", "Mis ventas", "Pedidos, ventas y lo que más se vende", "data-ali-ventas", r.id) +
+          tile("📲", "Compartir mi carta", "Enlace y código QR para redes y mesas", "data-ali-compartir", r.id) +
+          tile("🍽️", "Menú del día", hoyMenu ? hoyMenu + "publicado hoy" : "Publica tu desayuno o almuerzo de hoy", "data-tab-ir", "almuerzos", !!hoyMenu) +
+          tile("✏️", "Editar mi carta", contarPlatos(r) + " productos · fotos, horario y más", "data-editar", r.id) +
+        "</div>" +
+      "</section>";
+  }
+
+  /* ---- Abrir / cerrar ya ---- */
+  async function alternarAbierto(id, boton) {
+    var r = restPorId(id);
+    if (!r) return;
+    var copia = JSON.parse(JSON.stringify(r));
+    copia.abierto = !(r.abierto !== false);
+    if (!copia.abierto && !confirm("¿Cerrar " + r.nombre + " ahora? Los clientes verán “Cerrado” y no podrán pedir hasta que lo vuelvas a abrir.")) return;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner"></span>';
+    try {
+      await window.Store.guardar(copia, { soloActualizar: esAliado() });
+      reemplazarEnMemoria(copia);
+      toast(copia.abierto ? "▶️ " + r.nombre + " ya recibe pedidos" : "⏸️ " + r.nombre + " quedó cerrado");
+      pintarLista();
+    } catch (ex) {
+      toast(mensajeErrorGuardar(ex), true);
+      boton.disabled = false;
+    }
+  }
+
+  /* ---- Disponibilidad rápida: agotados y precios, se guarda solo ---- */
+  function abrirDisponibilidad(id) {
+    var r = restPorId(id);
+    if (!r) return;
+    dispCopia = JSON.parse(JSON.stringify(r));
+    var html =
+      '<p class="muted" style="margin-top:0">Apaga lo que se te acabó y ajusta precios aquí mismo. <strong>Todo se guarda solo</strong> y se ve en la tienda al instante.</p>' +
+      '<div class="disp-barra">' +
+        '<input class="field__input" id="dispBuscar" type="search" placeholder="🔎 Buscar producto…" autocomplete="off" />' +
+        '<span class="disp-estado" id="dispEstado" role="status" aria-live="polite"></span>' +
+      "</div>";
+    (dispCopia.carta || []).forEach(function (s, si) {
+      html += '<div class="disp-sec" data-disp-sec><h4>' + esc(s.sec) + "</h4>";
+      (s.items || []).forEach(function (it, pi) {
+        var k = si + "-" + pi;
+        html +=
+          '<div class="disp-fila' + (it.agotado ? " disp-fila--agotado" : "") + '" data-disp-fila data-n="' + esc(String(it.n || "").toLowerCase()) + '">' +
+            '<label class="disp-toggle" title="Disponible / agotado"><input type="checkbox" data-disp-ag="' + k + '"' + (it.agotado ? "" : " checked") +
+              ' aria-label="' + esc(it.n) + ' disponible" /><span class="disp-switch"></span></label>' +
+            '<span class="disp-nombre">' + esc(it.n) +
+              (Array.isArray(it.opciones) && it.opciones.length ? ' <small class="muted">· con opciones</small>' : "") +
+              '<small class="disp-tag">' + (it.agotado ? "Agotado" : "Disponible") + "</small></span>" +
+            '<span class="disp-precio"><span>$</span><input class="field__input" type="number" min="0" step="100" inputmode="numeric" data-disp-p="' + k + '" value="' +
+              esc(it.p || "") + '" aria-label="Precio de ' + esc(it.n) + '" /></span>' +
+          "</div>";
+      });
+      html += "</div>";
+    });
+    if (!(dispCopia.carta || []).length) html += '<p class="muted">Aún no tienes productos. Agrégalos en “Editar mi carta”.</p>';
+    abrirAli("⚡ Disponibilidad · " + r.nombre, html);
+  }
+  function itemDisp(k) {
+    var p = k.split("-");
+    var s = dispCopia && dispCopia.carta[Number(p[0])];
+    return s && s.items[Number(p[1])];
+  }
+  function programarGuardadoDisp() {
+    var est = $("#dispEstado");
+    if (est) { est.textContent = "Guardando…"; est.className = "disp-estado"; }
+    if (dispTimer) clearTimeout(dispTimer);
+    dispTimer = setTimeout(function () { dispTimer = null; guardarDisp(); }, 700);
+  }
+  async function guardarDisp() {
+    if (!dispCopia) return;
+    var copia = JSON.parse(JSON.stringify(dispCopia));
+    var est = $("#dispEstado");
+    dispGuardando = (async function () {
+      try {
+        await window.Store.guardar(copia, { soloActualizar: esAliado() });
+        reemplazarEnMemoria(copia);
+        if (est) { est.textContent = "✓ Guardado"; est.className = "disp-estado disp-estado--ok"; }
+      } catch (ex) {
+        if (est) { est.textContent = "⚠️ " + mensajeErrorGuardar(ex); est.className = "disp-estado disp-estado--error"; }
+      } finally { dispGuardando = null; }
+    })();
+    return dispGuardando;
+  }
+
+  /* ---- Promoción propia ---- */
+  function abrirPromo(id) {
+    var r = restPorId(id);
+    if (!r) return;
+    var p = r.promo || {};
+    var faltaSql = window.Store.columnasFaltantes().indexOf("promo") !== -1;
+    abrirAli("🔥 Mi promoción · " + r.nombre,
+      (faltaSql ? '<p class="aviso-sql aviso-sql--inline">Las promociones se activan cuando el equipo de Servicios Ghost termine de configurar el sistema.</p>' : "") +
+      '<p class="muted" style="margin-top:0">Sale como una etiqueta dorada en tu tarjeta y arriba de tu carta. Que sea corta y clara.</p>' +
+      '<div class="promo-ideas">' + ["2x1 en granizados", "10% en tu primer pedido", "Postre gratis desde $40.000", "Combo del día $15.000"].map(function (t) {
+        return '<button type="button" class="chip chip--sm" data-promo-idea="' + esc(t) + '">' + esc(t) + "</button>";
+      }).join("") + "</div>" +
+      '<div class="field"><label class="field__label" for="promoTexto">Texto de la promoción <span class="muted">(máx. 40 letras)</span></label>' +
+        '<input class="field__input" id="promoTexto" maxlength="40" value="' + esc(p.texto || "") + '" placeholder="Ej: 2x1 en granizados" /></div>' +
+      '<div class="field"><label class="field__label" for="promoHasta">Válida hasta <span class="muted">(opcional; se quita sola)</span></label>' +
+        '<input class="field__input" id="promoHasta" type="date" min="' + esc(hoyISO()) + '" value="' + esc(p.hasta || "") + '" /></div>' +
+      '<div class="promo-vista" id="promoVista"></div>' +
+      '<div class="actions">' +
+        '<button type="button" class="btn-primary" data-promo-guardar="' + esc(id) + '">💾 Guardar promoción</button>' +
+        (p.texto ? '<button type="button" class="btn-danger" data-promo-quitar="' + esc(id) + '">Quitar promoción</button>' : "") +
+      "</div>");
+    pintarVistaPromo();
+  }
+  function pintarVistaPromo() {
+    var v = $("#promoVista"), t = (($("#promoTexto") || {}).value || "").trim();
+    if (v) v.innerHTML = t ? 'Así se verá: <span class="promo-badge">🔥 ' + esc(t) + "</span>" : "";
+  }
+  async function guardarPromo(id, quitar, boton) {
+    var r = restPorId(id);
+    if (!r) return;
+    var texto = quitar ? "" : (($("#promoTexto") || {}).value || "").trim();
+    if (!quitar && !texto) { toast("Escribe el texto de la promoción", true); return; }
+    var copia = JSON.parse(JSON.stringify(r));
+    copia.promo = texto ? { texto: texto, hasta: ($("#promoHasta") || {}).value || "" } : null;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner"></span>Guardando…';
+    try {
+      await window.Store.guardar(copia, { soloActualizar: esAliado() });
+      if (window.Store.columnasRechazadas().indexOf("promo") !== -1) {
+        toast("Aún no se puede guardar la promoción: falta un paso de configuración (avísale a Servicios Ghost).", true);
+      } else {
+        reemplazarEnMemoria(copia);
+        toast(texto ? "🔥 Promoción publicada ✓" : "Promoción quitada");
+      }
+      cerrarAli();
+    } catch (ex) {
+      toast(mensajeErrorGuardar(ex), true);
+      boton.disabled = false;
+      boton.textContent = quitar ? "Quitar promoción" : "💾 Guardar promoción";
+    }
+  }
+
+  /* ---- Mis ventas ---- */
+  function abrirVentasAliado(id) {
+    var r = restPorId(id);
+    if (!r) return;
+    abrirAli("📊 Mis ventas · " + r.nombre,
+      '<div class="inline-actions" style="margin-bottom:12px"><select class="field__select" id="aliRango" aria-label="Periodo">' +
+        '<option value="hoy">Hoy</option><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="mes">Este mes</option><option value="todo">Todo</option>' +
+      "</select></div>" +
+      '<div id="aliVentas"><p class="muted">Calculando…</p></div>');
+    cargarVentasAliado();
+  }
+  async function cargarVentasAliado() {
+    var cont = $("#aliVentas");
+    if (!cont) return;
+    var rango = ($("#aliRango") || {}).value || "30";
+    cont.innerHTML = '<p class="muted">Calculando…</p>';
+    try {
+      var d = await window.Store.misVentas(desdeRango(rango));
+      if (!$("#aliVentas")) return;
+      if (!d.pedidos && !d.cancelados) {
+        cont.innerHTML = '<p class="muted">Todavía no hay pedidos en este periodo. ¡Comparte tu carta para recibir los primeros! 📲</p>';
+        return;
+      }
+      var kpis = [
+        ["Ventas entregadas", money(Number(d.ventas) || 0)],
+        ["Pedidos entregados", (d.entregados || 0) + " de " + (d.pedidos || 0)],
+        ["En curso", String(d.en_curso || 0)],
+        ["Productos vendidos", String(d.unidades || 0)],
+      ];
+      var dias = Object.keys(d.por_dia || {}).sort();
+      cont.innerHTML =
+        '<div class="kpis">' + kpis.map(function (k) {
+          return '<div class="kpi"><span class="kpi__etq">' + esc(k[0]) + '</span><strong class="kpi__val">' + esc(k[1]) + "</strong></div>";
+        }).join("") + "</div>" +
+        (dias.length > 1 ? '<div class="ventas-card"><h3>Ventas por día</h3>' +
+          barrasHTML(dias.map(function (x) { return [x.slice(8, 10) + "/" + x.slice(5, 7), Number(d.por_dia[x]) || 0]; }), money) + "</div>" : "") +
+        ((d.top || []).length ? '<div class="ventas-card"><h3>🏆 Lo que más te piden</h3><ol class="top-platos">' +
+          d.top.map(function (t) { return "<li><span>" + esc(t.plato) + "</span><strong>" + esc(t.unidades) + "</strong></li>"; }).join("") +
+          "</ol></div>" : "") +
+        '<p class="muted" style="font-size:.8rem">Las ventas cuentan solo pedidos entregados. Por privacidad, aquí no se muestran datos de los clientes.</p>';
+    } catch (ex) {
+      cont.innerHTML = ex && ex.code === "SIN_SQL"
+        ? '<p class="aviso-sql aviso-sql--inline">Las estadísticas se activan cuando el equipo de Servicios Ghost termine de configurar el sistema.</p>'
+        : '<p class="muted">No se pudieron cargar las ventas: ' + esc(ex && ex.message ? ex.message : "error") + "</p>";
+    }
+  }
+
+  /* ---- Compartir mi carta (enlace + QR) ---- */
+  function abrirCompartir(id) {
+    var r = restPorId(id);
+    if (!r) return;
+    var url = enlaceTienda(id);
+    var qr = "https://api.qrserver.com/v1/create-qr-code/?size=480x480&margin=16&data=" + encodeURIComponent(url);
+    var wa = "https://wa.me/?text=" + encodeURIComponent("Mira la carta de " + r.nombre + " y pide a domicilio 🛵👻 " + url);
+    abrirAli("📲 Compartir · " + r.nombre,
+      (r.visible === false ? '<p class="aviso-sql aviso-sql--inline">Tu negocio aún no está publicado: el enlace y el QR funcionarán cuando lo publiques.</p>' : "") +
+      '<div class="compartir">' +
+        '<figure class="compartir__qr"><img src="' + esc(qr) + '" alt="Código QR de la carta de ' + esc(r.nombre) + '" width="220" height="220" />' +
+          "<figcaption>Escanea y pide a domicilio</figcaption></figure>" +
+        '<div class="compartir__acc">' +
+          '<p class="muted" style="margin-top:0">Imprime el QR y ponlo en tus mesas, el mostrador o tus bolsas. Comparte el enlace en tus estados de WhatsApp, Instagram y Facebook.</p>' +
+          '<input class="field__input" readonly value="' + esc(url) + '" id="aliUrl" aria-label="Enlace de tu carta" />' +
+          '<div class="inline-actions">' +
+            '<button type="button" class="btn-primary btn-sm" data-ali-copiar>📋 Copiar enlace</button>' +
+            '<a class="btn-copy btn-sm" href="' + esc(wa) + '" target="_blank" rel="noopener">💬 Enviar por WhatsApp</a>' +
+            '<a class="btn-copy btn-sm" href="' + esc(qr.replace("480x480", "1000x1000")) + '" target="_blank" rel="noopener">⬇️ QR para imprimir</a>' +
+          "</div>" +
+        "</div>" +
+      "</div>");
+  }
+  function copiarEnlaceAli() {
+    var inp = $("#aliUrl");
+    if (!inp) return;
+    function ok() { toast("Enlace copiado ✓ Pégalo donde quieras"); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(inp.value).then(ok, function () { inp.select(); document.execCommand("copy"); ok(); });
+    } else { inp.select(); document.execCommand("copy"); ok(); }
+  }
+
+  /* ---- Eventos de las herramientas ---- */
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    if (t.closest("[data-ali-close]")) { cerrarAli(); return; }
+    var x;
+    if ((x = t.closest("[data-ali-abrir]"))) { alternarAbierto(x.getAttribute("data-ali-abrir"), x); return; }
+    if ((x = t.closest("[data-ali-disp]"))) { abrirDisponibilidad(x.getAttribute("data-ali-disp")); return; }
+    if ((x = t.closest("[data-ali-promo]"))) { abrirPromo(x.getAttribute("data-ali-promo")); return; }
+    if ((x = t.closest("[data-ali-ventas]"))) { abrirVentasAliado(x.getAttribute("data-ali-ventas")); return; }
+    if ((x = t.closest("[data-ali-compartir]"))) { abrirCompartir(x.getAttribute("data-ali-compartir")); return; }
+    if (t.closest("[data-ali-copiar]")) { copiarEnlaceAli(); return; }
+    if ((x = t.closest("[data-tab-ir]"))) { cambiarTab(x.getAttribute("data-tab-ir")); window.scrollTo(0, 0); return; }
+    if ((x = t.closest("[data-promo-idea]"))) { $("#promoTexto").value = x.getAttribute("data-promo-idea"); pintarVistaPromo(); return; }
+    if ((x = t.closest("[data-promo-guardar]"))) { guardarPromo(x.getAttribute("data-promo-guardar"), false, x); return; }
+    if ((x = t.closest("[data-promo-quitar]"))) { guardarPromo(x.getAttribute("data-promo-quitar"), true, x); return; }
+  });
+  document.addEventListener("change", function (e) {
+    var t = e.target;
+    if (!t || !t.getAttribute) return;
+    var k = t.getAttribute("data-disp-ag");
+    if (k) {
+      var it = itemDisp(k);
+      if (!it) return;
+      it.agotado = !t.checked;
+      var fila = t.closest("[data-disp-fila]");
+      fila.classList.toggle("disp-fila--agotado", it.agotado);
+      fila.querySelector(".disp-tag").textContent = it.agotado ? "Agotado" : "Disponible";
+      programarGuardadoDisp();
+      return;
+    }
+    k = t.getAttribute("data-disp-p");
+    if (k) {
+      var it2 = itemDisp(k);
+      if (!it2) return;
+      var v = Math.max(0, Math.round(Number(t.value) || 0));
+      if (v === (Number(it2.p) || 0)) return;
+      it2.p = v;
+      programarGuardadoDisp();
+      return;
+    }
+    if (t.id === "aliRango") cargarVentasAliado();
+  });
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (!t) return;
+    if (t.id === "promoTexto") { pintarVistaPromo(); return; }
+    if (t.id === "dispBuscar") {
+      var q = t.value.trim().toLowerCase();
+      elAliBody.querySelectorAll("[data-disp-sec]").forEach(function (sec) {
+        var alguna = false;
+        sec.querySelectorAll("[data-disp-fila]").forEach(function (f) {
+          var ver = !q || f.getAttribute("data-n").indexOf(q) !== -1;
+          f.hidden = !ver;
+          if (ver) alguna = true;
+        });
+        sec.hidden = !alguna;
+      });
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && elAli && !elAli.hidden) cerrarAli();
+  });
 
   /* ------------------- Delegación de eventos ---------------------- */
   document.addEventListener("click", function (e) {

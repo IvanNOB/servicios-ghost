@@ -71,6 +71,8 @@
   }
 
   // ¿La foto de perfil es un logo (se muestra completa) o una foto (llena el espacio)?
+  // Promoción propia del negocio (vigente hoy).
+  function promoVigente(r) { var p = r && r.promo; return !!(p && p.texto && (!p.hasta || p.hasta >= hoyISO())); }
   function esLogo(r) { return r && r.logoAjuste === "logo"; }
   function claseLogo(r) { return r && r.logo && esLogo(r) ? " portada--logo" : ""; }
 
@@ -474,6 +476,7 @@
         '<button type="button" class="card' + (abiertoAhora(r) ? "" : " card--cerrado") + '" data-rest="' + esc(r.id) +
         '" aria-label="Ver la carta de ' + esc(r.nombre) + '">' +
           cover +
+          (promoVigente(r) ? '<span class="card__promo">🔥 ' + esc(r.promo.texto) + "</span>" : "") +
           '<div class="card__body">' +
             '<div class="card__name">' + esc(r.nombre) + "</div>" +
             '<div class="card__meta"><span>' + esc(r.cat) +
@@ -526,7 +529,9 @@
           '<div class="rest-head__meta"><span>⏱ ' + esc(r.tiempo) + "</span>" +
             estadoHTML(r) + "</div>" +
         "</div>" +
-      "</div>" + almuerzoBloque + secciones;
+      "</div>" +
+      (promoVigente(r) ? '<div class="promo-carta">🔥 <strong>' + esc(r.promo.texto) + "</strong>" + (r.promo.hasta ? ' <span class="muted">· hasta el ' + esc(r.promo.hasta.slice(8, 10) + "/" + r.promo.hasta.slice(5, 7)) + "</span>" : "") + "</div>" : "") +
+      almuerzoBloque + secciones;
 
     elVistaInicio.hidden = true;
     elVistaCarta.hidden = false;

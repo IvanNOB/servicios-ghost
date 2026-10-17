@@ -30,6 +30,8 @@ alter table public.restaurantes add column if not exists desayuno jsonb default 
 alter table public.restaurantes add column if not exists visible boolean not null default true;
 -- Cómo se muestra la foto de perfil: 'foto' (llena el espacio) o 'logo' (completa, sin recortes).
 alter table public.restaurantes add column if not exists logo_ajuste text default 'foto';
+-- Promoción propia del negocio: { texto, hasta }. Sale como etiqueta en su tarjeta.
+alter table public.restaurantes add column if not exists promo jsonb default null;
 
 -- 2) Perfiles y permisos ----------------------------------------------
 create table if not exists public.perfiles (
@@ -345,6 +347,54 @@ create policy "borrar fotos admin"
     )
   );
 
+-- 9) Estadísticas del negocio aliado (solo SUS ventas, sin datos de clientes)
+create or replace function public.mis_ventas(p_desde timestamptz)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_rest text := public.mi_restaurante();
+  v_res  jsonb;
+begin
+  if v_rest is null then
+    raise exception 'Solo un negocio aliado puede ver sus ventas.';
+  end if;
+  with it as (
+    select p.id, p.estado, p.creado_en,
+           e->>'plato' as plato,
+           case when e->>'cantidad' ~ '^[0-9]+$' then (e->>'cantidad')::int else 0 end as cantidad,
+           case when e->>'subtotal' ~ '^[0-9]+([.][0-9]+)?$' then (e->>'subtotal')::numeric else 0 end as subtotal
+    from public.pedidos p
+    cross join lateral jsonb_array_elements(
+      case when jsonb_typeof(p.items) = 'array' then p.items else '[]'::jsonb end) e
+    where p.creado_en >= coalesce(p_desde, '2000-01-01'::timestamptz)
+      and e->>'restaurante_id' = v_rest
+  )
+  select jsonb_build_object(
+    'pedidos',    (select count(distinct id) from it where estado <> 'cancelado'),
+    'entregados', (select count(distinct id) from it where estado = 'entregado'),
+    'en_curso',   (select count(distinct id) from it where estado not in ('entregado', 'cancelado')),
+    'cancelados', (select count(distinct id) from it where estado = 'cancelado'),
+    'ventas',     (select coalesce(sum(subtotal), 0) from it where estado = 'entregado'),
+    'unidades',   (select coalesce(sum(cantidad), 0) from it where estado <> 'cancelado'),
+    'top', (select coalesce(jsonb_agg(to_jsonb(t) order by t.unidades desc), '[]'::jsonb) from (
+              select regexp_replace(plato, '[[:space:]]*[(].*[)][[:space:]]*$', '') as plato,
+                     sum(cantidad) as unidades
+              from it where estado <> 'cancelado'
+              group by 1 order by 2 desc limit 5) t),
+    'por_dia', (select coalesce(jsonb_object_agg(d, v), '{}'::jsonb) from (
+              select to_char(creado_en at time zone 'America/Bogota', 'YYYY-MM-DD') as d,
+                     sum(subtotal) as v
+              from it where estado = 'entregado' group by 1) x)
+  ) into v_res;
+  return v_res;
+end;
+$$;
+
+grant execute on function public.mis_ventas(timestamptz)    to authenticated;
 grant execute on function public.es_admin()                 to anon, authenticated;
 grant execute on function public.mi_restaurante()           to anon, authenticated;
 grant execute on function public.mi_perfil()                to authenticated;
