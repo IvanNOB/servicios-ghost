@@ -618,3 +618,16 @@ code {
 .campo-wa__ayuda { font-size: 0.8rem; margin: 4px 0 0; }
 .campo-wa__ayuda--error { color: var(--text); background: color-mix(in srgb, var(--error, #ef4444) 14%, transparent); border: 1px solid color-mix(in srgb, var(--error, #ef4444) 50%, transparent); border-radius: 10px; padding: 8px 10px; }
 .campo-wa__ayuda--error .sql-linea { white-space: pre-wrap; }
+
+/* Ordenar secciones y productos */
+.orden { display: inline-flex; gap: 4px; flex: 0 0 auto; }
+.orden-btn { display: inline-grid; place-items: center; padding: 0;
+  width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border-fuerte, #333);
+  background: var(--surface, #1e1e1e); color: var(--text); font-size: 1rem; font-weight: 800; cursor: pointer; line-height: 1;
+}
+.orden-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.orden-btn:disabled { opacity: .3; cursor: default; }
+.orden-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0 2px; font-size: 0.8rem; }
+.orden-movido { outline: 2px solid var(--primary); outline-offset: 3px; transition: outline-color .9s ease; }
+.editor-section__head { flex-wrap: wrap; }
+.editor-section__head .field__input { flex: 1 1 160px; }

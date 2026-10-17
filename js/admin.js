@@ -901,6 +901,32 @@
       '" style="height:46px; padding:4px" /></div>';
   }
 
+  // Flechas dibujadas (los símbolos ⤒ ↑ no se ven en todos los equipos).
+  var svgO = function (d) { return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + "</svg>"; };
+  var ICO_ORDEN = {
+    primero: svgO('<path d="M5 4h14M12 20V9M7 13l5-5 5 5"/>'),
+    arriba: svgO('<path d="M12 19V5M6 11l6-6 6 6"/>'),
+    abajo: svgO('<path d="M12 5v14M6 13l6 6 6-6"/>'),
+    ultimo: svgO('<path d="M5 20h14M12 4v11M7 11l5 5 5-5"/>'),
+  };
+  // Flechas para cambiar el orden: primero, subir, bajar, último.
+  function ordenHTML(tipo, clave, pos, total, que) {
+    if (total < 2) return "";
+    var b = function (dir, ico, txt, off) {
+      return '<button type="button" class="orden-btn" data-orden="' + tipo + "|" + clave + "|" + dir + '" title="' + txt + " este " + que + '" aria-label="' + txt + '"' + (off ? " disabled" : "") + ">" + ico + "</button>";
+    };
+    return '<span class="orden">' +
+      b("primero", ICO_ORDEN.primero, "Poner de primero", pos === 0) + b("arriba", ICO_ORDEN.arriba, "Subir", pos === 0) +
+      b("abajo", ICO_ORDEN.abajo, "Bajar", pos === total - 1) + b("ultimo", ICO_ORDEN.ultimo, "Poner de último", pos === total - 1) + "</span>";
+  }
+  function moverEnLista(lista, i, dir) {
+    var j = dir === "arriba" ? i - 1 : dir === "abajo" ? i + 1 : dir === "primero" ? 0 : lista.length - 1;
+    if (j < 0 || j >= lista.length || j === i) return -1;
+    var x = lista.splice(i, 1)[0];
+    lista.splice(j, 0, x);
+    return j;
+  }
+
   function seccionHTML(sec, idx) {
     var platos = "";
     for (var i = 0; i < (sec.items || []).length; i++) {
@@ -911,6 +937,7 @@
         '<div class="editor-section__head">' +
           '<input class="field__input" data-sec-nombre="' + idx + '" value="' + esc(sec.sec || "") +
             '" placeholder="Nombre de la sección (ej. Obleas)" style="font-weight:700" />' +
+          ordenHTML("sec", String(idx), idx, editando.carta.length, "sección") +
           '<button type="button" class="btn-danger" data-del-seccion="' + idx + '">Quitar</button>' +
         "</div>" +
         '<div data-platos="' + idx + '">' + platos + "</div>" +
@@ -955,6 +982,9 @@
           '<input class="field__input" data-plato-n="' + si + "-" + pi + '" value="' + esc(it.n || "") +
             '" placeholder="Ej: Frappé de caramelo" aria-label="Nombre del producto" />' +
           '<button type="button" class="btn-danger" data-del-plato="' + si + "-" + pi + '" title="Quitar este producto">✕</button>' +
+        "</div>" +
+        '<div class="orden-fila"><span class="muted">Posición ' + (pi + 1) + " de " + editando.carta[si].items.length + "</span>" +
+          ordenHTML("plato", si + "-" + pi, pi, editando.carta[si].items.length, "producto") +
         "</div>" +
         '<span class="mini-label">Descripción <span class="muted">(opcional)</span></span>' +
         '<input class="field__input" data-plato-d="' + si + "-" + pi + '" value="' + esc(it.d || "") +
@@ -2067,6 +2097,30 @@
     }
 
     // Secciones
+    // Cambiar el orden de secciones y productos
+    var ord = t.closest("[data-orden]");
+    if (ord) {
+      leerEditor();
+      var po = ord.getAttribute("data-orden").split("|"), dir = po[2], nueva, sel;
+      if (po[0] === "sec") {
+        nueva = moverEnLista(editando.carta, Number(po[1]), dir);
+        sel = '[data-seccion="' + nueva + '"]';
+      } else {
+        var k = po[1].split("-"), siO = Number(k[0]);
+        nueva = moverEnLista(editando.carta[siO].items, Number(k[1]), dir);
+        sel = '[data-plato="' + siO + "-" + nueva + '"]';
+      }
+      if (nueva < 0) return;
+      pintarEditor();
+      var movido = elEditorBody.querySelector(sel);
+      if (movido) {
+        movido.scrollIntoView({ block: "center" });
+        movido.classList.add("orden-movido");
+        setTimeout(function () { movido.classList.remove("orden-movido"); }, 900);
+      }
+      toast("Orden cambiado ✓ (recuerda Guardar cambios)");
+      return;
+    }
     if (t.closest("[data-add-seccion]")) {
       leerEditor(); editando.carta.push({ sec: "", items: [] }); pintarEditor(); return;
     }
