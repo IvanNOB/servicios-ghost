@@ -454,8 +454,6 @@ code {
 .pub-foto__vacia small { font-size: 0.8rem; }
 .sql-linea { display: block; margin-top: 8px; padding: 8px 10px; background: rgba(0,0,0,.35); border-radius: 8px; user-select: all; word-break: break-all; }
 
-.ajuste-foto { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
-.ajuste-foto .pay__option { flex: 1 1 220px; }
 
 /* Publicado / oculto */
 .publicar {
@@ -556,21 +554,14 @@ code {
 .logo-ed--arrastrando { cursor: grabbing; outline: 2px solid var(--primary); outline-offset: 2px; }
 .logo-ed__fila { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .logo-ed__fila input[type="range"] { flex: 1 1 140px; accent-color: var(--primary); min-width: 0; }
-.logo-ed__lbl { flex: 0 0 76px; font-size: 0.85rem; font-weight: 600; }
+.logo-ed__lbl { flex: 0 0 auto; font-size: 0.85rem; font-weight: 600; }
 .logo-ed__val { flex: 0 0 44px; text-align: right; font-size: 0.82rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .logo-ed__btn {
   width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-fuerte, #333);
   background: var(--surface, #1e1e1e); color: var(--text); font-size: 1.1rem; font-weight: 700; cursor: pointer; line-height: 1;
 }
 .logo-ed__btn:hover { border-color: var(--primary); }
-.logo-ed__chip {
-  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
-  border: 1px solid var(--border-fuerte, #333); background: var(--surface, #1e1e1e); color: var(--text-2);
-  border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.8rem; font-weight: 600;
-}
-.logo-ed__chip:hover { color: var(--text); }
-.logo-ed__chip--on { background: var(--primary); border-color: var(--primary); color: #1a1407; }
-.logo-ed__chip input[type="color"] { width: 22px; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; }
 .logo-ed__pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px; font-size: 0.8rem; }
-.logo-ed .ajuste-foto { margin-top: 12px; }
-@media (max-width: 420px) { .logo-ed__fig--cuadro { flex-basis: 84px; } .logo-ed__lbl { flex-basis: 64px; } }
+@media (max-width: 420px) { .logo-ed__fig--cuadro { flex-basis: 96px; } }
+.logo-ed__ayuda { font-size: 0.82rem; color: var(--text-2); margin: 10px 0 0; line-height: 1.4; }
+.logo-ed__banner img, .logo-ed__cuadro img { pointer-events: none; }

@@ -42,7 +42,7 @@
     if (!(b === "blur" || b === "blanco" || b === "negro" || esColor(b))) b = null;
     return {
       modo: modo,
-      pos: { z: num(o.z, 1, 0.3, 3), x: num(o.x, 50, 0, 100), y: num(o.y, 50, 0, 100), b: b },
+      pos: { z: num(o.z, 1, 1, 4), x: num(o.x, 50, 0, 100), y: num(o.y, 50, 0, 100), b: b },
     };
   }
 
@@ -51,11 +51,8 @@
     modo = modo === "logo" ? "logo" : "foto";
     if (!pos) return modo;
     var p = normalizar({ m: modo, z: pos.z, x: pos.x, y: pos.y, b: pos.b }).pos;
-    var porDefecto = p.z === 1 && p.x === 50 && p.y === 50 && !p.b;
-    if (porDefecto) return modo;
-    var o = { m: modo, z: Math.round(p.z * 100) / 100, x: Math.round(p.x), y: Math.round(p.y) };
-    if (p.b) o.b = p.b;
-    return JSON.stringify(o);
+    if (p.z === 1 && p.x === 50 && p.y === 50) return "foto";
+    return JSON.stringify({ m: "foto", z: Math.round(p.z * 100) / 100, x: Math.round(p.x), y: Math.round(p.y) });
   }
 
   // Color de fondo detrás del logo.
@@ -69,32 +66,22 @@
 
   /* Contenido de la portada: devuelve { estilo, html } para meter dentro de
      cualquier recuadro (tarjeta, cabecera de la carta, panel…).
-     opciones.mosaico: es la tarjeta cuadrada de la lista. Si el negocio no ha
-     ajustado nada y es una "foto", se muestra completa sobre un fondo
-     difuminado (así los logos anchos no se cortan). */
+     La foto SIEMPRE llena todo el recuadro (sin franjas vacías). El negocio
+     elige qué parte se ve: acerca (zoom ≥ 100%) y mueve la foto.
+     Por qué no deja huecos: "object-fit: cover" ya cubre el recuadro, y
+     agrandar (scale ≥ 1) desde un punto que está dentro del recuadro sigue
+     cubriéndolo entero. */
   function portada(r, opciones) {
     opciones = opciones || {};
     if (!r || !r.logo) return null;
-    var pos = r.logoPos || null;
-    var modo = r.logoAjuste === "logo" ? "logo" : "foto";
-    var ajustado = !!pos;
-    var p = pos || { z: 1, x: 50, y: 50, b: null };
-
-    var difuminado = p.b === "blur" || (!ajustado && modo === "foto" && opciones.mosaico);
-    var ajuste = modo === "logo" || (!ajustado && opciones.mosaico) ? "contain" : "cover";
-    // Los logos llevan un pequeño margen para que respiren.
-    var escala = p.z * (modo === "logo" ? 0.86 : 1);
-    var url = esc(r.logo);
-
-    var imgEstilo =
-      "object-fit:" + ajuste + ";object-position:" + p.x + "% " + p.y + "%;" +
-      (escala !== 1 ? "transform:scale(" + escala + ");transform-origin:" + p.x + "% " + p.y + "%;" : "");
-
+    var p = r.logoPos || { z: 1, x: 50, y: 50 };
+    var z = Math.max(1, Math.min(4, Number(p.z) || 1));
+    var x = num(p.x, 50, 0, 100), y = num(p.y, 50, 0, 100);
+    var imgEstilo = "object-fit:cover;object-position:" + x + "% " + y + "%;" +
+      (z !== 1 ? "transform:scale(" + z + ");transform-origin:" + x + "% " + y + "%;" : "");
     return {
-      estilo: "background-color:" + colorFondo(r, p),
-      html:
-        (difuminado ? '<span class="lg-fondo" style="background-image:url(\'' + url + '\')"></span>' : "") +
-        '<img class="lg-img" src="' + url + '" alt="" ' + (opciones.sinLazy ? "" : 'loading="lazy" ') +
+      estilo: "background-color:#111",
+      html: '<img class="lg-img" src="' + esc(r.logo) + '" alt="" ' + (opciones.sinLazy ? "" : 'loading="lazy" ') +
         'decoding="async" draggable="false" style="' + imgEstilo + '" />',
     };
   }

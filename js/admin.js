@@ -296,65 +296,38 @@
 
   // Fondo cuando no hay foto de perfil. Las fotos se pintan con LogoGhost (js/logo.js).
   function estiloPortada(r) { return 'style="background:' + esc(r.color || "#3b82f6") + '"'; }
-  /* ------------- Editor de la foto de perfil: cada negocio la acomoda ------------- */
-  var FONDOS_LOGO = [
-    { k: null, t: "Automático" },
-    { k: "blanco", t: "Blanco" },
-    { k: "negro", t: "Negro" },
-    { k: "blur", t: "Foto difuminada" },
-  ];
-
-  function posLogo(r) { return r.logoPos || { z: 1, x: 50, y: 50, b: null }; }
+  /* ------------- Editor de la foto de perfil: cada negocio la acomoda -------------
+     La foto siempre llena el recuadro (sin espacios vacíos). El negocio elige
+     qué parte se ve: la arrastra, la acerca (dos dedos, rueda del mouse o la
+     barra) y ve al instante cómo queda en su carta y en la lista. */
+  function posLogo(r) { return r.logoPos || { z: 1, x: 50, y: 50 }; }
 
   function logoEditorHTML(r) {
-    var p = posLogo(r), esLogo = r.logoAjuste === "logo";
-    var propio = p.b && /^#/.test(p.b);
+    var p = posLogo(r);
     return (
       '<div class="logo-ed" id="logoEd">' +
         '<div class="logo-ed__vistas">' +
           '<figure class="logo-ed__fig logo-ed__fig--banner">' +
-            '<div class="logo-ed__banner" id="logoEdBanner" title="Arrastra para mover"></div>' +
-            "<figcaption>En tu carta · <strong>arrastra la foto para moverla</strong></figcaption>" +
+            '<div class="logo-ed__banner" id="logoEdBanner"></div>' +
+            "<figcaption>En tu carta</figcaption>" +
           "</figure>" +
           '<figure class="logo-ed__fig logo-ed__fig--cuadro">' +
             '<div class="logo-ed__cuadro" id="logoEdCuadro"></div>' +
             "<figcaption>En la lista</figcaption>" +
           "</figure>" +
         "</div>" +
-
-        '<div class="ajuste-foto" role="group" aria-label="Cómo se muestra la foto">' +
-          '<label class="pay__option"><input type="radio" name="logoAjuste" value="logo"' + (esLogo ? " checked" : "") + " /> 📐 Completo (logo)</label>" +
-          '<label class="pay__option"><input type="radio" name="logoAjuste" value="foto"' + (!esLogo ? " checked" : "") + " /> 🖼️ Llenar el espacio (foto)</label>" +
-        "</div>" +
-
+        '<p class="logo-ed__ayuda">👆 <strong>Arrastra la foto</strong> para elegir qué parte se ve. ' +
+          "Para acercar: <strong>dos dedos</strong> en el celular, la <strong>rueda del mouse</strong> o la barra.</p>" +
         '<div class="logo-ed__fila">' +
-          '<span class="logo-ed__lbl">🔍 Tamaño</span>' +
-          '<button type="button" class="logo-ed__btn" data-logo-zoom="-10" aria-label="Más pequeño">−</button>' +
-          '<input type="range" id="logoZoom" min="30" max="300" step="1" value="' + Math.round(p.z * 100) + '" aria-label="Tamaño de la foto" />' +
-          '<button type="button" class="logo-ed__btn" data-logo-zoom="10" aria-label="Más grande">+</button>' +
+          '<span class="logo-ed__lbl">🔍 Acercar</span>' +
+          '<button type="button" class="logo-ed__btn" data-logo-zoom="-10" aria-label="Alejar">−</button>' +
+          '<input type="range" id="logoZoom" min="100" max="400" step="1" value="' + Math.round(p.z * 100) + '" aria-label="Acercar la foto" />' +
+          '<button type="button" class="logo-ed__btn" data-logo-zoom="10" aria-label="Acercar">+</button>' +
           '<span class="logo-ed__val" id="logoZoomTxt">' + Math.round(p.z * 100) + "%</span>" +
-        "</div>" +
-        '<div class="logo-ed__fila">' +
-          '<span class="logo-ed__lbl">↔️ Mover</span>' +
-          '<input type="range" id="logoX" min="0" max="100" step="1" value="' + Math.round(p.x) + '" aria-label="Mover a los lados" />' +
-        "</div>" +
-        '<div class="logo-ed__fila">' +
-          '<span class="logo-ed__lbl">↕️ Mover</span>' +
-          '<input type="range" id="logoY" min="0" max="100" step="1" value="' + Math.round(p.y) + '" aria-label="Mover arriba o abajo" />' +
-        "</div>" +
-
-        '<div class="logo-ed__fila logo-ed__fila--fondo">' +
-          '<span class="logo-ed__lbl">🎨 Fondo</span>' +
-          FONDOS_LOGO.map(function (f) {
-            var on = (p.b || null) === f.k;
-            return '<button type="button" class="logo-ed__chip' + (on ? " logo-ed__chip--on" : "") + '" data-logo-fondo="' + (f.k || "") + '">' + f.t + "</button>";
-          }).join("") +
-          '<label class="logo-ed__chip' + (propio ? " logo-ed__chip--on" : "") + '">Otro color ' +
-            '<input type="color" id="logoFondoColor" value="' + esc(propio ? p.b : (r.color || "#1e1e1e")) + '" /></label>' +
         "</div>" +
         '<div class="logo-ed__pie">' +
           '<span class="muted">Así lo verán tus clientes. Se guarda al tocar <strong>Guardar cambios</strong>.</span>' +
-          '<button type="button" class="btn-link" data-logo-reset>↺ Centrar de nuevo</button>' +
+          '<button type="button" class="btn-link" data-logo-reset>↺ Volver a centrar</button>' +
         "</div>" +
       "</div>"
     );
@@ -364,82 +337,102 @@
   function pintarLogoVistas() {
     var r = editando;
     if (!r || !r.logo) return;
-    [["logoEdBanner", {}], ["logoEdCuadro", { mosaico: true }]].forEach(function (v) {
-      var el = document.getElementById(v[0]);
+    ["logoEdBanner", "logoEdCuadro"].forEach(function (id) {
+      var el = document.getElementById(id);
       if (!el) return;
-      var c = LogoGhost.portada(r, Object.assign({ sinLazy: true }, v[1]));
-      el.className = el.id === "logoEdBanner" ? "logo-ed__banner lg" : "logo-ed__cuadro lg";
+      var c = LogoGhost.portada(r, { sinLazy: true });
+      var img = el.querySelector("img");
+      // Si la foto ya está, solo cambiamos su estilo (no parpadea al arrastrar).
+      if (img && img.getAttribute("src") === r.logo) {
+        var tmp = document.createElement("div"); tmp.innerHTML = c.html;
+        img.setAttribute("style", tmp.firstChild.getAttribute("style"));
+      } else {
+        el.innerHTML = c.html;
+      }
+      el.classList.add("lg");
       el.setAttribute("style", c.estilo);
-      el.innerHTML = c.html;
     });
     var p = posLogo(r);
     var zt = document.getElementById("logoZoomTxt"); if (zt) zt.textContent = Math.round(p.z * 100) + "%";
     var z = document.getElementById("logoZoom"); if (z && Number(z.value) !== Math.round(p.z * 100)) z.value = Math.round(p.z * 100);
-    var x = document.getElementById("logoX"); if (x) x.value = Math.round(p.x);
-    var y = document.getElementById("logoY"); if (y) y.value = Math.round(p.y);
-    var col = document.getElementById("logoFondoColor");
-    document.querySelectorAll("#logoEd [data-logo-fondo]").forEach(function (b) {
-      b.classList.toggle("logo-ed__chip--on", (b.getAttribute("data-logo-fondo") || null) === (p.b || null));
-    });
-    if (col) col.parentNode.classList.toggle("logo-ed__chip--on", !!(p.b && /^#/.test(p.b)));
   }
 
   function cambiarLogo(cambios) {
     if (!editando) return;
     var p = Object.assign({}, posLogo(editando), cambios);
-    p.z = Math.min(3, Math.max(0.3, p.z));
+    p.z = Math.min(4, Math.max(1, p.z));
     p.x = Math.min(100, Math.max(0, p.x));
     p.y = Math.min(100, Math.max(0, p.y));
     editando.logoPos = p;
+    editando.logoAjuste = "foto"; // siempre llena el espacio
     pintarLogoVistas();
   }
 
-  // Arrastrar la foto con el dedo o el mouse.
-  var _arrastreLogo = null;
+  // Arrastrar con un dedo / el mouse; acercar con dos dedos.
+  var _dedos = {}, _gesto = null;
+  function nDedos() { return Object.keys(_dedos).length; }
+  function distDedos() {
+    var k = Object.keys(_dedos), a = _dedos[k[0]], b = _dedos[k[1]];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+  function iniciarGesto(el) {
+    var p = posLogo(editando), k = Object.keys(_dedos), d = _dedos[k[0]];
+    _gesto = { el: el, x0: d.x, y0: d.y, px: p.x, py: p.y, pz: p.z, d0: nDedos() > 1 ? distDedos() : 0 };
+  }
   document.addEventListener("pointerdown", function (e) {
+    var el = e.target.closest && e.target.closest("#logoEdBanner, #logoEdCuadro");
+    if (!el || !editando || !editando.logo) return;
+    e.preventDefault();
+    _dedos[e.pointerId] = { x: e.clientX, y: e.clientY };
+    el.classList.add("logo-ed--arrastrando");
+    iniciarGesto(el);
+    try { if (el.setPointerCapture) el.setPointerCapture(e.pointerId); } catch (ex) { /* sin captura: igual funciona */ }
+  });
+  document.addEventListener("pointermove", function (e) {
+    if (!_gesto || !_dedos[e.pointerId]) return;
+    _dedos[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var g = _gesto;
+    if (nDedos() > 1 && g.d0) {
+      cambiarLogo({ z: g.pz * distDedos() / g.d0 });
+      return;
+    }
+    var rect = g.el.getBoundingClientRect();
+    // La foto sigue al dedo: al llevarla a la derecha se ve más de su lado izquierdo.
+    var f = 1.6 / g.pz;
+    cambiarLogo({
+      x: g.px - f * (e.clientX - g.x0) / rect.width * 100,
+      y: g.py - f * (e.clientY - g.y0) / rect.height * 100,
+    });
+  });
+  function soltarDedo(e) {
+    if (!_dedos[e.pointerId]) return;
+    delete _dedos[e.pointerId];
+    if (!nDedos()) {
+      if (_gesto) _gesto.el.classList.remove("logo-ed--arrastrando");
+      _gesto = null;
+    } else if (_gesto) {
+      iniciarGesto(_gesto.el); // queda un dedo: sigue arrastrando desde ahí
+    }
+  }
+  document.addEventListener("pointerup", soltarDedo);
+  document.addEventListener("pointercancel", soltarDedo);
+  // Rueda del mouse (computador): acercar / alejar.
+  document.addEventListener("wheel", function (e) {
     var el = e.target.closest && e.target.closest("#logoEdBanner, #logoEdCuadro");
     if (!el || !editando) return;
     e.preventDefault();
-    var p = posLogo(editando);
-    _arrastreLogo = { el: el, x0: e.clientX, y0: e.clientY, px: p.x, py: p.y, id: e.pointerId };
-    if (el.setPointerCapture) el.setPointerCapture(e.pointerId);
-    el.classList.add("logo-ed--arrastrando");
-  });
-  document.addEventListener("pointermove", function (e) {
-    var a = _arrastreLogo;
-    if (!a || e.pointerId !== a.id) return;
-    var rect = a.el.getBoundingClientRect();
-    // "Llenar": la foto sobra por los lados, así que movemos al revés que el
-    // dedo para que la foto siga al dedo. "Completo": la movemos igual que el dedo.
-    var llenar = editando.logoAjuste !== "logo" && !(editando.logoPos && editando.logoPos.z < 1);
-    var s = llenar ? -1.4 : 1.4;
-    cambiarLogo({ x: a.px + s * (e.clientX - a.x0) / rect.width * 100, y: a.py + s * (e.clientY - a.y0) / rect.height * 100 });
-  });
-  function soltarLogo() {
-    if (!_arrastreLogo) return;
-    _arrastreLogo.el.classList.remove("logo-ed--arrastrando");
-    _arrastreLogo = null;
-  }
-  document.addEventListener("pointerup", soltarLogo);
-  document.addEventListener("pointercancel", soltarLogo);
+    cambiarLogo({ z: posLogo(editando).z * (e.deltaY < 0 ? 1.08 : 1 / 1.08) });
+  }, { passive: false });
 
-  // Deslizadores
+  // Barra y botones
   document.addEventListener("input", function (e) {
-    var t = e.target;
-    if (!t || !editando) return;
-    if (t.id === "logoZoom") cambiarLogo({ z: Number(t.value) / 100 });
-    else if (t.id === "logoX") cambiarLogo({ x: Number(t.value) });
-    else if (t.id === "logoY") cambiarLogo({ y: Number(t.value) });
-    else if (t.id === "logoFondoColor") cambiarLogo({ b: t.value });
+    if (e.target && e.target.id === "logoZoom" && editando) cambiarLogo({ z: Number(e.target.value) / 100 });
   });
-  // Botones (zoom, fondo, centrar)
   document.addEventListener("click", function (e) {
     var t = e.target;
     if (!t.closest || !editando) return;
     var zb = t.closest("[data-logo-zoom]");
     if (zb) { cambiarLogo({ z: posLogo(editando).z + Number(zb.getAttribute("data-logo-zoom")) / 100 }); return; }
-    var fb = t.closest("[data-logo-fondo]");
-    if (fb) { cambiarLogo({ b: fb.getAttribute("data-logo-fondo") || null }); return; }
     if (t.closest("[data-logo-reset]")) { editando.logoPos = null; pintarLogoVistas(); }
   });
 
