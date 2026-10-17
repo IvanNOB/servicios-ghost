@@ -59,7 +59,8 @@
       color: row.color || "#3b82f6",
       desc: row.descripcion || "",
       logo: row.logo || "",
-      logoAjuste: row.logo_ajuste === "logo" ? "logo" : "foto",
+      logoAjuste: leerLogo(row.logo_ajuste).modo,
+      logoPos: leerLogo(row.logo_ajuste).pos,
       visible: row.visible !== false,
       promo: normalizarPromo(row.promo),
       carta: Array.isArray(row.carta) ? row.carta : [],
@@ -95,6 +96,12 @@
       console.warn("Supabase no respondió, uso data.js:", e && e.message);
       return base;
     }
+  }
+
+  // Ajustes de la foto de perfil (ver js/logo.js).
+  function leerLogo(v) {
+    if (window.LogoGhost) return LogoGhost.leer(v);
+    return { modo: v === "logo" ? "logo" : "foto", pos: null };
   }
 
   /* ----------------------- Normalizadores -------------------------- */
@@ -223,7 +230,7 @@
       color: rest.color || "#3b82f6",
       descripcion: rest.desc || "",
       logo: rest.logo || "",
-      logo_ajuste: rest.logoAjuste === "logo" ? "logo" : "foto",
+      logo_ajuste: window.LogoGhost ? LogoGhost.guardar(rest.logoAjuste, rest.logoPos) : (rest.logoAjuste === "logo" ? "logo" : "foto"),
       visible: rest.visible !== false,
       promo: normalizarPromo(rest.promo),
       carta: normalizarCarta(rest.carta),

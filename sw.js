@@ -13,6 +13,7 @@ var BASICOS = [
   "css/style.css",
   "js/data.js",
   "js/supabase-config.js",
+  "js/logo.js",
   "js/store.js",
   "js/app.js",
   "assets/logo-sm.png",

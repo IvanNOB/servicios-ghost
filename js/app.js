@@ -57,24 +57,15 @@
       .toUpperCase();
   }
 
-  // Estilo de portada: imagen si existe, si no un degradado del color.
+  // Fondo (degradado del color del negocio) para cuando no hay foto de perfil.
+  // Las fotos se pintan con LogoGhost (js/logo.js).
   function coverStyle(r) {
-    if (r.logo && esLogo(r)) {
-      // Logo: se ve completo, sin recortes, sobre el color del negocio.
-      return "background-color:" + esc(r.color || "#1e1e1e") + ";background-image:url('" + esc(r.logo) + "')";
-    }
-    if (r.logo) {
-      return "background-image:url('" + esc(r.logo) + "')";
-    }
     var c = esc(r.color || "#3b82f6");
     return "background-image:linear-gradient(135deg, " + c + ", " + c + "99)";
   }
 
-  // ¿La foto de perfil es un logo (se muestra completa) o una foto (llena el espacio)?
   // Promoción propia del negocio (vigente hoy).
   function promoVigente(r) { var p = r && r.promo; return !!(p && p.texto && (!p.hasta || p.hasta >= hoyISO())); }
-  function esLogo(r) { return r && r.logoAjuste === "logo"; }
-  function claseLogo(r) { return r && r.logo && esLogo(r) ? " portada--logo" : ""; }
 
   // Busca un restaurante por id (incluye el que se está viendo en vista previa).
   function findRest(id) {
@@ -626,13 +617,9 @@
     var html = "";
     for (var i = 0; i < lista.length; i++) {
       var r = lista[i];
-      // Fotos: se ven completas (sin recortar letras de los logos anchos) sobre
-      // un fondo difuminado de la misma foto.
-      var cover = r.logo && esLogo(r)
-        ? '<div class="card__cover' + claseLogo(r) + '" style="' + coverStyle(r) + '"></div>'
-        : r.logo
-        ? '<div class="card__cover card__cover--foto"><span class="card__fondo" style="background-image:url(\'' + esc(r.logo) + '\')"></span>' +
-          '<img class="card__img" src="' + esc(r.logo) + '" alt="" loading="lazy" decoding="async" /></div>'
+      // Foto de perfil tal como la acomodó el negocio (ver js/logo.js).
+      var cover = r.logo
+        ? LogoGhost.recuadro(r, "card__cover", { mosaico: true })
         : '<div class="card__cover">' +
           '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
@@ -662,7 +649,7 @@
     vistaActual = restId;
 
     var cover = r.logo
-      ? '<div class="rest-head__cover' + claseLogo(r) + '" style="' + coverStyle(r) + '"></div>'
+      ? LogoGhost.recuadro(r, "rest-head__cover", { sinLazy: true })
       : '<div class="rest-head__cover" style="' + coverStyle(r) + '">' +
         '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
