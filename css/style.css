@@ -1677,3 +1677,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 @keyframes fabAparece { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fabPista { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .fab__menu, .fab__fondo, .fab__pista { animation: none; } }
+
+/* ----------------- Adiciones de un plato (queso extra, tocineta…) ----------------- */
+.dish-adic { flex: 1 1 100%; order: 5; border: 1px dashed var(--border-fuerte); border-radius: 12px; padding: 0 10px; }
+.dish-adic[open] { border-style: solid; border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); padding-bottom: 8px; }
+.dish-adic summary { cursor: pointer; list-style: none; padding: 9px 0; font-size: 0.86rem; font-weight: 700; color: var(--primary); }
+.dish-adic summary::-webkit-details-marker { display: none; }
+.dish-adic__n { color: var(--text); }
+.dish-adic__lista { display: grid; gap: 4px; }
+.dish-adic__op {
+  display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 7px 8px; border-radius: 10px;
+  font-size: 0.88rem; background: var(--bg);
+}
+.dish-adic__op:has(input:checked) { background: color-mix(in srgb, var(--primary) 16%, var(--bg)); }
+.dish-adic__op input { accent-color: var(--primary); width: 18px; height: 18px; flex: 0 0 auto; }
+.dish-adic__op span:first-of-type { flex: 1; min-width: 0; }
+.dish-adic__precio { color: var(--primary); font-weight: 700; white-space: nowrap; font-size: 0.84rem; }
+.dish-opc .dish-opc__add { order: 6; margin-left: auto; }

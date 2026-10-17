@@ -35,7 +35,9 @@
     "   Grupo: Proteína > Pollo, Res, Cerdo\n" +
     "   Grupo: Bebida > Jugo de mango, Lulo\n" +
     "   Si una opción cambia el precio: Sin sopa (precio=10000). Si está agotada: Lentejas (agotado)\n" +
-    "5. No inventes platos ni precios. Si un precio no se ve, escribe ?.\n\n" +
+    "5. Si la carta tiene ADICIONES o ADICIONALES (queso extra, tocineta…), ponlas en una línea debajo de la sección a la que aplican:\n" +
+    "   Adiciones: Queso extra $2000, Tocineta $3000, Huevo $1500\n" +
+    "6. No inventes platos ni precios. Si un precio no se ve, escribe ?.\n\n" +
     "FORMATO EXACTO:\n\n" +
     "NOMBRE: <nombre del restaurante>\n" +
     "CATEGORÍA: <ej. Pizza, Parrilla, Comida rápida>\n" +
@@ -126,6 +128,24 @@
     return String(texto || "").split(/\r?\n/).map(parsearLineaGrupo).filter(Boolean);
   }
 
+  // Adiciones: "Queso extra (precio=2000), Tocineta $3.000, Huevo + 1500 (agotado)"
+  // → [{ n, precio, agotado? }]. Acepta el precio escrito como (precio=…), $…, + … o un número al final.
+  function parsearAdiciones(texto) {
+    var t = String(texto || "").replace(/\r?\n+/g, ", ");
+    return dividirOpciones(t).map(function (parte) {
+      var op = parsearOpcion(parte);
+      var n = op.n, pr = Number(op.precio) || 0;
+      if (!pr) {
+        var m = n.match(/^(.*?)[\s:\-–—]*(?:\+|\$)\s*\$?\s*(\d[\d.,]*\s*(?:mil|k)?)\s*$/i) ||
+                n.match(/^(.*?\D)\s+(\d{1,3}(?:[.,]\d{3})+|\d{3,6})\s*$/);
+        if (m && limpiar(m[1])) { pr = precio(m[2]); n = limpiar(m[1]); }
+      }
+      var a = { n: n.replace(/^[+]\s*/, ""), precio: pr };
+      if (op.agotado) a.agotado = true;
+      return a;
+    }).filter(function (a) { return a.n; });
+  }
+
   // Grupos → texto editable (para la pestaña "Menú del día").
   function opcionesATexto(grupos) {
     return (grupos || []).map(function (g) {
@@ -211,6 +231,13 @@
           continue;
         }
         if (clave === "seccion") { nuevaSeccion(mc[2]); continue; }
+        // "Adiciones: Queso extra $2.000, Tocineta $3.000" → adiciones de la sección actual
+        if ((clave === "adiciones" || clave === "adicionales" || clave === "extras") && !enAlmuerzo) {
+          if (!seccion) nuevaSeccion("Carta");
+          var adic = parsearAdiciones(mc[2]);
+          if (adic.length) seccion.adiciones = (seccion.adiciones || []).concat(adic);
+          continue;
+        }
       }
 
       // Dentro del bloque ALMUERZO
@@ -284,6 +311,7 @@
     parsearCarta: parsearCarta,
     parsearOpciones: parsearOpciones,
     opcionesATexto: opcionesATexto,
+    parsearAdiciones: parsearAdiciones,
     precio: precio,
   };
 })(typeof window !== "undefined" ? window : globalThis);

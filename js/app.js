@@ -273,7 +273,7 @@
       if (r && arm && arm._base) {
         // Combo (salsa, tamaño…): se rehace con los precios y agotados de HOY.
         var base = findItem(r.id, arm._base);
-        var nuevo = base && !base.agotado && tieneOpciones(base) ? armarCombo(r, base, arm._elec || []) : null;
+        var nuevo = base && !base.agotado && armable(r, base) ? armarCombo(r, base, arm._elec || [], arm._adic || []) : null;
         if (!nuevo) vencido = true;
         else if (nuevo.p !== arm.p || nuevo.n !== arm.n) { almuerzosArmados[p.itemId].item = nuevo; cambio = true; }
       }
@@ -781,10 +781,10 @@
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
-    // Plato con opciones a elegir (ej. salsa de las alitas).
-    if (tieneOpciones(it) && !it.agotado && abiertoAhora(r)) {
+    // Plato con opciones a elegir (ej. salsa de las alitas) o con adiciones.
+    if (armable(r, it) && !it.agotado && abiertoAhora(r)) {
       // "desde $X" si algún grupo cambia el precio (hay tamaños/variantes).
-      var variaPrecio = it.opciones.some(grupoTienePrecios);
+      var variaPrecio = (it.opciones || []).some(grupoTienePrecios);
       var precioMostrar = it.p > 0 ? (variaPrecio ? "desde " : "") + money(it.p) : precioTxt(0);
       return (
         '<div class="dish dish--opciones' + (it.foto ? ' dish--foto' : '') + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
@@ -825,6 +825,22 @@
     return Array.isArray(it.opciones) && it.opciones.length > 0;
   }
 
+  // Adiciones de la sección donde está el plato (queso extra, tocineta…).
+  function adicionesDe(r, it, conAgotadas) {
+    var carta = (r && r.carta) || [];
+    for (var s = 0; s < carta.length; s++) {
+      var items = carta[s].items || [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].id === it.id) {
+          return (carta[s].adiciones || []).filter(function (a) { return a && a.n && (conAgotadas || !a.agotado); });
+        }
+      }
+    }
+    return [];
+  }
+  // ¿El cliente arma el plato antes de agregarlo (opciones o adiciones)?
+  function armable(r, it) { return tieneOpciones(it) || adicionesDe(r, it).length > 0; }
+
   // ¿Alguna opción de este grupo cambia el precio del plato?
   function grupoTienePrecios(g) {
     return (g.opciones || []).some(function (op) { return Number(op.precio) > 0; });
@@ -833,8 +849,9 @@
   // Selector de opciones + botón "Agregar" para un plato (ej. salsa o tamaño).
   function opcionesPlatoHTML(r, it) {
     var html = '<div class="dish-opc" data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">';
-    for (var gi = 0; gi < it.opciones.length; gi++) {
-      var g = it.opciones[gi];
+    var gruposOpc = it.opciones || [];
+    for (var gi = 0; gi < gruposOpc.length; gi++) {
+      var g = gruposOpc[gi];
       var ops = Array.isArray(g.opciones) ? g.opciones : [];
       // Si el grupo cambia el precio, mostramos el PRECIO TOTAL de cada opción
       // (base + extra); si no, solo el nombre (ej. salsa, proteína).
@@ -849,6 +866,19 @@
       }
       html += "</select>";
     }
+    // Adiciones (opcionales, se pueden marcar varias): cada una suma su precio.
+    var adic = adicionesDe(r, it);
+    if (adic.length) {
+      html += '<details class="dish-adic" data-adic-box>' +
+        '<summary>➕ Agregar adiciones <span class="dish-adic__n" data-adic-n></span></summary>' +
+        '<div class="dish-adic__lista">' +
+        adic.map(function (a) {
+          return '<label class="dish-adic__op"><input type="checkbox" data-adic value="' + esc(a.n) + '" data-precio="' + (Number(a.precio) || 0) + '" />' +
+            "<span>" + esc(a.n) + "</span>" +
+            '<span class="dish-adic__precio">' + (a.precio > 0 ? "+ " + esc(money(a.precio)) : "Gratis") + "</span></label>";
+        }).join("") +
+        "</div></details>";
+    }
     html += '<button type="button" class="add-btn dish-opc__add" data-opc-add ' +
       'data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">Agregar</button>';
     return html + "</div>";
@@ -857,25 +887,36 @@
   // Construye la línea "plato + opciones elegidas" con el precio ACTUAL.
   // elecciones = valor elegido por cada grupo (en orden). Devuelve null si
   // alguna opción ya no existe o está agotada (ej. al repetir un pedido viejo).
-  function armarCombo(r, it, elecciones) {
-    var extra = 0, valores = [];
-    for (var gi = 0; gi < it.opciones.length; gi++) {
-      var g = it.opciones[gi] || {}, val = elecciones[gi];
+  function armarCombo(r, it, elecciones, adiciones) {
+    var extra = 0, valores = [], grupos = it.opciones || [];
+    for (var gi = 0; gi < grupos.length; gi++) {
+      var g = grupos[gi] || {}, val = elecciones[gi];
       var op = (g.opciones || []).filter(function (o) { return o.n === val && !o.agotado; })[0];
       if (!op) return null;
       extra += Number(op.precio) || 0;
       valores.push(val);
     }
+    // Adiciones elegidas (con el precio de HOY; si alguna ya no está, no se arma).
+    var disponibles = adicionesDe(r, it), elegidas = [];
+    var pedidas = Array.isArray(adiciones) ? adiciones : [];
+    for (var ai = 0; ai < pedidas.length; ai++) {
+      var ad = disponibles.filter(function (a) { return a.n === pedidas[ai]; })[0];
+      if (!ad) return null;
+      extra += Number(ad.precio) || 0;
+      elegidas.push(ad.n);
+    }
     var sufijo = valores.join(", ");
+    var conAdic = elegidas.length ? " + " + elegidas.join(" + ") : "";
     // id único por combinación: así "4 alitas BBQ" y "4 alitas Maracuyá" no se mezclan.
     return {
-      id: it.id + "--" + slug(sufijo),
-      n: it.n + (sufijo ? " (" + sufijo + ")" : ""),
+      id: it.id + "--" + slug(sufijo + (elegidas.length ? " mas " + elegidas.join(" ") : "")),
+      n: it.n + (sufijo ? " (" + sufijo + ")" : "") + conAdic,
       d: it.d || "",
       p: it.p + extra,
       _combo: true,
       _base: it.id,
       _elec: valores,
+      _adic: elegidas,
     };
   }
 
@@ -883,7 +924,7 @@
   function agregarPlatoConOpciones(restId, itemId) {
     var r = findRest(restId);
     var it = r ? findItem(restId, itemId) : null;
-    if (!r || !it || !tieneOpciones(it)) return;
+    if (!r || !it || !armable(r, it)) return;
     var cont = elVistaCarta.querySelector('.dish-opc[data-item="' + cssId(itemId) + '"]');
     if (!cont) return;
 
@@ -891,12 +932,23 @@
     cont.querySelectorAll("[data-opc]").forEach(function (sel) {
       elecciones[Number(sel.getAttribute("data-opc"))] = sel.value;
     });
-    var combo = armarCombo(r, it, elecciones);
-    if (!combo) return;
-    almuerzosArmados[combo.id] = { restId: r.id, item: combo };
-    setQty(r.id, combo.id, getQty(r.id, combo.id) + 1);
+    var adic = [].map.call(cont.querySelectorAll("[data-adic]:checked"), function (c) { return c.value; });
+    if (!tieneOpciones(it) && !adic.length) {
+      // Sin opciones ni adiciones marcadas: el plato tal cual.
+      setQty(r.id, it.id, getQty(r.id, it.id) + 1);
+    } else {
+      var combo = armarCombo(r, it, elecciones, adic);
+      if (!combo) return;
+      almuerzosArmados[combo.id] = { restId: r.id, item: combo };
+      setQty(r.id, combo.id, getQty(r.id, combo.id) + 1);
+    }
     refreshCart();
     repintarPlato(r.id, it.id);
+    // Listo para el siguiente: sin adiciones marcadas.
+    cont.querySelectorAll("[data-adic]:checked").forEach(function (c) { c.checked = false; });
+    var caja = cont.querySelector("[data-adic-box]");
+    if (caja) caja.open = false;
+    actualizarTotalPlato(cont);
 
     // Feedback breve en el botón.
     var btn = cont.querySelector("[data-opc-add]");
@@ -907,6 +959,32 @@
       setTimeout(function () { btn.textContent = antes; btn.classList.remove("add-btn--ok"); }, 1200);
     }
   }
+
+  // Muestra en el botón el total con las adiciones marcadas ("Agregar · $14.000").
+  function actualizarTotalPlato(cont) {
+    if (!cont) return;
+    var r = findRest(cont.getAttribute("data-rest"));
+    var it = r ? findItem(r.id, cont.getAttribute("data-item")) : null;
+    var btn = cont.querySelector("[data-opc-add]");
+    if (!it || !btn) return;
+    var marcadas = cont.querySelectorAll("[data-adic]:checked");
+    var n = cont.querySelector("[data-adic-n]");
+    if (n) n.textContent = marcadas.length ? "(" + marcadas.length + ")" : "";
+    if (!marcadas.length) { btn.textContent = "Agregar"; return; }
+    var total = it.p;
+    cont.querySelectorAll("[data-opc]").forEach(function (sel) {
+      var g = (it.opciones || [])[Number(sel.getAttribute("data-opc"))] || {};
+      var op = (g.opciones || []).filter(function (o) { return o.n === sel.value; })[0];
+      total += op ? Number(op.precio) || 0 : 0;
+    });
+    marcadas.forEach(function (c) { total += Number(c.getAttribute("data-precio")) || 0; });
+    btn.textContent = "Agregar · " + money(total);
+  }
+  document.addEventListener("change", function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    if (t.hasAttribute("data-adic") || t.hasAttribute("data-opc")) actualizarTotalPlato(t.closest(".dish-opc"));
+  });
 
   // slug sencillo para construir ids de combinación.
   function slug(txt) {
@@ -2061,7 +2139,7 @@
       if (!abiertoAhora(r)) { cerrados[r.nombre] = true; return; }
       if (l.armado) {
         var base = l.armado._base ? findItem(r.id, l.armado._base) : null;
-        var combo = base && !base.agotado && tieneOpciones(base) ? armarCombo(r, base, l.armado._elec || []) : null;
+        var combo = base && !base.agotado && armable(r, base) ? armarCombo(r, base, l.armado._elec || [], l.armado._adic || []) : null;
         if (!combo) { faltan++; return; }
         almuerzosArmados[combo.id] = { restId: r.id, item: combo };
         setQty(r.id, combo.id, getQty(r.id, combo.id) + l.qty);

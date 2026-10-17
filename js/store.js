@@ -123,7 +123,7 @@
   function normalizarCarta(carta) {
     if (!Array.isArray(carta)) return [];
     return carta.map(function (sec) {
-      return {
+      var salida = {
         sec: (sec && sec.sec ? String(sec.sec) : "Sección"),
         items: Array.isArray(sec && sec.items) ? sec.items.map(function (it) {
           var plato = {
@@ -139,7 +139,20 @@
           return plato;
         }) : [],
       };
+      // Adiciones de la sección (queso extra, tocineta…): el cliente marca las que quiera.
+      var adic = normalizarAdiciones(sec && sec.adiciones);
+      if (adic.length) salida.adiciones = adic;
+      return salida;
     });
+  }
+
+  function normalizarAdiciones(lista) {
+    if (!Array.isArray(lista)) return [];
+    return lista.map(function (a) {
+      var o = { n: String((a && a.n) || "").trim(), precio: Math.max(0, Number(a && a.precio) || 0) };
+      if (a && a.agotado) o.agotado = true;
+      return o;
+    }).filter(function (a) { return a.n; });
   }
 
   // Promoción propia del negocio: { texto, hasta: "YYYY-MM-DD" | "" } o null.

@@ -746,6 +746,7 @@
       });
       r.carta = (r.carta || []).concat(d.carta);
     } else if (nPlatos) {
+      conservarAdiciones(r.carta, d.carta);
       r.carta = d.carta;
     }
     if (d.almuerzo) { d.almuerzo.fecha = hoyISO(); r.almuerzo = d.almuerzo; }
@@ -874,7 +875,33 @@
         "</div>" +
         '<div data-platos="' + idx + '">' + platos + "</div>" +
         '<button type="button" class="btn-copy" data-add-plato="' + idx + '">+ Agregar plato</button>' +
+        adicionesSeccionHTML(sec, idx) +
       "</div>"
+    );
+  }
+
+  // Adiciones de la sección: el cliente puede marcar las que quiera en
+  // cualquier plato de esta sección, y cada una suma su precio.
+  function adicionesATexto(lista) {
+    if (!Array.isArray(lista)) return "";
+    return lista.map(function (a) {
+      return a.n + (a.precio > 0 ? " $" + Number(a.precio).toLocaleString("es-CO") : "") + (a.agotado ? " (agotado)" : "");
+    }).join(", ");
+  }
+  function textoAAdiciones(texto) {
+    return window.Importar && window.Importar.parsearAdiciones ? window.Importar.parsearAdiciones(texto) : [];
+  }
+  function adicionesSeccionHTML(sec, idx) {
+    var texto = adicionesATexto(sec.adiciones);
+    var n = (sec.adiciones || []).length;
+    return (
+      '<details class="plato-opc sec-adic"' + (n ? " open" : "") + ">" +
+        "<summary>➕ Adiciones de esta sección" + (n ? " (" + n + ")" : "") + "</summary>" +
+        '<textarea class="field__textarea" rows="2" data-sec-adic="' + idx + '" placeholder="Queso extra $2.000, Tocineta $3.000, Huevo $1.500">' + esc(texto) + "</textarea>" +
+        '<p class="muted plato-opc__ayuda">Escríbelas separadas por coma, con lo que <strong>suma</strong> cada una (ej. <code>Queso extra $2.000</code>). ' +
+          'El cliente marca las que quiera en cualquier plato de esta sección. Si una se acaba, ponle <code>(agotado)</code>.</p>' +
+        (n ? '<button type="button" class="btn-copy btn-sm" data-adic-todas="' + idx + '">Usar estas adiciones en todas las secciones</button>' : "") +
+      "</details>"
     );
   }
 
@@ -982,7 +1009,7 @@
         "Si los agregaste o corregiste tú desde el panel, se perderán. En ese caso toca Cancelar.");
       lineas.push("");
     }
-    lineas.push("Se conservan: fotos, agotados, horario, portada, menús del día y si está abierto.");
+    lineas.push("Se conservan: fotos, agotados, adiciones, horario, portada, menús del día y si está abierto.");
     lineas.push("¿Usar la carta nueva?");
     if (!confirm(lineas.join("\n"))) return;
     // Fotos y agotados de la copia actual, por id de plato.
@@ -996,6 +1023,7 @@
         if (p && p.agotado) it.agotado = true;
       });
     });
+    conservarAdiciones(r.carta, nueva);
     var copia = JSON.parse(JSON.stringify(r));
     copia.carta = nueva;
     copia.nombre = c.nombre; copia.cat = c.cat; copia.tiempo = c.tiempo; copia.desc = c.desc;
@@ -1013,6 +1041,17 @@
       boton.disabled = false;
       boton.textContent = texto;
     }
+  }
+
+  // Al reemplazar una carta, cada sección conserva sus adiciones (por nombre),
+  // salvo que la carta nueva ya traiga las suyas.
+  function conservarAdiciones(vieja, nueva) {
+    var porNombre = {};
+    (vieja || []).forEach(function (s) { if (s.adiciones && s.adiciones.length) porNombre[slug(s.sec || "")] = s.adiciones; });
+    (nueva || []).forEach(function (s) {
+      var prev = porNombre[slug(s.sec || "")];
+      if (prev && !(s.adiciones && s.adiciones.length)) s.adiciones = JSON.parse(JSON.stringify(prev));
+    });
   }
 
   function contarConFoto(r) {
@@ -1083,7 +1122,11 @@
         }
         items.push(plato);
       });
-      nuevasSecs.push({ sec: nombreSec ? nombreSec.value.trim() : "Sección", items: items });
+      var secNueva = { sec: nombreSec ? nombreSec.value.trim() : "Sección", items: items };
+      var adicEl = secEl.querySelector('[data-sec-adic="' + si + '"]');
+      var adic = adicEl ? textoAAdiciones(adicEl.value) : [];
+      if (adic.length) secNueva.adiciones = adic;
+      nuevasSecs.push(secNueva);
     });
     r.carta = nuevasSecs;
 
@@ -1822,6 +1865,21 @@
       leerEditor();
       editando.carta.splice(Number(delSec.getAttribute("data-del-seccion")), 1);
       pintarEditor(); return;
+    }
+    // Copiar las adiciones de una sección a todas
+    var adicTodas = t.closest("[data-adic-todas]");
+    if (adicTodas) {
+      leerEditor();
+      var origen = editando.carta[Number(adicTodas.getAttribute("data-adic-todas"))];
+      var lista = origen && origen.adiciones ? origen.adiciones : [];
+      if (!lista.length) return;
+      if (!confirm("¿Poner estas " + lista.length + " adiciones en todas las secciones? Reemplaza las que tengan las otras secciones.")) return;
+      editando.carta.forEach(function (sc) { sc.adiciones = JSON.parse(JSON.stringify(lista)); });
+      var yA = elEditorBody.scrollTop;
+      pintarEditor();
+      elEditorBody.scrollTop = yA;
+      toast("Adiciones copiadas a " + editando.carta.length + " secciones ✓ (falta Guardar cambios)");
+      return;
     }
     var addPlato = t.closest("[data-add-plato]");
     if (addPlato) {
