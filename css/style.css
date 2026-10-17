@@ -132,10 +132,6 @@ a { color: inherit; text-decoration: none; }
   filter: drop-shadow(0 2px 6px rgba(212, 175, 55, 0.4));
 }
 /* Buscador */
-.search {
-  align-items: center;
-}
-
 .search__icon {
   font-size: 0.95rem;
   opacity: 0.8;
@@ -152,7 +148,6 @@ a { color: inherit; text-decoration: none; }
 .chip {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.hero { margin-bottom: 20px; }
 /* Promociones (franja deslizable) */
 .promos {
   display: flex;
@@ -862,108 +857,7 @@ body {
   padding: 24px 20px 40px;
 }
 
-/* ------------------------------- Hero ------------------------------- */
-.hero {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 36px;
-  align-items: center;
-  padding: 30px 0 44px;
-}
-.hero__badge {
-  display: inline-block;
-  border: 1px solid var(--border-fuerte);
-  color: var(--silver);
-  font-size: 0.8rem;
-  font-weight: 500;
-  padding: 7px 15px;
-  border-radius: var(--radius-pill);
-  margin-bottom: 18px;
-}
-.hero__title {
-  font-family: var(--font-title);
-  font-size: clamp(32px, 6vw, 64px);
-  line-height: 1.02;
-  letter-spacing: -0.02em;
-  font-weight: 800;
-  margin: 0 0 16px;
-}
 .gold { color: var(--primary); }
-.hero__lead {
-  color: var(--silver);
-  font-size: 1.05rem;
-  max-width: 46ch;
-  margin: 0 0 26px;
-}
-.hero__actions { display: flex; flex-wrap: wrap; gap: 12px; }
-
-.hero__visual { display: flex; align-items: center; justify-content: center; }
-.hero__card {
-  background: #000;
-  border: 1px solid var(--surface);
-  border-radius: 28px;
-  padding: 22px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: var(--shadow);
-}
-.hero__card-head { margin-bottom: 14px; }
-.hero__card-eyebrow {
-  display: block;
-  font-family: var(--font-title);
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: var(--text);
-}
-.hero__card-sub { display: block; color: var(--silver-soft); font-size: 0.82rem; }
-
-/* Escaparate de platos */
-.escaparate { display: flex; flex-direction: column; gap: 8px; }
-.esc__row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 10px 12px;
-  cursor: pointer;
-  color: inherit;
-  font-family: var(--font-body);
-  transition: border-color .15s ease, transform .15s ease;
-  animation: escIn .35s ease;
-}
-.esc__row:hover { border-color: var(--primary); transform: translateX(2px); }
-@keyframes escIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-.esc__img {
-  width: 42px; height: 42px;
-  flex: 0 0 auto;
-  border-radius: 10px;
-  background-size: cover;
-  background-position: center;
-  background-color: var(--bg);
-}
-.esc__img--ini {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-title);
-  font-weight: 800;
-  color: var(--primary);
-  font-size: 0.95rem;
-}
-.esc__info { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-.esc__plato {
-  font-weight: 700;
-  font-size: 0.92rem;
-  color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.esc__rest { color: var(--silver-soft); font-size: 0.78rem; }
-.esc__precio { color: var(--primary); font-weight: 700; font-size: 0.9rem; flex: 0 0 auto; }
 
 /* Logo flotante fijo en una esquina (insignia circular premium) */
 .logo-flotante {
@@ -990,21 +884,6 @@ body {
   object-fit: cover;
 }
 /* --------------------- Buscador y categorías ------------------------ */
-.buscador-panel {
-  background: var(--surface);
-  border: 1px solid var(--border-fuerte);
-  border-radius: 24px;
-  padding: 20px;
-  margin-bottom: 20px;
-}
-.search { position: relative; display: block; margin-bottom: 14px; }
-.search__label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--silver);
-  margin-bottom: 8px;
-}
 .search__box { position: relative; display: flex; align-items: center; }
 .search__icon {
   position: absolute;
@@ -1201,7 +1080,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 
 /* ============================ RESPONSIVE ============================ */
 @media (max-width: 860px) {
-  .hero { grid-template-columns: 1fr; gap: 24px; }
   .pasos { grid-template-columns: 1fr; }
   .header__nav { display: none; }
   .header__cart-text { display: none; }
@@ -1209,7 +1087,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 }
 @media (max-width: 520px) {
   .main { padding: 16px 16px 90px; }
-  .hero__title { font-size: 32px; }
   .cta { padding: 28px 20px; }
 }
 
@@ -1465,19 +1342,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
    Menú del día (desayunos y almuerzos), recomendado y fotos
    ===================================================================== */
 
-/* Botones grandes del inicio */
-.hero__menus { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 12px; max-width: 480px; }
-.menu-btn {
-  display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text);
-  background: var(--surface); border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--border));
-  border-radius: 16px; padding: 12px 14px; transition: border-color .15s ease, transform .15s ease, background .15s ease;
-}
-.menu-btn:hover { border-color: var(--primary); transform: translateY(-2px); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
-.menu-btn__ico { font-size: 1.7rem; line-height: 1; }
-.menu-btn strong { display: block; font-size: 1rem; }
-.menu-btn small { display: block; color: var(--text-2); font-size: 0.78rem; }
-.hero__actions--sec { margin-top: 0; }
-
 /* Pestañas Desayunos / Almuerzos */
 .bloque__head--menu { flex-wrap: wrap; gap: 12px; align-items: center; }
 .menu-tabs { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 4px; gap: 4px; }
@@ -1550,7 +1414,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 }
 .card__cover.portada--logo { padding: 16px; }
 .rest-head__cover.portada--logo { padding: 20px; }
-.esc__img.portada--logo { padding: 3px; }
 
 /* Carta: volver + compartir, y aviso de vista previa */
 .rest-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1574,4 +1437,94 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 22%, var(--surface)), var(--surface));
   border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
   border-radius: 14px; padding: 12px 16px; margin: 0 0 18px; font-size: 1rem;
+}
+
+/* =====================================================================
+   Inicio rápido: encabezado compacto, buscador fijo, categorías y lista
+   ===================================================================== */
+
+/* Encabezado en una sola línea también en el celular */
+@media (max-width: 860px) {
+  .header__inner { flex-direction: row; justify-content: space-between; padding: 10px 16px; gap: 10px; }
+  .logo__mark svg { width: 32px; height: 32px; }
+  .logo__name { font-size: 1.02rem; }
+}
+
+/* Saludo corto */
+.inicio { padding: 18px 0 10px; }
+.inicio__titulo {
+  font-family: var(--font-title); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
+  font-size: clamp(1.45rem, 5.4vw, 2.4rem); margin: 0;
+}
+.inicio__sub { color: var(--text-2); font-size: 0.88rem; margin: 6px 0 0; display: flex; align-items: center; gap: 8px; }
+.resumen__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 25%, transparent); flex: 0 0 auto; }
+.inicio .repetir-box { margin-top: 12px; }
+.inicio .repetir { margin: 0; }
+
+/* Buscador fijo bajo el encabezado */
+.buscador-fijo {
+  position: sticky; top: var(--alto-header, 64px); z-index: 25;
+  background: var(--bg); padding: 10px 0 8px;
+  margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+  border-bottom: 1px solid transparent;
+}
+@media (min-width: 521px) { .buscador-fijo { margin: 0 -20px; padding-left: 20px; padding-right: 20px; } }
+.buscador-fijo .search__box { position: relative; }
+.buscador-fijo .search__input { padding-right: 44px; }
+.search__limpiar {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--surface-2); color: var(--text-2); font-size: 0.85rem;
+}
+.search__limpiar:hover { color: var(--text); }
+.buscador-fijo .chips { margin-top: 10px; padding-bottom: 2px; }
+.chip__n { font-size: 0.72rem; opacity: 0.7; font-weight: 700; margin-left: 2px; }
+.chip[aria-pressed="true"] .chip__n { opacity: 0.85; }
+
+/* Bloques más juntos: menos scroll para llegar a lo que importa */
+.bloque--compacto { padding: 16px 0; }
+.bloque--compacto .bloque__head { margin-bottom: 12px; align-items: center; gap: 10px; }
+.bloque--compacto .bloque__title { font-size: clamp(18px, 3.4vw, 26px); }
+.promos { margin-top: 8px; }
+
+/* Menú del día en fila deslizable en el celular */
+@media (max-width: 700px) {
+  .alm-grid--fila { display: grid; grid-auto-flow: column; grid-auto-columns: 86%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 4px; }
+  .alm-grid--fila::-webkit-scrollbar { display: none; }
+  .alm-grid--fila .alm-card { scroll-snap-align: start; }
+  .reco { aspect-ratio: 16 / 10; }
+}
+
+/* Resultados de búsqueda: platos de todos los restaurantes */
+.res-lista { display: grid; gap: 8px; }
+@media (min-width: 760px) { .res-lista { grid-template-columns: 1fr 1fr; } }
+.res {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 8px 12px 8px 8px;
+  color: inherit; font: inherit; transition: border-color .15s ease;
+}
+.res:hover { border-color: var(--primary); }
+.res--off { opacity: 0.6; }
+.res__img { width: 54px; height: 54px; flex: 0 0 54px; border-radius: 10px; object-fit: cover; display: grid; place-items: center; font-family: var(--font-title); font-weight: 800; color: var(--primary); }
+.res__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.res__plato { font-weight: 700; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.res__plato mark { background: color-mix(in srgb, var(--primary) 35%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+.res__rest { color: var(--text-2); font-size: 0.8rem; }
+.res__precio { color: var(--primary); font-weight: 800; white-space: nowrap; font-size: 0.92rem; }
+.res__mas { grid-column: 1 / -1; font-size: 0.85rem; margin: 4px 0 0; }
+
+/* Restaurantes: lista compacta en el celular (se ven muchos más de una vez) */
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; gap: 8px; }
+  .card { flex-direction: row; align-items: stretch; border-radius: 14px; min-height: 86px; }
+  .card:hover { transform: none; }
+  .card__cover { width: 86px; flex: 0 0 86px; height: auto; aspect-ratio: auto; }
+  .card__cover.portada--logo { padding: 10px; }
+  .card__initials { font-size: 26px; }
+  .card__body { padding: 8px 12px; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .card__name { font-size: 16px; line-height: 1.2; }
+  .card__meta { font-size: 13px; margin-top: 3px; }
+  .card__meta .state__det { display: none; }
+  .card__link { display: none; }
+  .card__promo { top: auto; bottom: 6px; left: 6px; max-width: 78px; font-size: 0.6rem; padding: 3px 7px; }
 }

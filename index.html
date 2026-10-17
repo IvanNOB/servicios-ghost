@@ -112,78 +112,48 @@
     <!-- Vista: inicio -->
     <section id="vistaInicio" class="vista">
 
-      <!-- ============================ HERO ============================ -->
-      <section class="hero">
-        <div class="hero__text">
-          <span class="hero__badge">Soluciones express y domicilios · Cartagena del Chairá</span>
-          <h1 class="hero__title">Pide en tus restaurantes favoritos.
-            <span class="gold">Nosotros lo llevamos.</span></h1>
-          <p class="hero__lead">
-            Mira las cartas, arma tu pedido y envíalo por WhatsApp.
-            No pagas en la web: todo se coordina contigo.
-          </p>
-          <div class="hero__actions">
-            <a class="btn btn--primary" href="#restaurantes">Ver restaurantes</a>
-          </div>
-          <div class="hero__menus" aria-label="Menú del día">
-            <a class="menu-btn" href="#almuerzos" data-menu-ir="desayuno"><span class="menu-btn__ico" aria-hidden="true">🍳</span><span><strong>Desayunos</strong><small>Arma el tuyo</small></span></a>
-            <a class="menu-btn" href="#almuerzos" data-menu-ir="almuerzo"><span class="menu-btn__ico" aria-hidden="true">🍲</span><span><strong>Almuerzos</strong><small>Corrientes de hoy</small></span></a>
-          </div>
-          <div class="hero__actions hero__actions--sec">
-            <a class="btn btn--outline" id="heroWa" href="#" target="_blank" rel="noopener">WhatsApp 321 428 6626</a>
-            <button type="button" class="btn btn--ghost" id="btnInstalar" hidden>📲 Instalar app</button>
-          </div>
-          <div class="repetir-box" id="repetirBox" hidden></div>
-        </div>
-        <div class="hero__visual">
-          <div class="hero__card">
-            <div class="hero__card-head">
-              <span class="hero__card-eyebrow">Antojos del momento</span>
-              <span class="hero__card-sub">De nuestros restaurantes aliados</span>
-            </div>
-            <div class="escaparate" id="escaparate" aria-live="polite"><!-- platos al azar (JS) --></div>
-          </div>
-        </div>
+      <!-- ===================== INICIO: buscar y elegir rápido ===================== -->
+      <section class="inicio">
+        <h1 class="inicio__titulo">¿Qué se te antoja hoy? <span class="gold">Te lo llevamos.</span></h1>
+        <p class="inicio__sub" id="resumenAbiertos">Domicilios en Cartagena del Chairá</p>
+        <div class="repetir-box" id="repetirBox" hidden></div>
       </section>
 
-      <!-- ===================== BUSCADOR Y CATEGORÍAS ===================== -->
-      <section class="buscador-panel">
-        <div class="search">
-          <label class="search__label" for="buscador">Buscar restaurante o plato</label>
-          <div class="search__box">
-            <svg class="search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" id="buscador" class="search__input"
-                   placeholder="Ej: pizza, almuerzo, Lucarnes…"
-                   aria-label="Buscar restaurante o plato" autocomplete="off" />
-          </div>
+      <!-- Buscador y categorías: quedan fijos arriba al bajar -->
+      <div class="buscador-fijo" id="buscadorFijo">
+        <div class="search__box">
+          <svg class="search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="search" id="buscador" class="search__input"
+                 placeholder="Busca un plato o restaurante…"
+                 aria-label="Buscar plato o restaurante" autocomplete="off" enterkeyhint="search" />
+          <button type="button" class="search__limpiar" id="buscadorLimpiar" hidden aria-label="Borrar búsqueda">✕</button>
         </div>
         <nav class="chips" id="chips" aria-label="Categorías"></nav>
+      </div>
+
+      <!-- Resultados de búsqueda: platos de todos los restaurantes -->
+      <section id="resultados" class="bloque bloque--compacto" hidden>
+        <div class="bloque__head">
+          <h2 class="bloque__title" id="resultadosTitulo">Platos</h2>
+        </div>
+        <div class="res-lista" id="resultadosPlatos" aria-live="polite"></div>
       </section>
 
       <!-- Promociones -->
-      <div class="promos" id="promos" aria-label="Promociones"></div>
-
-      <!-- ========================= RECOMENDADO ========================= -->
-      <section id="recomendado" class="bloque" hidden>
-        <div class="bloque__head">
-          <h2 class="bloque__title">⭐ Recomendado</h2>
-          <button type="button" class="btn-link" data-reco-otro>🔀 Ver otro</button>
-        </div>
-        <div class="reco-wrap" id="recoCard" aria-live="polite"></div>
-      </section>
+      <div class="promos" id="promos" aria-label="Promociones" data-portada></div>
 
       <!-- ============== MENÚ DEL DÍA: DESAYUNOS Y ALMUERZOS ============== -->
-      <section id="almuerzos" class="bloque">
+      <section id="almuerzos" class="bloque bloque--compacto">
         <div class="bloque__head bloque__head--menu">
           <h2 class="bloque__title">🍽️ Menú del día</h2>
           <div class="menu-tabs" id="menuTabs" role="group" aria-label="Desayunos o almuerzos"></div>
         </div>
-        <div class="alm-grid" id="gridAlmuerzos" aria-live="polite"></div>
+        <div class="alm-grid alm-grid--fila" id="gridAlmuerzos" aria-live="polite"></div>
         <p class="empty" id="almuerzosVacio" hidden></p>
       </section>
 
       <!-- ======================== LO MÁS PEDIDO ======================== -->
-      <section id="populares" class="bloque" hidden>
+      <section id="populares" class="bloque bloque--compacto" hidden data-portada>
         <div class="bloque__head">
           <h2 class="bloque__title">🔥 Lo más pedido</h2>
         </div>
@@ -191,14 +161,25 @@
       </section>
 
       <!-- ===================== RESTAURANTES ===================== -->
-      <section id="restaurantes" class="bloque">
+      <section id="restaurantes" class="bloque bloque--compacto">
         <div class="bloque__head">
-          <h2 class="bloque__title">Restaurantes aliados</h2>
+          <h2 class="bloque__title" id="tituloRestaurantes">Restaurantes</h2>
+          <button type="button" class="btn-link" id="btnQuitarFiltros" data-limpiar-filtros hidden>✕ Quitar filtros</button>
         </div>
         <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
         <p class="empty" id="sinResultados" hidden>
-          No encontramos nada con esa búsqueda. Prueba con otro nombre.
+          No encontramos nada. Prueba con otra palabra o
+          <button type="button" class="btn-link" data-limpiar-filtros>mira todos los restaurantes</button>.
         </p>
+      </section>
+
+      <!-- ========================= RECOMENDADO ========================= -->
+      <section id="recomendado" class="bloque bloque--compacto" hidden data-portada>
+        <div class="bloque__head">
+          <h2 class="bloque__title">⭐ Recomendado</h2>
+          <button type="button" class="btn-link" data-reco-otro>🔀 Ver otro</button>
+        </div>
+        <div class="reco-wrap" id="recoCard" aria-live="polite"></div>
       </section>
 
       <!-- ===================== CÓMO FUNCIONA ===================== -->
@@ -236,6 +217,7 @@
         <h2 class="cta__title">¿Tienes hambre?</h2>
         <p class="cta__text">Escríbenos y te llevamos tu pedido.</p>
         <a class="btn btn--dark" id="ctaWa" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+        <button type="button" class="btn btn--ghost" id="btnInstalar" hidden>📲 Instalar la app</button>
       </section>
     </section>
 

@@ -178,8 +178,6 @@
 
   // Menús del día: el desayuno y el almuerzo funcionan igual (se publican a
   // diario desde el panel → pestaña "Menú del día" y se ocultan solos al día siguiente).
-  var CHIP_DESAYUNO = "🍳 Desayunos";
-  var CHIP_ALMUERZO = "🍽️ Almuerzos";
   var MENUS = {
     desayuno: { campo: "desayuno", titulo: "Desayuno del día", emoji: "🍳", nombre: "desayuno", plural: "Desayunos" },
     almuerzo: { campo: "almuerzo", titulo: "Almuerzo del día", emoji: "🍲", nombre: "almuerzo", plural: "Almuerzos" },
@@ -226,7 +224,7 @@
   var LS_ARMADOS = "ghost_armados_v1";
   var cart = loadCart();          // { "restId::itemId": qty }
   almuerzosArmados = loadArmados();
-  var filtroCategoria = "Todos";
+  var filtroCategoria = "todos";
   var termino = "";
   var vistaActual = null;         // null = inicio, o id de restaurante
 
@@ -384,60 +382,225 @@
   var elSheet = $("#sheet");
   var elSheetBody = $("#sheetBody");
 
-  /* ---------------------------- Chips ----------------------------- */
+  /* ---------------------- Categorías y búsqueda ---------------------- */
+  // Las categorías que escribe cada negocio son muy variadas ("Comida rápida y
+  // pescados", "Café y Repostería"...). Las agrupamos en pocas y claras.
+  // cat = se busca en la categoría; sec = en los nombres de las secciones de la carta.
+  var GRUPOS = [
+    { k: "rapida", t: "🍔 Comida rápida", cat: /rapida|hamburgues|burger/, sec: /hamburgues|perro|salchipap|burger/ },
+    { k: "pizza", t: "🍕 Pizza", cat: /pizza/, sec: /pizza/ },
+    { k: "parrilla", t: "🥩 Parrilla", cat: /parrill|asad/, sec: /parrill|picada|al barril/ },
+    { k: "mar", t: "🐟 Pescados y mar", cat: /pescad|marisc/, sec: /pescad|marisc|camaron|de mar/ },
+    { k: "china", t: "🥡 China", cat: /china|chino/, sec: /arroz chino/ },
+    { k: "mexicana", t: "🌮 Mexicana", cat: /mexican/, sec: /taco|birria|quesadill|enchilad|burrito/ },
+    { k: "helados", t: "🍦 Helados y postres", cat: /helad|postre|reposter/, sec: /helad|oblea|copas?$/ },
+    { k: "cafe", t: "☕ Café", cat: /caf[e]|panader/, sec: /^cafes?$|capuchin|capuccin/ },
+  ];
+  var ESPECIALES = {
+    todos: "Todos",
+    abiertos: "🟢 Abiertos ahora",
+    promos: "🔥 Promos",
+    desayuno: "🍳 Desayunos",
+    almuerzo: "🍲 Almuerzos",
+  };
+
+  function norm(t) {
+    return String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
+  // Grupos a los que pertenece un restaurante (se calcula una vez).
+  function gruposDe(r) {
+    if (r._grupos) return r._grupos;
+    var cat = norm(r.cat), secs = (r.carta || []).map(function (s) { return norm(s.sec); });
+    r._grupos = GRUPOS.filter(function (g) {
+      return g.cat.test(cat) || secs.some(function (x) { return g.sec.test(x); });
+    }).map(function (g) { return g.k; });
+    return r._grupos;
+  }
+
+  function cumpleFiltro(r, f) {
+    if (!f || f === "todos") return true;
+    if (f === "abiertos") return abiertoAhora(r);
+    if (f === "promos") return promoVigente(r);
+    if (f === "desayuno") return menuVigente(r, "desayuno");
+    if (f === "almuerzo") return almuerzoVigente(r);
+    return gruposDe(r).indexOf(f) !== -1;
+  }
+
+  function etiquetaFiltro(f) {
+    if (ESPECIALES[f]) return ESPECIALES[f];
+    var g = GRUPOS.filter(function (x) { return x.k === f; })[0];
+    return g ? g.t : "Todos";
+  }
 
   function categorias() {
-    var cats = ["Todos"];
-    // Si hay desayunos o almuerzos publicados hoy, añadimos esas categorías especiales.
-    if (DATA.some(function (r) { return menuVigente(r, "desayuno"); })) cats.push(CHIP_DESAYUNO);
-    if (DATA.some(almuerzoVigente)) cats.push(CHIP_ALMUERZO);
-    for (var i = 0; i < DATA.length; i++) {
-      if (cats.indexOf(DATA[i].cat) === -1) cats.push(DATA[i].cat);
-    }
+    var cats = ["todos"];
+    var abiertos = DATA.filter(abiertoAhora).length;
+    if (abiertos && abiertos < DATA.length) cats.push("abiertos");
+    if (DATA.some(promoVigente)) cats.push("promos");
+    if (DATA.some(function (r) { return menuVigente(r, "desayuno"); })) cats.push("desayuno");
+    if (DATA.some(almuerzoVigente)) cats.push("almuerzo");
+    GRUPOS.forEach(function (g) {
+      if (DATA.some(function (r) { return gruposDe(r).indexOf(g.k) !== -1; })) cats.push(g.k);
+    });
     return cats;
   }
 
   function renderChips() {
     var cats = categorias();
-    var html = "";
-    for (var i = 0; i < cats.length; i++) {
-      var activo = cats[i] === filtroCategoria;
-      html +=
-        '<button type="button" class="chip" data-chip="' + esc(cats[i]) +
-        '" aria-pressed="' + (activo ? "true" : "false") + '">' +
-        esc(cats[i]) + "</button>";
+    if (cats.indexOf(filtroCategoria) === -1) filtroCategoria = "todos";
+    elChips.innerHTML = cats.map(function (k) {
+      var n = k === "todos" ? 0 : DATA.filter(function (r) { return cumpleFiltro(r, k); }).length;
+      return '<button type="button" class="chip" data-chip="' + esc(k) + '" aria-pressed="' + (k === filtroCategoria) + '">' +
+        esc(etiquetaFiltro(k)) + (n ? ' <span class="chip__n">' + n + "</span>" : "") + "</button>";
+    }).join("");
+    var activo = elChips.querySelector('[aria-pressed="true"]');
+    if (activo && activo.scrollIntoView && filtroCategoria !== "todos") {
+      var izq = activo.offsetLeft - (elChips.clientWidth - activo.offsetWidth) / 2;
+      elChips.scrollTo({ left: Math.max(0, izq), behavior: "smooth" });
     }
-    elChips.innerHTML = html;
   }
 
   /* --------------------- Lista de restaurantes -------------------- */
 
   function matchBusqueda(r, q) {
     if (!q) return true;
-    if (r.nombre.toLowerCase().indexOf(q) !== -1) return true;
+    if (norm(r.nombre).indexOf(q) !== -1 || norm(r.cat).indexOf(q) !== -1) return true;
     for (var s = 0; s < r.carta.length; s++) {
+      if (norm(r.carta[s].sec).indexOf(q) !== -1) return true;
       var items = r.carta[s].items;
       for (var i = 0; i < items.length; i++) {
-        if (items[i].n.toLowerCase().indexOf(q) !== -1) return true;
+        if (norm(items[i].n).indexOf(q) !== -1) return true;
       }
     }
     return false;
   }
 
   function restaurantesFiltrados() {
-    var q = termino.trim().toLowerCase();
-    return DATA.filter(function (r) {
-      var catOk;
-      if (filtroCategoria === CHIP_ALMUERZO) {
-        catOk = almuerzoVigente(r);
-      } else if (filtroCategoria === CHIP_DESAYUNO) {
-        catOk = menuVigente(r, "desayuno");
-      } else {
-        catOk = filtroCategoria === "Todos" || r.cat === filtroCategoria;
-      }
-      return catOk && matchBusqueda(r, q);
-    });
+    var q = norm(termino.trim());
+    return DATA.filter(function (r) { return cumpleFiltro(r, filtroCategoria) && matchBusqueda(r, q); });
   }
+
+  // Platos de TODOS los restaurantes que coinciden con lo que se escribe.
+  function platosQueCoinciden(q, max) {
+    var out = [];
+    DATA.forEach(function (r) {
+      if (!cumpleFiltro(r, filtroCategoria)) return;
+      (r.carta || []).forEach(function (s) {
+        (s.items || []).forEach(function (it) {
+          var n = norm(it.n), d = norm(it.d), sec = norm(s.sec);
+          var peso = n.indexOf(q) === 0 ? 0 : n.indexOf(q) !== -1 ? 1 : sec.indexOf(q) !== -1 ? 2 : d.indexOf(q) !== -1 ? 3 : -1;
+          if (peso < 0) return;
+          out.push({ r: r, it: it, peso: peso + (abiertoAhora(r) ? 0 : 10) + (it.agotado ? 20 : 0) });
+        });
+      });
+    });
+    out.sort(function (a, b) { return a.peso - b.peso || (a.it.p || 0) - (b.it.p || 0); });
+    return { lista: out.slice(0, max), total: out.length };
+  }
+
+  function resaltar(texto, q) {
+    var t = String(texto || ""), i = norm(t).indexOf(q);
+    if (!q || i < 0) return esc(t);
+    return esc(t.slice(0, i)) + "<mark>" + esc(t.slice(i, i + q.length)) + "</mark>" + esc(t.slice(i + q.length));
+  }
+
+  function renderResultadosPlatos() {
+    var sec = document.getElementById("resultados");
+    var cont = document.getElementById("resultadosPlatos");
+    if (!sec || !cont) return;
+    var q = norm(termino.trim());
+    if (q.length < 2) { sec.hidden = true; cont.innerHTML = ""; return; }
+    var res = platosQueCoinciden(q, 24);
+    sec.hidden = !res.total;
+    document.getElementById("resultadosTitulo").textContent =
+      "🍽️ " + res.total + (res.total === 1 ? " plato" : " platos") + " con “" + termino.trim() + "”";
+    cont.innerHTML = res.lista.map(function (x) {
+      var img = x.it.foto
+        ? '<img class="res__img" src="' + esc(x.it.foto) + '" alt="" loading="lazy" decoding="async" />'
+        : '<span class="res__img res__img--ini" style="' + coverStyle({ color: x.r.color }) + '">' + esc(iniciales(x.r.nombre)) + "</span>";
+      var precio = x.it.p > 0 ? (tieneOpciones(x.it) ? "desde " : "") + money(x.it.p) : precioTxt(0);
+      return '<button type="button" class="res' + (x.it.agotado || !abiertoAhora(x.r) ? " res--off" : "") + '" data-ir-rest="' + esc(x.r.id) + '" data-ir-item="' + esc(x.it.id) + '">' +
+          img +
+          '<span class="res__info"><span class="res__plato">' + resaltar(x.it.n, q) + "</span>" +
+            '<span class="res__rest">' + esc(x.r.nombre) + (x.it.agotado ? " · Agotado" : !abiertoAhora(x.r) ? " · Cerrado" : "") + "</span></span>" +
+          '<span class="res__precio">' + esc(precio) + "</span>" +
+        "</button>";
+    }).join("") +
+      (res.total > res.lista.length ? '<p class="muted res__mas">Y ' + (res.total - res.lista.length) + " más. Escribe algo más específico para encontrarlo.</p>" : "");
+  }
+
+  // ¿El cliente está buscando o filtrando? Entonces mostramos solo resultados.
+  function enModoFiltro() { return !!termino.trim() || filtroCategoria !== "todos"; }
+
+  function actualizarVista() {
+    var filtrando = enModoFiltro();
+    var esMenu = filtroCategoria === "desayuno" || filtroCategoria === "almuerzo";
+    // Las secciones de portada se ocultan al buscar/filtrar; al volver, cada
+    // una decide si se muestra (renderPromos, renderRecomendado, renderPopulares).
+    if (filtrando) document.querySelectorAll("[data-portada]").forEach(function (el) { el.hidden = true; });
+    var menu = document.getElementById("almuerzos");
+    // En la portada, si hoy nadie publicó desayuno ni almuerzo, no ocupa espacio.
+    var sinMenus = !menusDeHoy("desayuno").length && !menusDeHoy("almuerzo").length;
+    if (menu) menu.hidden = esMenu ? false : (filtrando || sinMenus);
+    if (esMenu && tipoMenuDia !== filtroCategoria) { tipoMenuDia = filtroCategoria; renderMenuDia(); }
+    if (!filtrando) { renderPromos(); renderRecomendado(); renderPopulares(); }
+    renderChips();
+    renderResultadosPlatos();
+    renderGrid();
+    var titulo = document.getElementById("tituloRestaurantes");
+    var n = restaurantesFiltrados().length;
+    if (titulo) {
+      titulo.textContent = !filtrando ? "Restaurantes" :
+        (termino.trim() ? n + (n === 1 ? " restaurante" : " restaurantes") + " con “" + termino.trim() + "”"
+                        : etiquetaFiltro(filtroCategoria) + " · " + n);
+    }
+    var quitar = document.getElementById("btnQuitarFiltros");
+    if (quitar) quitar.hidden = !filtrando;
+    renderResumen();
+  }
+
+  function aplicarFiltro(k) {
+    filtroCategoria = filtroCategoria === k && k !== "todos" ? "todos" : k;
+    if (vistaActual) irAInicio();
+    actualizarVista();
+    if (enModoFiltro()) irAResultados();
+  }
+  function limpiarFiltros() {
+    filtroCategoria = "todos";
+    termino = "";
+    elBuscador.value = "";
+    var l = document.getElementById("buscadorLimpiar");
+    if (l) l.hidden = true;
+    actualizarVista();
+  }
+  // Lleva la vista a los resultados, dejando visible el buscador fijo.
+  function irAResultados() {
+    var destino = document.getElementById(
+      termino.trim().length >= 2 && !document.getElementById("resultados").hidden ? "resultados" :
+      (filtroCategoria === "desayuno" || filtroCategoria === "almuerzo") ? "almuerzos" : "restaurantes");
+    var fijo = document.getElementById("buscadorFijo");
+    var alto = (document.querySelector(".header") || {}).offsetHeight || 0;
+    alto += fijo ? fijo.offsetHeight : 0;
+    if (destino) window.scrollTo({ top: destino.getBoundingClientRect().top + window.scrollY - alto - 8, behavior: "smooth" });
+  }
+
+  // "🟢 12 de 20 abiertos ahora"
+  function renderResumen() {
+    var el = document.getElementById("resumenAbiertos");
+    if (!el) return;
+    var abiertos = DATA.filter(abiertoAhora).length;
+    el.innerHTML = '<span class="resumen__dot"></span>' + abiertos + " de " + DATA.length +
+      " restaurantes abiertos ahora · Cartagena del Chairá";
+  }
+
+  // Altura del encabezado (para que el buscador quede fijo justo debajo).
+  function medirEncabezado() {
+    var h = document.querySelector(".header");
+    if (h) document.documentElement.style.setProperty("--alto-header", h.offsetHeight + "px");
+  }
+  window.addEventListener("resize", medirEncabezado);
+  medirEncabezado();
 
   // Etiqueta "Abierto · Hasta las 10 pm" / "Cerrado · Abre mañana 11 am".
   function estadoHTML(r) {
@@ -1360,13 +1523,9 @@
     if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); irAInicio(); return; }
 
     // --- Chips de categoría ---
+    if (t.closest("[data-limpiar-filtros]")) { limpiarFiltros(); return; }
     var chip = t.closest("[data-chip]");
-    if (chip) {
-      filtroCategoria = chip.getAttribute("data-chip");
-      renderChips();
-      renderGrid();
-      return;
-    }
+    if (chip) { aplicarFiltro(chip.getAttribute("data-chip")); return; }
 
     // --- Volver desde la carta ---
     if (t.closest("[data-back]")) { irAInicio(); return; }
@@ -1436,9 +1595,6 @@
     if (fotoVer) { verFoto(fotoVer.getAttribute("src"), fotoVer.getAttribute("data-foto-titulo") || fotoVer.getAttribute("alt") || ""); return; }
     if (t.closest("[data-visor-close]")) { cerrarFoto(); return; }
 
-    // --- Fila del escaparate: abre la carta de ese restaurante ---
-    var escRow = t.closest(".esc__row");
-    if (escRow) { abrirCarta(escRow.getAttribute("data-rest")); return; }
 
     // --- Abrir carta tocando una tarjeta ---
     var card = t.closest("[data-rest]");
@@ -1459,10 +1615,21 @@
   });
 
   // Buscador
+  var _busqTimer = null;
   elBuscador.addEventListener("input", function (e) {
     termino = e.target.value;
+    var limpiar = document.getElementById("buscadorLimpiar");
+    if (limpiar) limpiar.hidden = !termino;
     if (vistaActual) irAInicio();
-    renderGrid();
+    clearTimeout(_busqTimer);
+    _busqTimer = setTimeout(actualizarVista, 120);
+  });
+  elBuscador.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); elBuscador.blur(); irAResultados(); }
+  });
+  var _limpiarBtn = document.getElementById("buscadorLimpiar");
+  if (_limpiarBtn) _limpiarBtn.addEventListener("click", function () {
+    elBuscador.value = ""; termino = ""; _limpiarBtn.hidden = true; actualizarVista(); elBuscador.focus();
   });
 
   // Cerrar con Escape (teclado)
@@ -1473,91 +1640,6 @@
     if (e.key === "Escape" && elTrack && !elTrack.hidden) { cerrarSeguimiento(); return; }
     if (e.key === "Escape" && !elSheet.hidden) closeSheet();
   });
-
-  /* ---------------- Escaparate de platos al azar ------------------ */
-  // Recoge todos los platos de todos los restaurantes (con su restaurante)
-  // y muestra algunos al azar en el hero, rotándolos cada pocos segundos.
-  function todosLosPlatos() {
-    var out = [];
-    for (var i = 0; i < DATA.length; i++) {
-      var r = DATA[i];
-      var carta = r.carta || [];
-      for (var s = 0; s < carta.length; s++) {
-        var items = carta[s].items || [];
-        for (var j = 0; j < items.length; j++) {
-          var it = items[j];
-          if (it.agotado) continue;           // no mostramos agotados
-          if (typeof it.p !== "number" || it.p <= 0) continue;
-          out.push({ rest: r, item: it });
-        }
-      }
-    }
-    return out;
-  }
-
-  function barajar(arr) {
-    arr = arr.slice();
-    for (var i = arr.length - 1; i > 0; i--) {
-      var k = Math.floor(Math.random() * (i + 1));
-      var t = arr[i]; arr[i] = arr[k]; arr[k] = t;
-    }
-    return arr;
-  }
-
-  var _escTimer = null;
-  function renderEscaparate() {
-    var cont = document.getElementById("escaparate");
-    if (!cont) return;
-
-    // Para dar variedad, tomamos como máximo 1 plato al azar por restaurante
-    // y luego barajamos esos; así se ven restaurantes distintos.
-    var porRest = {};
-    var todos = todosLosPlatos();
-    for (var i = 0; i < todos.length; i++) {
-      var rid = todos[i].rest.id;
-      if (!porRest[rid]) porRest[rid] = [];
-      porRest[rid].push(todos[i]);
-    }
-    var unoPorRest = [];
-    for (var k in porRest) {
-      var lista = barajar(porRest[k]);
-      unoPorRest.push(lista[0]);
-    }
-    var platos = barajar(unoPorRest).slice(0, 4);
-    if (!platos.length) { cont.innerHTML = ""; return; }
-
-    var html = "";
-    for (var i = 0; i < platos.length; i++) {
-      var p = platos[i];
-      var inicial = esc(iniciales(p.rest.nombre));
-      var fotoMini = p.item.foto || p.rest.logo;
-      var mini = fotoMini
-        ? '<span class="esc__img' + (p.item.foto ? "" : claseLogo(p.rest)) + '" style="' + (p.item.foto ? "background-image:url(\'" + esc(fotoMini) + "\')" : coverStyle(p.rest)) + '"></span>'
-        : '<span class="esc__img esc__img--ini">' + inicial + "</span>";
-      html +=
-        '<button type="button" class="esc__row" data-rest="' + esc(p.rest.id) + '" aria-label="Ver ' + esc(p.rest.nombre) + '">' +
-          mini +
-          '<span class="esc__info">' +
-            '<span class="esc__plato">' + esc(p.item.n) + "</span>" +
-            '<span class="esc__rest">' + esc(p.rest.nombre) + "</span>" +
-          "</span>" +
-          '<span class="esc__precio">' + esc((tieneOpciones(p.item) ? "desde " : "") + money(p.item.p)) + "</span>" +
-        "</button>";
-    }
-    cont.innerHTML = html;
-  }
-
-  function iniciarEscaparate() {
-    renderEscaparate();
-    if (_escTimer) clearInterval(_escTimer);
-    // Rota los platos cada 4 segundos (respeta reduce-motion: si está activo, no rota)
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reduce) {
-      _escTimer = setInterval(function () {
-        if (!elVistaInicio.hidden) renderEscaparate();
-      }, 4000);
-    }
-  }
 
   /* ------------------------- Menú del día (inicio) ------------------------- */
   // Pestañas "Desayunos / Almuerzos". Por defecto: desayunos antes de las
@@ -1651,6 +1733,7 @@
     var sec = document.getElementById("recomendado");
     var card = document.getElementById("recoCard");
     if (!sec || !card) return;
+    if (enModoFiltro()) { sec.hidden = true; return; }
     var lista = candidatosReco();
     if (!lista.length) { sec.hidden = true; return; }
     sec.hidden = false;
@@ -1738,6 +1821,7 @@
   function renderPromos() {
     var cont = document.getElementById("promos");
     if (!cont) return;
+    if (enModoFiltro()) { cont.hidden = true; return; }
     var lista = listaPromos();
     if (!lista.length) { cont.innerHTML = ""; cont.hidden = true; return; }
     cont.hidden = false;
@@ -1765,6 +1849,7 @@
     var sec = document.getElementById("populares");
     var cont = document.getElementById("gridPopulares");
     if (!sec || !cont) return;
+    if (enModoFiltro()) { sec.hidden = true; return; }
     var lista = (Array.isArray(AJUSTES.populares) ? AJUSTES.populares : [])
       .map(function (p) {
         var r = findRest(p.rest);
@@ -2108,12 +2193,10 @@
   closeSheet();
 
   function pintarTodo() {
-    renderPromos();
-    renderChips();
+    // actualizarVista pinta promos, recomendado, populares, chips y restaurantes
+    // (o solo los resultados si el cliente está buscando o filtrando).
     renderMenuDia();
-    renderRecomendado();
-    renderPopulares();
-    renderGrid();
+    actualizarVista();
     renderRepetir();
     refreshCart();
   }
@@ -2121,7 +2204,6 @@
   // Primer pintado con lo que haya (data.js) para que no se vea vacío.
   conectarEnlacesWa();
   pintarTodo();
-  iniciarEscaparate();
   revisarHash();
 
   // Luego traemos los datos de la nube (restaurantes + ajustes) y repintamos.
@@ -2134,7 +2216,6 @@
           // Con la lista definitiva ya cargada, quitamos del carrito lo que no existe.
           limpiarHuerfanos();
           pintarTodo();
-          iniciarEscaparate();
         }
       })
       .catch(function () { /* ya mostramos el respaldo */ });
@@ -2153,7 +2234,7 @@
 
   // Los horarios cambian con la hora: repintamos cada minuto (y al volver a la pestaña).
   function refrescarHorarios() {
-    if (!elVistaInicio.hidden) { renderGrid(); renderMenuDia(); }
+    if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); }
   }
   setInterval(refrescarHorarios, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) refrescarHorarios(); });
