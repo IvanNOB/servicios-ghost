@@ -133,9 +133,6 @@
     }
     elAdminUser.textContent = (sesion.user && sesion.user.email ? sesion.user.email : "Admin") +
       (esAliado() ? " · aliado" : "");
-    // El negocio aliado se queda en su panel: el logo no lo saca a la tienda de clientes.
-    var logoPanel = document.querySelector(".admin-header .logo");
-    if (logoPanel && esAliado()) { logoPanel.setAttribute("href", "admin.html"); logoPanel.setAttribute("aria-label", "Mi panel"); }
     aplicarRol();
     mostrar("panel");
     await recargarLista();
@@ -2214,6 +2211,51 @@
       toast("No se pudo borrar: " + (ex && ex.message ? ex.message : "error"), true);
     }
   }
+
+  /* ---------- Quedarse en el panel: el logo y "atrás" nunca llevan a la tienda ---------- */
+  // Ventana abierta encima (editor, menú del día, herramientas del negocio).
+  function capaAbierta() {
+    if (elAlmSheet && !elAlmSheet.hidden) return "alm";
+    if (elAli && !elAli.hidden) return "ali";
+    if (!elEditorSheet.hidden) return "editor";
+    return null;
+  }
+  function tabActual() {
+    var t = document.querySelector(".tab.tab--active");
+    return t ? t.getAttribute("data-tab") : "restaurantes";
+  }
+  // Cierra lo que esté abierto y vuelve a la primera pestaña.
+  function irAlInicioPanel() {
+    var c = capaAbierta();
+    if (c === "editor" && !confirm("¿Salir sin guardar los cambios de este restaurante?")) return;
+    if (c === "alm") cerrarPublicarAlmuerzo();
+    else if (c === "ali") cerrarAli();
+    else if (c === "editor") cerrarEditor();
+    if (!elVistaPanel || elVistaPanel.hidden) return; // aún en la pantalla de entrar
+    cambiarTab("restaurantes");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  var elLogoPanel = document.getElementById("logoPanel");
+  if (elLogoPanel) elLogoPanel.addEventListener("click", function (e) { e.preventDefault(); irAlInicioPanel(); });
+
+  // Botón "atrás" del celular o del navegador: primero cierra lo abierto,
+  // luego vuelve a la primera pestaña, y nunca sale del panel a la tienda.
+  try {
+    history.replaceState({ ghostPanel: "base" }, "");
+    history.pushState({ ghostPanel: "panel" }, "");
+  } catch (e) { /* navegador sin historial */ }
+  window.addEventListener("popstate", function () {
+    try { history.pushState({ ghostPanel: "panel" }, ""); } catch (e) { /* nada */ }
+    var c = capaAbierta();
+    if (c === "alm") { cerrarPublicarAlmuerzo(); return; }
+    if (c === "ali") { cerrarAli(); return; }
+    if (c === "editor") {
+      if (confirm("¿Salir sin guardar los cambios de este restaurante?")) cerrarEditor();
+      return;
+    }
+    if (elVistaPanel && !elVistaPanel.hidden && tabActual() !== "restaurantes") { cambiarTab("restaurantes"); window.scrollTo(0, 0); return; }
+    toast("Estás en tu panel 👻 Para salir, toca “Cerrar sesión”.");
+  });
 
   /* ------------------------- Pestañas ----------------------------- */
   function cambiarTab(cual) {
