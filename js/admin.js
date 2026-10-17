@@ -3003,6 +3003,23 @@
   (async function init() {
     if (!window.Store || !window.Store.supabaseDisponible()) {
       mostrar("config");
+      // Si la configuración está pero la conexión no cargó, casi siempre es el
+      // navegador o un programa del computador bloqueándola (no falta configurar nada).
+      var configurado = typeof SUPABASE_URL === "string" && /^https:\/\//.test(SUPABASE_URL) && !/xxxx/.test(SUPABASE_URL);
+      if (configurado && typeof window.supabase === "undefined") {
+        var av = document.getElementById("avisoConfig");
+        if (av) av.innerHTML =
+          '<h2 class="panel__title">No pudimos conectar desde este navegador</h2>' +
+          '<p class="muted">El panel no logró cargar la conexión. Casi siempre es un <strong>bloqueador de anuncios</strong>, ' +
+          "el <strong>antivirus</strong> o un <strong>navegador desactualizado</strong>. Prueba así:</p>" +
+          '<ol class="muted" style="line-height:1.7">' +
+            "<li>Abre esta página en <strong>Google Chrome</strong> actualizado (o Edge).</li>" +
+            "<li>Si tienes un bloqueador de anuncios (AdBlock, uBlock…), desactívalo para esta página.</li>" +
+            "<li>Prueba en una <strong>ventana de incógnito</strong> (Ctrl + Shift + N).</li>" +
+            "<li>Si estás en una red de oficina o colegio, prueba con otra red o con los datos del celular.</li>" +
+          "</ol>" +
+          '<button type="button" class="btn-primary" onclick="location.reload()">Volver a intentar</button>';
+      }
       return;
     }
     enlazarLogin();
