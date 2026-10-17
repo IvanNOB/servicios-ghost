@@ -1498,34 +1498,33 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .res__precio { color: var(--primary); font-weight: 800; white-space: nowrap; font-size: 0.92rem; }
 .res__mas { grid-column: 1 / -1; font-size: 0.85rem; margin: 4px 0 0; }
 
-/* Restaurantes: mosaico de logos. Se ven todos casi sin bajar:
-   4 por fila en el celular, 6-8 en el computador. */
-.grid { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
-@media (max-width: 600px) { .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; } }
-@media (max-width: 340px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.card { border-radius: 14px; }
+/* Restaurantes: tarjetas grandes. 2 por fila en el celular,
+   3-5 en el computador (según el ancho). */
+.grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+@media (max-width: 600px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.card { border-radius: 16px; }
 .card:hover { transform: translateY(-2px); }
-.card__cover { height: auto; aspect-ratio: 1 / 1; }
-.card__initials { font-size: clamp(20px, 6vw, 30px); }
-.card__body { padding: 6px 6px 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; flex: 1; min-width: 0; }
+.card__cover { height: auto; aspect-ratio: 4 / 3; }
+.card__initials { font-size: clamp(30px, 9vw, 44px); }
+.card__body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
 .card__name {
-  font-size: 0.74rem; line-height: 1.2; font-weight: 700;
+  font-size: 0.98rem; line-height: 1.25; font-weight: 700;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  min-height: 2.4em; hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word;
+  overflow-wrap: break-word;
 }
-.card__meta { margin: 0; font-size: 0.64rem; justify-content: center; }
-.card__meta .state { padding: 2px 6px; gap: 4px; }
-.card__meta .state__dot { width: 6px; height: 6px; }
+.card__info { color: var(--text-2); font-size: 0.78rem; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card__meta { margin: 2px 0 0; font-size: 0.74rem; }
+.card__meta .state { padding: 3px 8px; gap: 5px; }
 .card__meta .state__det { display: none; }
-.card__promo { top: 4px; left: 4px; max-width: calc(100% - 8px); font-size: 0.56rem; padding: 2px 6px; }
+.card__promo { top: 8px; left: 8px; max-width: calc(100% - 16px); font-size: 0.68rem; padding: 3px 8px; }
 .card__menu {
-  position: absolute; top: 4px; right: 4px; z-index: 2; width: 22px; height: 22px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 0.75rem; background: rgba(0,0,0,.65);
+  position: absolute; top: 8px; right: 8px; z-index: 2; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.9rem; background: rgba(0,0,0,.65);
 }
 @media (min-width: 601px) {
-  .card__name { font-size: 0.88rem; }
-  .card__meta { font-size: 0.7rem; }
-}
+  .card__name { font-size: 1.05rem; }
+  .card__info { font-size: 0.85rem; }
+  .card__meta .state__det { display: inline; }
 }
 
 /* =====================================================================

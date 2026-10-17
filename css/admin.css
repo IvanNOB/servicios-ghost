@@ -545,14 +545,14 @@ code {
 .logo-ed__vistas { display: flex; gap: 12px; align-items: flex-start; }
 .logo-ed__fig { margin: 0; display: flex; flex-direction: column; gap: 6px; }
 .logo-ed__fig--banner { flex: 1 1 auto; min-width: 0; }
-.logo-ed__fig--cuadro { flex: 0 0 104px; }
+.logo-ed__fig--cuadro { flex: 0 0 120px; }
 .logo-ed__fig figcaption { font-size: 0.76rem; color: var(--text-2); line-height: 1.3; }
 .logo-ed__banner, .logo-ed__cuadro {
   border-radius: 14px; border: 1px solid var(--border-fuerte, #333);
   cursor: grab; touch-action: none; user-select: none;
 }
 .logo-ed__banner { aspect-ratio: 5 / 2; }
-.logo-ed__cuadro { aspect-ratio: 1 / 1; }
+.logo-ed__cuadro { aspect-ratio: 4 / 3; }
 .logo-ed--arrastrando { cursor: grabbing; outline: 2px solid var(--primary); outline-offset: 2px; }
 .logo-ed__fila { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .logo-ed__fila input[type="range"] { flex: 1 1 140px; accent-color: var(--primary); min-width: 0; }

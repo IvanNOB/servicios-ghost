@@ -634,6 +634,7 @@
           (menuHoy ? '<span class="card__menu" aria-hidden="true">' + menuHoy + "</span>" : "") +
           '<div class="card__body">' +
             '<div class="card__name">' + esc(r.nombre) + "</div>" +
+            '<div class="card__info">' + esc(r.cat) + " · " + esc(r.tiempo) + "</div>" +
             '<div class="card__meta">' + estadoHTML(r) + "</div>" +
           "</div>" +
         "</button>";
