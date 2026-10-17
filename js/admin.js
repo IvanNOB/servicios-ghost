@@ -853,6 +853,15 @@
     );
   }
 
+  // Mensaje grande junto a la casilla del WhatsApp (y la deja a la vista).
+  function avisoWhatsapp(html) {
+    var a = document.getElementById("campoWhatsappAyuda");
+    var w = document.getElementById("campoWhatsapp");
+    if (a) { a.innerHTML = html; a.classList.add("campo-wa__ayuda--error"); }
+    if (w) { w.scrollIntoView({ block: "center", behavior: "smooth" }); w.focus({ preventScroll: true }); }
+    toast(html.replace(/<[^>]+>/g, "").split(":")[0], true);
+  }
+
   function ayudaWhatsapp(v) {
     var n = window.Store && window.Store.normalizarWhatsapp ? window.Store.normalizarWhatsapp(v) : "";
     if (n) return "✅ Los pedidos de este negocio le llegan directo a <strong>+" + esc(n.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, "$1 $2 $3 $4")) + "</strong> por WhatsApp.";
@@ -862,7 +871,7 @@
   document.addEventListener("input", function (e) {
     if (e.target && e.target.id === "campoWhatsapp") {
       var a = document.getElementById("campoWhatsappAyuda");
-      if (a) a.innerHTML = ayudaWhatsapp(e.target.value);
+      if (a) { a.innerHTML = ayudaWhatsapp(e.target.value); a.classList.remove("campo-wa__ayuda--error"); }
     }
   });
 
@@ -2190,6 +2199,12 @@
     });
     if (!r.nombre.trim()) { toast("Ponle un nombre al restaurante", true); return; }
     if (!r.cat.trim()) { toast("Ponle una categoría", true); return; }
+    // WhatsApp de pedidos: si escribieron algo, tiene que ser un número válido.
+    var waEscrito = String(r.whatsapp || "").replace(/\D/g, "");
+    if (waEscrito && !window.Store.normalizarWhatsapp(waEscrito)) {
+      avisoWhatsapp("⚠️ Ese número de WhatsApp no es válido. Escríbelo con sus 10 dígitos, por ejemplo 321 428 6626.");
+      return;
+    }
     if (!r.id) r.id = slug(r.nombre);
     // Si se edita un restaurante de data.js sin "orden", darle uno coherente.
     if (typeof r.orden !== "number") r.orden = restaurantes.length;
@@ -2203,6 +2218,17 @@
       delete r._importMsg;
       await window.Store.guardar(r, { soloActualizar: esAliado() });
       var falta = window.Store.columnasFaltantes();
+      // El número no se pudo guardar porque a la base de datos le falta ese espacio.
+      if (waEscrito && window.Store.columnasRechazadas().indexOf("whatsapp") !== -1) {
+        btn.disabled = false;
+        btn.textContent = "Guardar cambios";
+        avisoWhatsapp(esAliado()
+          ? "⚠️ Lo demás quedó guardado, pero <strong>tu número de WhatsApp todavía no</strong>: falta un ajuste de Servicios Ghost. Avísales y vuelve a guardar cuando te confirmen."
+          : "⚠️ Lo demás quedó guardado, pero <strong>el número de WhatsApp no</strong>: a la base de datos le falta ese espacio. En Supabase → <em>SQL Editor</em> ejecuta estas dos líneas, recarga esta página y vuelve a guardar:" +
+            '<code class="sql-linea">alter table public.restaurantes add column if not exists whatsapp text default null;\nnotify pgrst, \'reload schema\';</code>');
+        await recargarLista();
+        return;
+      }
       toast(falta.indexOf("horario") !== -1 && r.horario
         ? "Guardado ✓ (el horario se activará al ejecutar supabase-mejoras.sql)"
         : "Guardado ✓");
