@@ -708,11 +708,7 @@
         "</div>" +
         (r.carta.length > 1 ? '<nav class="carta-nav__chips" id="cartaChips" aria-label="Secciones de la carta">' + indice + "</nav>" : "") +
       "</div>";
-    // Imágenes de referencia (ilustraciones) mientras el negocio sube sus fotos.
-    var hayIlustraciones = r.carta.some(function (sc) { return (sc.items || []).some(function (it) { return esIlustracion(it.foto); }); });
-    secciones = navCarta +
-      (hayIlustraciones ? '<p class="carta-ilus">🎨 Las imágenes son ilustrativas: el plato real puede verse diferente.</p>' : "") +
-      secciones +
+    secciones = navCarta + secciones +
       '<p class="empty" id="cartaVacia" hidden>No encontramos ese plato aquí. <button type="button" class="btn-link" data-limpiar-carta>Ver toda la carta</button></p>';
 
     elVistaCarta.innerHTML =
@@ -854,9 +850,6 @@
     if (!m || m.mostrar === false || !String(m.texto || "").trim()) return "";
     return '<span class="dish__msg">' + esc(String(m.texto).trim()) + "</span>";
   }
-
-  // ¿La foto es una ilustración de referencia (no una foto real del negocio)?
-  function esIlustracion(url) { return /^assets\/platos\//.test(String(url || "")); }
 
   // Foto del plato (si la subieron en el panel). Carga diferida: no gasta datos
   // hasta que el cliente baja hasta ese plato.
@@ -2037,6 +2030,18 @@
         if (a && a.foto && menuVigente(r, t)) out.push({ r: r, menu: t, a: a, clave: r.id + "::menu-" + t });
       });
     });
+    // Si aún no hay fotos de platos, recomendamos platos con la foto de portada
+    // del restaurante (uno al azar de cada restaurante con portada).
+    if (!out.length) {
+      DATA.forEach(function (r) {
+        if (!r.logo) return;
+        var platos = [];
+        (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (!it.agotado && it.p > 0) platos.push(it); }); });
+        if (!platos.length) return;
+        var it = platos[Math.floor(Math.random() * platos.length)];
+        out.push({ r: r, it: it, fotoRest: r.logo, clave: r.id + "::" + it.id });
+      });
+    }
     // Si hay de restaurantes abiertos, solo esos.
     var abiertos = out.filter(function (x) { return abiertoAhora(x.r); });
     return abiertos.length ? abiertos : out;
@@ -2063,7 +2068,7 @@
       precio = x.a.precio ? money(x.a.precio) : "";
       accion = 'data-menu-abrir="' + esc(x.r.id) + '" data-tipo="' + x.menu + '"';
     } else {
-      foto = x.it.foto; titulo = x.it.n;
+      foto = x.it.foto || x.fotoRest; titulo = x.it.n;
       precio = x.it.p > 0 ? (tieneOpciones(x.it) ? "desde " : "") + money(x.it.p) : "";
       accion = 'data-ir-rest="' + esc(x.r.id) + '" data-ir-item="' + esc(x.it.id) + '"';
     }

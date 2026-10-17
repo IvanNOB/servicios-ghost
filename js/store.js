@@ -88,7 +88,7 @@
       // Qué columnas tiene la tabla (para avisar en el panel si falta alguna nueva).
       if (res.data && res.data[0]) columnasTabla = Object.keys(res.data[0]);
       var nube = (res.data || []).map(filaARestaurante);
-      completarFotos(nube, base);
+      quitarIlustraciones(nube);
       var idsNube = {};
       for (var i = 0; i < nube.length; i++) idsNube[nube[i].id] = true;
       var faltantes = base.filter(function (r) { return !idsNube[r.id]; });
@@ -99,20 +99,12 @@
     }
   }
 
-  // Platos guardados en Supabase sin foto: usan la imagen de data.js (si hay)
-  // para el mismo plato. La foto que suba el negocio siempre manda.
-  function completarFotos(nube, base) {
-    var fotos = {};
-    base.forEach(function (r) {
+  // Las imágenes ilustrativas (assets/platos/…) ya no existen: si alguna quedó
+  // guardada en un plato, se quita para que no salga una imagen rota.
+  function quitarIlustraciones(lista) {
+    lista.forEach(function (r) {
       (r.carta || []).forEach(function (s) {
-        (s.items || []).forEach(function (it) { if (it.foto) fotos[r.id + "::" + it.id] = it.foto; });
-      });
-    });
-    nube.forEach(function (r) {
-      (r.carta || []).forEach(function (s) {
-        (s.items || []).forEach(function (it) {
-          if (!it.foto && fotos[r.id + "::" + it.id]) it.foto = fotos[r.id + "::" + it.id];
-        });
+        (s.items || []).forEach(function (it) { if (/^assets\/platos\//.test(String(it.foto || ""))) delete it.foto; });
       });
     });
   }
