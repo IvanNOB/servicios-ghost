@@ -1704,6 +1704,32 @@
     if (caja) actualizarVisibilidadMenu(caja);
   });
 
+  // En los grupos de "elige 1", tocar otra vez la opción marcada la quita
+  // (un botón de radio normal no se puede desmarcar).
+  var _radioYaMarcado = null;
+  function radioDeMenu(t) {
+    var op = t && t.closest && t.closest("[data-menu-box] .alm-op");
+    var i = op && op.querySelector('input[type="radio"]');
+    return i && !i.disabled ? i : null;
+  }
+  // Antes del clic: ¿la opción ya estaba marcada?
+  ["pointerdown", "keydown"].forEach(function (tipo) {
+    document.addEventListener(tipo, function (e) {
+      if (tipo === "keydown" && e.key !== " " && e.key !== "Enter") return;
+      var i = radioDeMenu(e.target);
+      _radioYaMarcado = i && i.checked ? i : null;
+    }, true);
+  });
+  document.addEventListener("click", function (e) {
+    var i = e.target;
+    if (!i || i.type !== "radio" || !i.closest || !i.closest("[data-menu-box]")) return;
+    if (_radioYaMarcado === i) {
+      i.checked = false;
+      i.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    _radioYaMarcado = null;
+  });
+
   // Buscador dentro de la carta de un restaurante
   var _cartaTimer = null;
   document.addEventListener("input", function (e) {
