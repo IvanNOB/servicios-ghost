@@ -1725,3 +1725,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 @keyframes transFantasma { from { transform: scale(.4) rotate(-14deg) translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes transTexto { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
 .trans--sale .trans__logo { transform: scale(1.08) translateY(-6px); transition: transform .22s ease-in; }
+
+/* Vista previa abierta desde el panel del negocio */
+.modo-panel #fab, .modo-panel .header__nav { display: none !important; }
+.panel-aviso {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
+  border-radius: 14px; padding: 10px 12px; margin-bottom: 14px; font-size: 0.9rem;
+}
+.panel-aviso .btn-primary-sm { padding: 9px 14px; border-radius: 999px; }

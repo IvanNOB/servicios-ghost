@@ -80,6 +80,21 @@
   // Los ocultos están organizando su carta: se pueden ver con su enlace de vista previa.
   var TODOS = [];
   var PREVIA = null;
+  // Vista previa abierta desde el panel ("👁 Ver cómo se ve"): el negocio ve su
+  // carta como la ve el cliente, pero "volver" lo lleva a SU panel, no a la tienda.
+  var MODO_PANEL = /[#&]previa=1/.test(location.hash) || (function () {
+    try { return sessionStorage.getItem("ghost_modo_panel") === "1"; } catch (e) { return false; }
+  })();
+  if (MODO_PANEL) {
+    try { sessionStorage.setItem("ghost_modo_panel", "1"); } catch (e) { /* sin almacenamiento */ }
+    document.documentElement.classList.add("modo-panel");
+  }
+  function volverAlPanel() {
+    try { sessionStorage.removeItem("ghost_modo_panel"); } catch (e) { /* nada */ }
+    // Si la vista previa se abrió en otra pestaña desde el panel, la cerramos.
+    if (window.opener && !window.opener.closed) { try { window.close(); } catch (e) { /* nada */ } }
+    location.href = location.pathname.replace(/[^/]*$/, "") + "admin.html";
+  }
   function cargarRestaurantes(lista) {
     TODOS = lista.slice();
     DATA = TODOS.filter(function (r) { return r.visible !== false; });
@@ -691,11 +706,15 @@
       '<p class="empty" id="cartaVacia" hidden>No encontramos ese plato aquí. <button type="button" class="btn-link" data-limpiar-carta>Ver toda la carta</button></p>';
 
     elVistaCarta.innerHTML =
-      (r.visible === false
+      (r.visible === false && !MODO_PANEL
         ? '<div class="previa-aviso">👁️ <strong>Vista previa.</strong> Este negocio aún no está publicado: los clientes no lo ven en la tienda. Se publica desde el panel.</div>'
         : "") +
-      '<div class="rest-nav"><button type="button" class="back-btn" data-back>← Todos los restaurantes</button>' +
-      (r.visible === false ? "" : '<button type="button" class="btn-link" data-compartir="' + esc(r.id) + '">🔗 Compartir</button>') + "</div>" +
+      (MODO_PANEL
+        ? '<div class="panel-aviso"><span>👁️ <strong>Vista previa de tu negocio.</strong> ' +
+            (r.visible === false ? "Aún no está publicado: tus clientes todavía no lo ven. Se publica desde tu panel." : "Así lo ven tus clientes.") + "</span>" +
+            '<button type="button" class="btn-primary-sm" data-volver-panel>← Volver a mi panel</button></div>'
+        : '<div class="rest-nav"><button type="button" class="back-btn" data-back>← Todos los restaurantes</button>' +
+          (r.visible === false ? "" : '<button type="button" class="btn-link" data-compartir="' + esc(r.id) + '">🔗 Compartir</button>') + "</div>") +
       '<div class="rest-head">' + cover +
         "<div>" +
           '<h1 class="rest-head__name">' + esc(r.nombre) + "</h1>" +
@@ -1702,6 +1721,7 @@
     if (t.closest("#cartBtnTop")) { openSheet(); return; }
 
     // --- Logo: volver al inicio ---
+    if (t.closest("[data-volver-panel]") || (MODO_PANEL && t.closest("#logoHome"))) { e.preventDefault(); volverAlPanel(); return; }
     if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); if (vistaActual) conTransicion(irAInicio); else irAInicio(); return; }
 
     // --- Chips de categoría ---
@@ -1710,7 +1730,7 @@
     if (chip) { aplicarFiltro(chip.getAttribute("data-chip")); return; }
 
     // --- Volver desde la carta ---
-    if (t.closest("[data-back]")) { conTransicion(irAInicio); return; }
+    if (t.closest("[data-back]")) { if (MODO_PANEL) volverAlPanel(); else conTransicion(irAInicio); return; }
     var comp = t.closest("[data-compartir]");
     if (comp) { compartirNegocio(comp.getAttribute("data-compartir")); return; }
 
@@ -2622,7 +2642,13 @@
       .then(function (lista) {
         if (Array.isArray(lista) && lista.length) {
           cargarRestaurantes(lista);
-          if (/^#r=/.test(location.hash)) revisarHash();
+          // Si ya había una carta abierta (enlace directo o vista previa), se
+          // vuelve a pintar con los datos reales: foto de portada, precios, etc.
+          if (vistaActual && findRest(vistaActual)) {
+            var yCarta = window.scrollY;
+            abrirCarta(vistaActual);
+            window.scrollTo(0, yCarta);
+          } else if (/^#r=/.test(location.hash)) revisarHash();
           // Con la lista definitiva ya cargada, quitamos del carrito lo que no existe.
           limpiarHuerfanos();
           pintarTodo();

@@ -133,6 +133,9 @@
     }
     elAdminUser.textContent = (sesion.user && sesion.user.email ? sesion.user.email : "Admin") +
       (esAliado() ? " · aliado" : "");
+    // El negocio aliado se queda en su panel: el logo no lo saca a la tienda de clientes.
+    var logoPanel = document.querySelector(".admin-header .logo");
+    if (logoPanel && esAliado()) { logoPanel.setAttribute("href", "admin.html"); logoPanel.setAttribute("aria-label", "Mi panel"); }
     aplicarRol();
     mostrar("panel");
     await recargarLista();
@@ -1465,7 +1468,15 @@
     var agotados = 0;
     (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (it.agotado) agotados++; }); });
     var hoyMenu = (menuHoy(r, "desayuno") ? "🍳 " : "") + (almuerzoHoy(r) ? "🍲 " : "");
+    // Su portada, en grande, tal como sale en la carta.
+    var portada = r.logo
+      ? LogoGhost.recuadro(r, "tablero__portada-img", { sinLazy: true })
+      : '<div class="tablero__portada-img tablero__portada-img--vacia">📷 Aún no tienes foto de portada</div>';
     return '<section class="tablero" style="grid-column:1/-1">' +
+        '<div class="tablero__portada">' + portada +
+          '<div class="tablero__portada-pie"><span><strong>Tu portada</strong> · así la ven tus clientes</span>' +
+            '<button type="button" class="btn-copy btn-sm" data-editar="' + esc(r.id) + '">' + (r.logo ? "📷 Cambiar o acomodar" : "📷 Subir foto") + "</button></div>" +
+        "</div>" +
         '<div class="tablero__estado' + (abierto ? " tablero__estado--on" : "") + '">' +
           "<div><strong>" + (abierto ? "🟢 Recibiendo pedidos" : "🔴 Cerrado temporalmente") + "</strong>" +
             "<small>" + esc(horarioHoyTexto(r)) + (r.visible === false ? " · 🙈 Aún no publicado en la tienda" : "") + "</small></div>" +

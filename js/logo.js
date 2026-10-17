@@ -13,6 +13,10 @@
   "use strict";
 
   var ZMIN = 0.2, ZMAX = 4;
+  // ¿El navegador entiende las medidas del marco (cqw/cqh)? Los celulares con
+  // navegador viejo no: ahí usamos una forma más simple que siempre se ve.
+  var MEDIDAS_EXACTAS = !!(typeof window !== "undefined" && window.CSS && CSS.supports &&
+    CSS.supports("width", "calc(1cqw + 1cqh)") && CSS.supports("container-type", "size"));
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -87,7 +91,7 @@
     var pos = r.logoPos || {};
     var fondo = esColor(pos.b) ? pos.b : "#111111";
     var imgEstilo;
-    if (pos.a) {
+    if (pos.a && MEDIDAS_EXACTAS) {
       // Medidas exactas (ver .lg-img--exacta en style.css): la foto puede ser
       // más grande o más pequeña que el marco y se ve entera, sin recortes raros.
       imgEstilo = "--a:" + pos.a + ";--z:" + m.z + ";--x:" + m.x + ";--y:" + m.y;
@@ -97,10 +101,12 @@
           'decoding="async" draggable="false" style="' + imgEstilo + '" />',
       };
     }
-    // Sin la forma de la foto (datos viejos): llenar el marco.
-    var z = Math.max(1, m.z);
-    imgEstilo = "object-fit:cover;object-position:" + m.x + "% " + m.y + "%;" +
-      (z !== 1 ? "transform:scale(" + z + ");transform-origin:" + m.x + "% " + m.y + "%;" : "");
+    // Sin la forma de la foto (datos viejos) o navegador viejo: llenar el marco;
+    // si el negocio la achicó, se muestra completa.
+    var z = m.z;
+    imgEstilo = (z < 1 ? "object-fit:contain;object-position:50% 50%;" :
+      "object-fit:cover;object-position:" + m.x + "% " + m.y + "%;" +
+      (z !== 1 ? "transform:scale(" + z + ");transform-origin:" + m.x + "% " + m.y + "%;" : ""));
     return {
       estilo: "background-color:" + fondo,
       html: '<img class="lg-img" src="' + esc(r.logo) + '" alt="" ' + (opciones.sinLazy ? "" : 'loading="lazy" ') +

@@ -577,3 +577,9 @@ code {
 .logo-ed__rapido:hover { border-color: var(--primary); }
 .logo-ed__color { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; }
 .logo-ed__color input { width: 34px; height: 30px; padding: 0; border: 1px solid var(--border-fuerte, #333); border-radius: 8px; background: none; cursor: pointer; }
+
+/* Portada del negocio en su tablero */
+.tablero__portada { margin-bottom: 12px; }
+.tablero__portada-img { width: 100%; aspect-ratio: 5 / 2; border-radius: 16px; border: 1px solid var(--border); background: #111; }
+.tablero__portada-img--vacia { display: grid; place-items: center; color: var(--text-2); font-size: 0.9rem; border-style: dashed; }
+.tablero__portada-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; font-size: 0.88rem; }
