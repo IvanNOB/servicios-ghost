@@ -1543,3 +1543,87 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   .card__meta { font-size: 0.7rem; }
 }
 }
+
+/* =====================================================================
+   Carta del restaurante: índice fijo, buscador y platos en tarjetas
+   ===================================================================== */
+.section[hidden], .dish[hidden], .carta-nav__chip[hidden] { display: none !important; }
+
+/* Cabecera del restaurante: compacta; en el computador, foto al lado */
+@media (min-width: 760px) {
+  .rest-head { flex-direction: row; align-items: center; gap: 22px; }
+  .rest-head__cover { width: 240px; flex: 0 0 240px; aspect-ratio: 4 / 3; }
+}
+.rest-head { margin-bottom: 14px; }
+@media (max-width: 759px) { .rest-head__cover { aspect-ratio: 5 / 2; } .rest-head { gap: 10px; } }
+/* Dentro de una carta el logo flotante no tapa precios ni botones */
+body:has(#vistaCarta:not([hidden])) .logo-flotante { display: none; }
+
+/* Índice: buscador + secciones, quedan fijos bajo el encabezado */
+.carta-nav {
+  position: sticky; top: var(--alto-header, 64px); z-index: 24;
+  background: var(--bg); margin: 0 -16px 8px; padding: 10px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+@media (min-width: 521px) { .carta-nav { margin: 0 -20px 8px; padding-left: 20px; padding-right: 20px; } }
+.carta-nav__buscar { position: relative; display: flex; align-items: center; }
+.carta-nav__buscar svg { position: absolute; left: 13px; color: var(--silver-soft); pointer-events: none; }
+.carta-nav__buscar input {
+  width: 100%; padding: 10px 14px 10px 40px; background: var(--surface);
+  border: 1px solid var(--border-fuerte); border-radius: 12px; color: var(--text);
+  font: inherit; font-size: 0.95rem;
+}
+.carta-nav__buscar input::placeholder { color: var(--silver-soft); }
+.carta-nav__buscar input:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.carta-nav__chips {
+  display: flex; gap: 8px; overflow-x: auto; margin-top: 10px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.carta-nav__chips::-webkit-scrollbar { display: none; }
+.carta-nav__chip {
+  flex: 0 0 auto; white-space: nowrap; cursor: pointer;
+  background: var(--surface); color: var(--text-2); border: 1px solid var(--border);
+  border-radius: var(--radius-pill); padding: 7px 14px; font: inherit; font-size: 0.85rem; font-weight: 600;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.carta-nav__chip:hover { color: var(--text); border-color: var(--primary); }
+.carta-nav__chip--on { background: var(--primary); color: var(--text-oscuro); border-color: var(--primary); }
+
+/* Secciones */
+.section { margin: 18px 0 8px; }
+.section__title { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; }
+.section__n {
+  font-size: 0.72rem; font-weight: 700; color: var(--text-2);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-pill); padding: 1px 8px;
+}
+
+/* Platos en tarjetas: 1 columna en el celular, 2-3 en el computador */
+.dishes { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 760px) { .dishes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+@media (min-width: 1180px) { .dishes { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.dishes .dish {
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "info" "pie";
+  gap: 10px; align-content: space-between; align-items: start;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 14px; transition: border-color .15s ease;
+}
+.dishes .dish:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+.dishes .dish--foto { grid-template-columns: 84px minmax(0, 1fr); grid-template-areas: "foto info" "foto pie"; column-gap: 12px; }
+.dishes .dish__foto { grid-area: foto; width: 84px; height: 84px; align-self: center; }
+.dishes .dish__info { grid-area: info; }
+.dishes .dish__name { font-weight: 700; line-height: 1.25; }
+.dishes .dish__desc { font-size: 0.84rem; line-height: 1.4; margin-top: 4px; }
+.dish__pie { grid-area: pie; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.dishes .dish__price { margin: 0; color: var(--primary); font-weight: 800; font-size: 1rem; }
+.dishes .dish__price--confirmar { color: var(--text-2); font-size: 0.88rem; }
+.dishes .add-btn { padding: 9px 18px; font-size: 0.86rem; box-shadow: none; }
+.dishes .stepper__btn { width: 34px; height: 34px; }
+
+/* Plato con opciones (tamaño, salsa…): las opciones ocupan todo el ancho */
+.dishes .dish--opciones { grid-template-areas: "info" "opc"; }
+.dishes .dish--opciones.dish--foto { grid-template-areas: "foto info" "opc opc"; }
+.dishes .dish--opciones .dish__price { margin-top: 6px; }
+.dishes .dish--opciones .dish__foto { align-self: start; }
+.dishes .dish-opc { grid-area: opc; margin-top: 0; }
+.dishes .dish-opc__label { flex: 0 0 100%; margin-bottom: -4px; font-size: 0.8rem; }

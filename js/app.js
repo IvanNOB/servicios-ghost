@@ -669,17 +669,34 @@
     // Desayuno y almuerzo del día (si el restaurante los publicó hoy)
     var almuerzoBloque = menuHTML(r, "desayuno") + menuHTML(r, "almuerzo");
 
-    var secciones = "";
+    var secciones = "", indice = "", totalPlatos = 0;
     for (var s = 0; s < r.carta.length; s++) {
       var sec = r.carta[s];
       var platos = "";
       for (var i = 0; i < sec.items.length; i++) {
         platos += dishHTML(r, sec.items[i]);
       }
+      totalPlatos += sec.items.length;
       secciones +=
-        '<div class="section"><h3 class="section__title">' + esc(sec.sec) +
-        "</h3>" + platos + "</div>";
+        '<section class="section" id="sec-' + s + '" data-sec="' + s + '">' +
+          '<h3 class="section__title">' + esc(sec.sec) + ' <span class="section__n">' + sec.items.length + "</span></h3>" +
+          '<div class="dishes">' + platos + "</div>" +
+        "</section>";
+      indice += '<button type="button" class="carta-nav__chip" data-ir-sec="' + s + '">' + esc(sec.sec) + "</button>";
     }
+    // Índice fijo (secciones + buscador) solo si la carta es larga.
+    var conIndice = r.carta.length > 1 || totalPlatos > 8;
+    if (_buscaCarta.rest !== r.id) _buscaCarta = { rest: r.id, q: "" };
+    var navCarta = !conIndice ? "" :
+      '<div class="carta-nav" id="cartaNav">' +
+        '<div class="carta-nav__buscar">' +
+          '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>' +
+          '<input type="search" id="buscaCarta" placeholder="Buscar en la carta de ' + esc(r.nombre) + '…" aria-label="Buscar en la carta" autocomplete="off" enterkeyhint="search" value="' + esc(_buscaCarta.q) + '" />' +
+        "</div>" +
+        (r.carta.length > 1 ? '<nav class="carta-nav__chips" id="cartaChips" aria-label="Secciones de la carta">' + indice + "</nav>" : "") +
+      "</div>";
+    secciones = navCarta + secciones +
+      '<p class="empty" id="cartaVacia" hidden>No encontramos ese plato aquí. <button type="button" class="btn-link" data-limpiar-carta>Ver toda la carta</button></p>';
 
     elVistaCarta.innerHTML =
       (r.visible === false
@@ -701,6 +718,75 @@
     elVistaInicio.hidden = true;
     elVistaCarta.hidden = false;
     window.scrollTo(0, 0);
+    if (_buscaCarta.q) filtrarCarta(_buscaCarta.q);
+    vigilarSecciones();
+  }
+
+  /* ---------------- Carta: buscador e índice de secciones ---------------- */
+  var _buscaCarta = { rest: null, q: "" }, _obsSecciones = null;
+
+  function filtrarCarta(q) {
+    _buscaCarta.q = q;
+    var t = norm(q.trim()), visibles = 0;
+    elVistaCarta.querySelectorAll(".section[data-sec]").forEach(function (sec) {
+      var n = 0;
+      // Si escribe el nombre de la sección ("perros"), se ve toda la sección.
+      var tit = sec.querySelector(".section__title");
+      var todaSec = t && tit && norm(tit.firstChild ? tit.firstChild.textContent : "").indexOf(t) !== -1;
+      sec.querySelectorAll("[data-dish]").forEach(function (d) {
+        var nom = d.querySelector(".dish__name"), des = d.querySelector(".dish__desc");
+        var ok = !t || todaSec || norm((nom ? nom.textContent : "") + " " + (des ? des.textContent : "")).indexOf(t) !== -1;
+        d.hidden = !ok;
+        if (ok) n++;
+      });
+      sec.hidden = n === 0;
+      visibles += n;
+    });
+    var vacia = document.getElementById("cartaVacia");
+    if (vacia) vacia.hidden = visibles > 0;
+    var chips = document.getElementById("cartaChips");
+    if (chips) chips.querySelectorAll("[data-ir-sec]").forEach(function (c) {
+      var sec = document.getElementById("sec-" + c.getAttribute("data-ir-sec"));
+      c.hidden = !sec || sec.hidden;
+    });
+  }
+
+  function marcarSeccion(i) {
+    var chips = document.getElementById("cartaChips");
+    if (!chips) return;
+    var activo = null;
+    chips.querySelectorAll("[data-ir-sec]").forEach(function (c) {
+      var on = c.getAttribute("data-ir-sec") === String(i);
+      c.classList.toggle("carta-nav__chip--on", on);
+      if (on) activo = c;
+    });
+    // Mueve la fila de secciones (solo de lado) para que se vea la actual.
+    if (activo) {
+      var izq = activo.offsetLeft - (chips.clientWidth - activo.offsetWidth) / 2;
+      chips.scrollTo ? chips.scrollTo({ left: Math.max(0, izq), behavior: "smooth" }) : (chips.scrollLeft = izq);
+    }
+  }
+
+  // Resalta en el índice la sección que el cliente está viendo.
+  function vigilarSecciones() {
+    if (_obsSecciones) { _obsSecciones.disconnect(); _obsSecciones = null; }
+    var secs = elVistaCarta.querySelectorAll(".section[data-sec]");
+    if (!secs.length || !document.getElementById("cartaChips") || !("IntersectionObserver" in window)) return;
+    var arriba = (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64) + 110;
+    _obsSecciones = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) { if (e.isIntersecting) marcarSeccion(e.target.getAttribute("data-sec")); });
+    }, { rootMargin: "-" + arriba + "px 0px -60% 0px" });
+    secs.forEach(function (s) { _obsSecciones.observe(s); });
+    marcarSeccion(secs[0].getAttribute("data-sec"));
+  }
+
+  function irASeccion(i) {
+    var sec = document.getElementById("sec-" + i);
+    if (!sec) return;
+    var nav = document.getElementById("cartaNav");
+    var alto = (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64) + (nav ? nav.offsetHeight : 0) + 8;
+    window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - alto, behavior: "smooth" });
+    marcarSeccion(i);
   }
 
   function dishHTML(r, it) {
@@ -729,10 +815,12 @@
         fotoHTML(it) +
         '<div class="dish__info">' +
           '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
-          '<div class="dish__desc">' + esc(it.d) + "</div>" +
-          '<div class="dish__price' + (it.p > 0 ? "" : " dish__price--confirmar") + '">' + esc((it.p > 0 && tieneOpciones(it) ? "desde " : "") + precioTxt(it.p)) + "</div>" +
+          (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
         "</div>" +
-        '<div class="dish__action">' + controlHTML(r, it, qty) + "</div>" +
+        '<div class="dish__pie">' +
+          '<div class="dish__price' + (it.p > 0 ? "" : " dish__price--confirmar") + '">' + esc((it.p > 0 && tieneOpciones(it) ? "desde " : "") + precioTxt(it.p)) + "</div>" +
+          '<div class="dish__action">' + controlHTML(r, it, qty) + "</div>" +
+        "</div>" +
       "</div>"
     );
   }
@@ -1039,6 +1127,7 @@
   function irAInicio() {
     vistaActual = null;
     PREVIA = null;
+    if (_obsSecciones) { _obsSecciones.disconnect(); _obsSecciones = null; }
     if (/^#r=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
     elVistaCarta.hidden = true;
     elVistaCarta.innerHTML = "";
@@ -1591,6 +1680,16 @@
     var menuCarta = t.closest("[data-menu-carta]");
     if (menuCarta) { cerrarMenuVentana(); abrirCarta(menuCarta.getAttribute("data-menu-carta")); return; }
 
+    // --- Carta: índice de secciones y buscador ---
+    var irSec = t.closest("[data-ir-sec]");
+    if (irSec) { irASeccion(irSec.getAttribute("data-ir-sec")); return; }
+    if (t.closest("[data-limpiar-carta]")) {
+      var bc = document.getElementById("buscaCarta");
+      if (bc) { bc.value = ""; bc.focus(); }
+      filtrarCarta("");
+      return;
+    }
+
     // --- Recomendado y fotos ampliadas ---
     if (t.closest("[data-reco-otro]")) { renderRecomendado(true); return; }
     var fotoVer = t.closest("[data-foto-ver]");
@@ -1614,6 +1713,22 @@
   document.addEventListener("change", function (e) {
     var caja = e.target && e.target.closest && e.target.closest("[data-menu-box]");
     if (caja) actualizarVisibilidadMenu(caja);
+  });
+
+  // Buscador dentro de la carta de un restaurante
+  var _cartaTimer = null;
+  document.addEventListener("input", function (e) {
+    if (!e.target || e.target.id !== "buscaCarta") return;
+    var v = e.target.value;
+    clearTimeout(_cartaTimer);
+    _cartaTimer = setTimeout(function () {
+      filtrarCarta(v);
+      var nav = document.getElementById("cartaNav");
+      // Que los resultados queden justo debajo del buscador.
+      if (v && nav && nav.getBoundingClientRect().top > (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64) + 2) {
+        window.scrollTo({ top: nav.getBoundingClientRect().top + window.scrollY - ((parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64)), behavior: "smooth" });
+      }
+    }, 100);
   });
 
   // Buscador
