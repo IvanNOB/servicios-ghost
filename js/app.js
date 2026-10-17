@@ -626,26 +626,28 @@
     var html = "";
     for (var i = 0; i < lista.length; i++) {
       var r = lista[i];
-      var cover = r.logo
+      // Fotos: se ven completas (sin recortar letras de los logos anchos) sobre
+      // un fondo difuminado de la misma foto.
+      var cover = r.logo && esLogo(r)
         ? '<div class="card__cover' + claseLogo(r) + '" style="' + coverStyle(r) + '"></div>'
+        : r.logo
+        ? '<div class="card__cover card__cover--foto"><span class="card__fondo" style="background-image:url(\'' + esc(r.logo) + '\')"></span>' +
+          '<img class="card__img" src="' + esc(r.logo) + '" alt="" loading="lazy" decoding="async" /></div>'
         : '<div class="card__cover">' +
           '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
 
-      // Si hoy tiene desayuno o almuerzo, la tarjeta invita a armarlo.
-      var enlace = almuerzoVigente(r) ? "Armar almuerzo →"
-        : menuVigente(r, "desayuno") ? "Armar desayuno →" : "Ver carta →";
-
+      // Mosaico compacto: logo + nombre + estado, para ver todos de un vistazo.
+      var menuHoy = almuerzoVigente(r) ? "🍲" : menuVigente(r, "desayuno") ? "🍳" : "";
       html +=
         '<button type="button" class="card' + (abiertoAhora(r) ? "" : " card--cerrado") + '" data-rest="' + esc(r.id) +
-        '" aria-label="Ver la carta de ' + esc(r.nombre) + '">' +
+        '" title="' + esc(r.nombre + " · " + r.cat + " · " + r.tiempo) + '"' +
+        ' aria-label="Ver la carta de ' + esc(r.nombre) + " (" + esc(r.cat) + ')">' +
           cover +
           (promoVigente(r) ? '<span class="card__promo">🔥 ' + esc(r.promo.texto) + "</span>" : "") +
+          (menuHoy ? '<span class="card__menu" aria-hidden="true">' + menuHoy + "</span>" : "") +
           '<div class="card__body">' +
             '<div class="card__name">' + esc(r.nombre) + "</div>" +
-            '<div class="card__meta"><span>' + esc(r.cat) +
-              '</span><span class="dot">·</span><span>' + esc(r.tiempo) + "</span></div>" +
             '<div class="card__meta">' + estadoHTML(r) + "</div>" +
-            '<span class="card__link">' + enlace + "</span>" +
           "</div>" +
         "</button>";
     }
