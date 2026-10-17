@@ -85,6 +85,16 @@
     elHeaderRight.hidden = cualVista !== "panel";
   }
 
+  // Supabase responde en inglés: lo traducimos a algo que el negocio entienda.
+  function errorEntrada(ex) {
+    var m = String((ex && ex.message) || "");
+    if (/invalid login credentials/i.test(m)) return "Correo o contraseña incorrectos. Revisa que estén bien escritos (sin espacios al final). Si no la recuerdas, pídele a Servicios Ghost una nueva.";
+    if (/email not confirmed/i.test(m)) return "Tu cuenta aún no está activada. Pídele a Servicios Ghost que la confirme.";
+    if (/rate limit|too many/i.test(m)) return "Muchos intentos seguidos. Espera unos minutos y vuelve a intentar.";
+    if (/failed to fetch|network/i.test(m)) return "No hay conexión a internet. Revisa tu señal y vuelve a intentar.";
+    return "No se pudo entrar: " + (m || "revisa el correo y la contraseña.");
+  }
+
   /* ----------------------------- Login ---------------------------- */
   function enlazarLogin() {
     var form = $("#loginForm");
@@ -99,7 +109,7 @@
         await window.Store.entrar($("#loginEmail").value.trim(), $("#loginPass").value);
         await iniciarPanel();
       } catch (ex) {
-        err.textContent = "No se pudo entrar: " + (ex && ex.message ? ex.message : "revisa el correo y la contraseña.");
+        err.textContent = errorEntrada(ex);
       } finally {
         btn.disabled = false;
         btn.textContent = "Entrar";
