@@ -1594,7 +1594,7 @@
       ubicacion: regalo ? null : ubicacionVigente(),
       destinatario: regalo ? {
         nombre: v("r_nombre"), telefono: v("r_telefono"),
-        referencia: v("r_referencia"), mensaje: v("r_mensaje"),
+        referencia: v("r_referencia"),
       } : null,
     };
   }
@@ -1979,7 +1979,6 @@
       lines.push("Telefono: " + d.telefono);
       if (d.referencia) lines.push("Referencia del lugar: " + d.referencia);
       lines.push("(escribirle a quien recibe para confirmar la direccion)");
-      if (d.mensaje) lines.push("Mensaje de regalo: \"" + d.mensaje + "\"");
       if (hayTarjetas(groups)) lines.push("(los mensajes en vaso o tarjeta van arriba, en cada producto)");
       lines.push("");
       lines.push("QUIEN COMPRA (contacto y pago)");
