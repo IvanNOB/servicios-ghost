@@ -2482,12 +2482,13 @@
         '<button type="button" class="btn-copy" data-repetir>🔁 Repetir pedido</button>' +
       "</div>";
   }
+  // El aviso "¿Lo mismo de la última vez?" ya no sale en el inicio (se veía de más).
+  // Sigue disponible dentro de "Tu pedido" cuando el carrito está vacío.
   function renderRepetir() {
     var box = document.getElementById("repetirBox");
     if (!box) return;
-    var html = repetirHTML();
-    box.innerHTML = html;
-    box.hidden = !html;
+    box.innerHTML = "";
+    box.hidden = true;
   }
 
   // Vuelve a poner en el carrito lo del último pedido, con los precios DE HOY.
