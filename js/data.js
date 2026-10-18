@@ -2457,6 +2457,9 @@ const RESTAURANTES = [
     nombre: "Atemporal",
     // Oculto: Atemporal va a organizar su propia carta desde su panel y la publica cuando esté lista.
     visible: false,
+    // La carta la maneja el negocio desde su panel: la copia de este archivo
+    // NUNCA reemplaza la suya (no sale "Revisar carta nueva").
+    cartaPropia: true,
     cat: "Bebidas y Postres",
     tiempo: "30-45 min",
     abierto: true,

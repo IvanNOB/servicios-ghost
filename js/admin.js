@@ -1248,6 +1248,7 @@
   function cartaNueva(r) {
     if (!r || !r._nube) return false;
     var c = cartaDelCodigo(r.id);
+    if (c && c.cartaPropia) return false;  // el negocio maneja su carta: nunca se reemplaza
     return !!c && huellaCarta(c.carta) !== huellaCarta(r.carta);
   }
 
@@ -1272,7 +1273,7 @@
   async function sincronizarCarta(id, boton) {
     var r = restaurantes.filter(function (x) { return x.id === id; })[0];
     var c = cartaDelCodigo(id);
-    if (!r || !c) return;
+    if (!r || !c || c.cartaPropia) return;
     var nPlatos = c.carta.reduce(function (n, s) { return n + (s.items || []).length; }, 0);
     var df = diferenciasCarta(r.carta, c.carta);
     var bajanACero = df.precios.filter(function (x) { return x.de > 0 && x.a === 0; });
@@ -1292,6 +1293,8 @@
     lineas.push("Se conservan: fotos, agotados, mensajes, adiciones, horario, portada, menús del día y si está abierto.");
     lineas.push("¿Usar la carta nueva?");
     if (!confirm(lineas.join("\n"))) return;
+    if (df.quitados.length && !confirm("⚠️ Segunda confirmación: se van a BORRAR " + df.quitados.length +
+      " productos de " + r.nombre + " (" + lista(df.quitados, 3) + ").\n\nSi el negocio los subió desde su panel, se pierden. ¿Seguro?")) return;
     // Fotos y agotados de la copia actual, por id de plato.
     var previos = {};
     (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { previos[it.id] = it; }); });
