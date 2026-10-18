@@ -234,7 +234,8 @@ as $$
         'plato', e->>'plato',
         'cantidad', e->'cantidad',
         'restaurante', e->>'restaurante',
-        'nota', e->>'nota'))
+        'nota', e->>'nota',
+        'tarjeta', e->'tarjeta'))
       from jsonb_array_elements(p.items) e
     ), '[]'::jsonb) else '[]'::jsonb end
   from public.pedidos p

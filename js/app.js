@@ -231,9 +231,22 @@
   var LS_NOTAS = "ghost_notas_v1";
   var notasCart = (function () { try { return JSON.parse(localStorage.getItem(LS_NOTAS) || "{}") || {}; } catch (e) { return {}; } })();
   function notaDe(key) { return String(notasCart[key] || "").trim(); }
+  // Tarjeta con mensaje personalizado, por producto: { para, de, msg }.
+  var LS_TARJ = "ghost_tarjetas_v1";
+  var tarjetasCart = (function () { try { return JSON.parse(localStorage.getItem(LS_TARJ) || "{}") || {}; } catch (e) { return {}; } })();
+  function tarjetaDe(key) {
+    var t = tarjetasCart[key];
+    if (!t || !String(t.msg || "").trim()) return null;
+    return { para: String(t.para || "").trim(), de: String(t.de || "").trim(), msg: String(t.msg).trim() };
+  }
+  function guardarTarjetas() {
+    for (var k in tarjetasCart) if (!cart[k] || !tarjetasCart[k] || !(tarjetasCart[k].msg || tarjetasCart[k].para || tarjetasCart[k].de)) delete tarjetasCart[k];
+    try { localStorage.setItem(LS_TARJ, JSON.stringify(tarjetasCart)); } catch (e) { /* sin almacenamiento */ }
+  }
   function guardarNotas() {
     for (var k in notasCart) if (!cart[k] || !String(notasCart[k] || "").trim()) delete notasCart[k];
     try { localStorage.setItem(LS_NOTAS, JSON.stringify(notasCart)); } catch (e) { /* sin almacenamiento */ }
+    guardarTarjetas();
   }
   var LS_ARMADOS = "ghost_armados_v1";
   var cart = loadCart();          // { "restId::itemId": qty }
@@ -329,6 +342,7 @@
   function vaciarCarrito() {
     cart = {};
     notasCart = {};
+    tarjetasCart = {};
     almuerzosArmados = {};
     saveCart();
   }
@@ -1481,7 +1495,7 @@
       for (var i = 0; i < g.items.length; i++) {
         var item = g.items[i].item;
         var qty = g.items[i].qty;
-        var kNota = cartKey(g.rest.id, item.id), nota = notaDe(kNota);
+        var kNota = cartKey(g.rest.id, item.id), nota = notaDe(kNota), tarj = tarjetaDe(kNota) || (tarjetasCart[kNota] ? { para: tarjetasCart[kNota].para || "", de: tarjetasCart[kNota].de || "", msg: tarjetasCart[kNota].msg || "" } : null);
         lineas +=
           '<div class="cart-line">' +
             '<div class="cart-line__info">' +
@@ -1494,11 +1508,24 @@
             "</div>" +
             // Nota para el restaurante (opcional)
             '<div class="cart-nota' + (nota ? " cart-nota--abierta" : "") + '">' +
-              '<button type="button" class="cart-nota__btn" data-nota-abrir' + (nota ? " hidden" : "") + ">✏️ Pedir algo especial (ej. sin cebolla)</button>" +
+              '<div class="cart-nota__btns">' +
+                '<button type="button" class="cart-nota__btn" data-nota-abrir' + (nota ? " hidden" : "") + ">✏️ Nota (ej. sin cebolla)</button>" +
+                '<button type="button" class="cart-nota__btn" data-tarj-abrir' + (tarj ? " hidden" : "") + ">💌 Tarjeta con mensaje</button>" +
+              "</div>" +
               '<label class="cart-nota__campo"' + (nota ? "" : " hidden") + ">" +
                 '<span>✏️ Nota para ' + esc(g.rest.nombre) + "</span>" +
                 '<input class="field__input" data-nota="' + esc(kNota) + '" maxlength="120" value="' + esc(nota) + '" placeholder="Ej: sin cebolla, la carne bien asada, salsa aparte" enterkeyhint="done" />' +
               "</label>" +
+              // Tarjeta con mensaje personalizado (para regalos, cumpleaños…)
+              '<div class="cart-tarj"' + (tarj ? "" : " hidden") + ">" +
+                '<span class="cart-tarj__tit">💌 Tarjeta con mensaje <button type="button" class="btn-link cart-tarj__quitar" data-tarj-quitar="' + esc(kNota) + '">Quitar</button></span>' +
+                '<div class="cart-tarj__fila">' +
+                  '<input class="field__input" data-tarj="' + esc(kNota) + '" data-campo-t="para" maxlength="40" value="' + esc(tarj ? tarj.para : "") + '" placeholder="Para (ej. Mamá)" />' +
+                  '<input class="field__input" data-tarj="' + esc(kNota) + '" data-campo-t="de" maxlength="40" value="' + esc(tarj ? tarj.de : "") + '" placeholder="De (ej. Juan)" />' +
+                "</div>" +
+                '<textarea class="field__textarea" data-tarj="' + esc(kNota) + '" data-campo-t="msg" maxlength="250" rows="3" placeholder="Escribe el mensaje que irá en la tarjeta ❤️">' + esc(tarj ? tarj.msg : "") + "</textarea>" +
+                '<small class="muted cart-tarj__n">' + (tarj ? tarj.msg.length : 0) + "/250</small>" +
+              "</div>" +
             "</div>" +
           "</div>";
       }
@@ -1633,6 +1660,7 @@
           cantidad: x.qty,
           subtotal: x.item.p * x.qty,
           nota: notaDe(cartKey(g.rest.id, x.item.id)) || undefined,
+          tarjeta: tarjetaDe(cartKey(g.rest.id, x.item.id)) || undefined,
         });
       });
     });
@@ -1692,6 +1720,13 @@
           (item.p > 0 ? money(item.p * qty) : "precio a confirmar"));
         var notaLinea = notaDe(cartKey(g.rest.id, item.id));
         if (notaLinea) lines.push("   > Nota: " + notaLinea);
+        var tarjLinea = tarjetaDe(cartKey(g.rest.id, item.id));
+        if (tarjLinea) {
+          lines.push("   > TARJETA CON MENSAJE:");
+          if (tarjLinea.para) lines.push("     Para: " + tarjLinea.para);
+          if (tarjLinea.de) lines.push("     De: " + tarjLinea.de);
+          lines.push("     \"" + tarjLinea.msg + "\"");
+        }
       }
       lines.push("Subtotal: " + money(g.subtotal));
       lines.push("");
@@ -1918,6 +1953,41 @@
     a.classList.add("btn-whatsapp--enviado");
     var ok = a.querySelector(".btn-whatsapp__ok");
     if (ok) ok.textContent = " ✓";
+  });
+
+  // Tarjeta con mensaje: abrir, escribir, quitar
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest && e.target.closest("[data-tarj-abrir]");
+    if (a) {
+      var box = a.closest(".cart-nota");
+      a.hidden = true;
+      var t = box.querySelector(".cart-tarj");
+      t.hidden = false;
+      var m = t.querySelector('[data-campo-t="para"]');
+      if (m) m.focus();
+      return;
+    }
+    var q = e.target.closest && e.target.closest("[data-tarj-quitar]");
+    if (q) {
+      delete tarjetasCart[q.getAttribute("data-tarj-quitar")];
+      guardarTarjetas();
+      var b2 = q.closest(".cart-nota"), tj = b2.querySelector(".cart-tarj");
+      tj.querySelectorAll("input,textarea").forEach(function (i) { i.value = ""; });
+      tj.hidden = true;
+      b2.querySelector("[data-tarj-abrir]").hidden = false;
+    }
+  });
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (!t || !t.hasAttribute || !t.hasAttribute("data-tarj")) return;
+    var k = t.getAttribute("data-tarj");
+    var o = tarjetasCart[k] || (tarjetasCart[k] = {});
+    o[t.getAttribute("data-campo-t")] = t.value;
+    if (t.getAttribute("data-campo-t") === "msg") {
+      var n = t.parentNode.querySelector(".cart-tarj__n");
+      if (n) n.textContent = t.value.length + "/250";
+    }
+    guardarTarjetas();
   });
 
   // Nota del cliente en un producto del pedido
@@ -2492,7 +2562,8 @@
         (items.length ? '<details class="track-items"><summary>Ver productos (' + items.length + ")</summary><ul>" +
           items.map(function (x) {
             return "<li>" + esc(x.cantidad) + " × " + esc(x.plato) + ' <span class="muted">· ' + esc(x.restaurante) + "</span>" +
-              (x.nota ? '<br><span class="muted">✏️ ' + esc(x.nota) + "</span>" : "") + "</li>";
+              (x.nota ? '<br><span class="muted">✏️ ' + esc(x.nota) + "</span>" : "") +
+              (x.tarjeta ? '<br><span class="muted">💌 Tarjeta' + (x.tarjeta.para ? " para " + esc(x.tarjeta.para) : "") + ": “" + esc(x.tarjeta.msg) + "”</span>" : "") + "</li>";
           }).join("") + "</ul>" +
           (p.total ? '<p class="track-total">Productos: <strong>' + esc(money(p.total)) + "</strong></p>" : "") +
           "</details>" : "") +

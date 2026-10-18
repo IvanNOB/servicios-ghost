@@ -631,3 +631,4 @@ code {
 .orden-movido { outline: 2px solid var(--primary); outline-offset: 3px; transition: outline-color .9s ease; }
 .editor-section__head { flex-wrap: wrap; }
 .editor-section__head .field__input { flex: 1 1 160px; }
+.pedido-nota--tarjeta { border-left-color: #e879a6; background: color-mix(in srgb, #e879a6 12%, transparent); }

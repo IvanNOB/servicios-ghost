@@ -2450,7 +2450,10 @@
       var it = items[i];
       lineas += '<li>' + esc(it.cantidad) + " × " + esc(it.plato) +
         ' <span class="muted">(' + esc(it.restaurante) + ")</span> — " + esc(money(it.subtotal)) +
-        (it.nota ? '<div class="pedido-nota">✏️ <strong>Nota del cliente:</strong> ' + esc(it.nota) + "</div>" : "") + "</li>";
+        (it.nota ? '<div class="pedido-nota">✏️ <strong>Nota del cliente:</strong> ' + esc(it.nota) + "</div>" : "") +
+        (it.tarjeta && it.tarjeta.msg ? '<div class="pedido-nota pedido-nota--tarjeta">💌 <strong>Tarjeta con mensaje</strong>' +
+          (it.tarjeta.para ? "<br>Para: " + esc(it.tarjeta.para) : "") + (it.tarjeta.de ? "<br>De: " + esc(it.tarjeta.de) : "") +
+          "<br>“" + esc(it.tarjeta.msg) + "”</div>" : "") + "</li>";
     }
 
     // Botones de cambio de estado
