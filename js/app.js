@@ -333,9 +333,14 @@
     saveCart();
   }
 
+  // Solo cuenta lo que existe y se ve en "Tu pedido" (si no, la barra decía
+  // "1 producto" con un pedido vacío y no había forma de quitarlo).
   function totalProductos() {
     var t = 0;
-    for (var k in cart) t += cart[k];
+    for (var k in cart) {
+      var p = parseKey(k);
+      if (findRest(p.restId) && findItem(p.restId, p.itemId)) t += Number(cart[k]) || 0;
+    }
     return t;
   }
 
@@ -344,7 +349,7 @@
     for (var key in cart) {
       var p = parseKey(key);
       var it = findItem(p.restId, p.itemId);
-      if (it) total += it.p * cart[key];
+      if (it && findRest(p.restId)) total += it.p * cart[key];
     }
     return total;
   }
@@ -699,7 +704,8 @@
     }
     // Índice fijo (secciones + buscador) solo si la carta es larga.
     var conIndice = r.carta.length > 1 || totalPlatos > 8;
-    if (_buscaCarta.rest !== r.id) _buscaCarta = { rest: r.id, q: "" };
+    if (_buscaCarta.rest !== r.id) _buscaCarta = { rest: r.id, q: "", sec: null };
+    indice = '<button type="button" class="carta-nav__chip carta-nav__chip--on" data-ir-sec="todo">Todo</button>' + indice;
     var navCarta = !conIndice ? "" :
       '<div class="carta-nav" id="cartaNav">' +
         '<div class="carta-nav__buscar">' +
@@ -740,19 +746,37 @@
   }
 
   /* ---------------- Carta: buscador e índice de secciones ---------------- */
-  var _buscaCarta = { rest: null, q: "" }, _obsSecciones = null;
+  var _buscaCarta = { rest: null, q: "", sec: null }, _obsSecciones = null;
 
+  // "granizado" también encuentra "granizada" y "granizados".
+  function raices(t) {
+    return t.split(/\s+/).filter(Boolean).map(function (w) {
+      if (w.length < 5) return w;
+      return w.replace(/(es|s)$/, "").replace(/[aeo]$/, "");
+    });
+  }
+  function coincide(texto, rs) {
+    for (var i = 0; i < rs.length; i++) if (texto.indexOf(rs[i]) === -1) return false;
+    return true;
+  }
+
+  // Muestra la sección elegida (o todas) y, dentro, lo que coincida con la búsqueda.
   function filtrarCarta(q) {
-    _buscaCarta.q = q;
-    var t = norm(q.trim()), visibles = 0;
+    if (typeof q === "string") _buscaCarta.q = q;
+    var t = norm(String(_buscaCarta.q || "").trim()), rs = raices(t), visibles = 0;
+    var soloSec = _buscaCarta.sec;
     elVistaCarta.querySelectorAll(".section[data-sec]").forEach(function (sec) {
       var n = 0;
+      if (soloSec != null && sec.getAttribute("data-sec") !== String(soloSec)) {
+        sec.hidden = true;
+        return;
+      }
       // Si escribe el nombre de la sección ("perros"), se ve toda la sección.
       var tit = sec.querySelector(".section__title");
-      var todaSec = t && tit && norm(tit.firstChild ? tit.firstChild.textContent : "").indexOf(t) !== -1;
+      var todaSec = t && tit && coincide(norm(tit.firstChild ? tit.firstChild.textContent : ""), rs);
       sec.querySelectorAll("[data-dish]").forEach(function (d) {
         var nom = d.querySelector(".dish__name"), des = d.querySelector(".dish__desc");
-        var ok = !t || todaSec || norm((nom ? nom.textContent : "") + " " + (des ? des.textContent : "")).indexOf(t) !== -1;
+        var ok = !t || todaSec || coincide(norm((nom ? nom.textContent : "") + " " + (des ? des.textContent : "")), rs);
         d.hidden = !ok;
         if (ok) n++;
       });
@@ -763,47 +787,38 @@
     if (vacia) vacia.hidden = visibles > 0;
     var chips = document.getElementById("cartaChips");
     if (chips) chips.querySelectorAll("[data-ir-sec]").forEach(function (c) {
-      var sec = document.getElementById("sec-" + c.getAttribute("data-ir-sec"));
-      c.hidden = !sec || sec.hidden;
+      var k = c.getAttribute("data-ir-sec");
+      c.classList.toggle("carta-nav__chip--on", soloSec == null ? k === "todo" : k === String(soloSec));
     });
   }
 
   function marcarSeccion(i) {
     var chips = document.getElementById("cartaChips");
     if (!chips) return;
-    var activo = null;
-    chips.querySelectorAll("[data-ir-sec]").forEach(function (c) {
-      var on = c.getAttribute("data-ir-sec") === String(i);
-      c.classList.toggle("carta-nav__chip--on", on);
-      if (on) activo = c;
-    });
-    // Mueve la fila de secciones (solo de lado) para que se vea la actual.
+    var activo = chips.querySelector('[data-ir-sec="' + i + '"]');
+    // Mueve la fila de secciones (solo de lado) para que se vea la elegida.
     if (activo) {
       var izq = activo.offsetLeft - (chips.clientWidth - activo.offsetWidth) / 2;
       chips.scrollTo ? chips.scrollTo({ left: Math.max(0, izq), behavior: "smooth" }) : (chips.scrollLeft = izq);
     }
   }
 
-  // Resalta en el índice la sección que el cliente está viendo.
   function vigilarSecciones() {
     if (_obsSecciones) { _obsSecciones.disconnect(); _obsSecciones = null; }
-    var secs = elVistaCarta.querySelectorAll(".section[data-sec]");
-    if (!secs.length || !document.getElementById("cartaChips") || !("IntersectionObserver" in window)) return;
-    var arriba = (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64) + 110;
-    _obsSecciones = new IntersectionObserver(function (entradas) {
-      entradas.forEach(function (e) { if (e.isIntersecting) marcarSeccion(e.target.getAttribute("data-sec")); });
-    }, { rootMargin: "-" + arriba + "px 0px -60% 0px" });
-    secs.forEach(function (s) { _obsSecciones.observe(s); });
-    marcarSeccion(secs[0].getAttribute("data-sec"));
+    if (_buscaCarta.sec != null || _buscaCarta.q) filtrarCarta();
   }
 
+  // Tocar una sección: muestra SOLO esa sección. "Todo" vuelve a la carta completa.
   function irASeccion(i) {
-    var sec = document.getElementById("sec-" + i);
-    if (!sec) return;
+    _buscaCarta.sec = i === "todo" || String(_buscaCarta.sec) === String(i) ? null : Number(i);
+    filtrarCarta();
+    marcarSeccion(_buscaCarta.sec == null ? "todo" : _buscaCarta.sec);
     var nav = document.getElementById("cartaNav");
-    var alto = (parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64) + (nav ? nav.offsetHeight : 0) + 8;
-    window.scrollTo({ top: sec.getBoundingClientRect().top + window.scrollY - alto, behavior: "smooth" });
-    marcarSeccion(i);
+    if (nav) {
+      var alto = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64;
+      var y = nav.getBoundingClientRect().top + window.scrollY - alto;
+      if (window.scrollY > y) window.scrollTo({ top: y, behavior: "smooth" });
+    }
   }
 
   function dishHTML(r, it) {
@@ -1503,6 +1518,7 @@
       '<div id="resumenTotales">' + resumenTotalesHTML(datosPrevios) + "</div>" +
       (hayPorConfirmar()
         ? '<p class="cart-note">Algunos productos tienen precio a confirmar: te lo decimos por WhatsApp.</p>' : "") +
+      '<button type="button" class="btn-link cart-vaciar" data-vaciar-pedido>🗑️ Vaciar todo el pedido</button>' +
       '<h3 class="form__heading">Tus datos de entrega</h3>' +
       (c.nombre ? '<p class="form__hint form__hint--ok">✓ Usamos tus datos del último pedido. Revísalos.</p>' : "") +
       '<form class="form" id="pedidoForm" novalidate>' +
@@ -1797,6 +1813,14 @@
 
     // --- Copiar pedido ---
     if (t.closest("[data-copy]")) { copiarPedido(); return; }
+    if (t.closest("[data-vaciar-pedido]")) {
+      if (!confirm("¿Quitar todos los productos de tu pedido?")) return;
+      vaciarCarrito();
+      refreshCart();
+      renderSheet();
+      if (vistaActual) { var yV = window.scrollY; abrirCarta(vistaActual); window.scrollTo(0, yV); }
+      return;
+    }
 
     // --- Agregar / sumar / restar ---
     var btn = t.closest("[data-add],[data-inc],[data-dec]");
@@ -1863,6 +1887,7 @@
     if (t.closest("[data-limpiar-carta]")) {
       var bc = document.getElementById("buscaCarta");
       if (bc) { bc.value = ""; bc.focus(); }
+      _buscaCarta.sec = null;
       filtrarCarta("");
       return;
     }
