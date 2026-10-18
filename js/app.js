@@ -300,10 +300,22 @@
   // Lista de restaurantes en memoria. Se llena desde el Store al arrancar
   // (Supabase si está configurado, o data.js como respaldo).
   var DATA = [];
-  cargarRestaurantes(typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []);
 
   // Ajustes del negocio (domicilios, promociones, lo más pedido). Se llenan desde la nube.
-  var AJUSTES = {};
+  // La vitrina se recuerda en el celular: así, al recargar, NO se ven por un
+  // momento los demás negocios mientras llega la respuesta de la nube.
+  var LS_VITRINA = "ghost_vitrina_v1";
+  var AJUSTES = (function () {
+    try { var v = JSON.parse(localStorage.getItem(LS_VITRINA) || "null"); return v ? { vitrina: v } : {}; }
+    catch (e) { return {}; }
+  })();
+  function recordarVitrina(v) {
+    try {
+      if (v && v.activo && v.hasta && Date.parse(v.hasta) > Date.now()) localStorage.setItem(LS_VITRINA, JSON.stringify(v));
+      else localStorage.removeItem(LS_VITRINA);
+    } catch (e) { /* sin almacenamiento */ }
+  }
+  cargarRestaurantes(typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []);
 
   function loadCart() {
     try {
@@ -2991,7 +3003,22 @@
     refreshCart();
   }
 
-  // Primer pintado con lo que haya (data.js) para que no se vea vacío.
+  // Mientras llega la nube (restaurantes + ajustes), el inicio no muestra la
+  // copia de data.js: podía enseñar negocios ocultos o que la vitrina esconde.
+  // Si la nube tarda más de 4 s o falla, se muestra la copia igual.
+  var _nubeOk = { rest: false, aj: false };
+  var esperaNube = !!(window.Store && window.Store.supabaseDisponible && window.Store.supabaseDisponible());
+  if (esperaNube) document.documentElement.classList.add("esperando-nube");
+  function nubeLista(parte) {
+    if (parte) _nubeOk[parte] = true;
+    if (parte && !(_nubeOk.rest && _nubeOk.aj)) return;
+    if (!document.documentElement.classList.contains("esperando-nube")) return;
+    document.documentElement.classList.remove("esperando-nube");
+    pintarTodo();
+  }
+  if (esperaNube) setTimeout(function () { nubeLista(null); }, 4000);
+
+  // Primer pintado con lo que haya (data.js); queda oculto si estamos esperando la nube.
   conectarEnlacesWa();
   pintarTodo();
   revisarHash();
@@ -3013,20 +3040,23 @@
           limpiarHuerfanos();
           pintarTodo();
         }
+        nubeLista("rest");
       })
-      .catch(function () { /* ya mostramos el respaldo */ });
+      .catch(function () { nubeLista("rest"); /* se muestra el respaldo */ });
   }
   if (window.Store && typeof window.Store.leerAjustes === "function") {
     window.Store.leerAjustes()
       .then(function (a) {
-        if (!a) return;
+        if (!a) { nubeLista("aj"); return; }
         AJUSTES = a;
+        recordarVitrina(a.vitrina);
         aplicarVitrina();
         renderPromos();
         renderPopulares();
         if (!elSheet.hidden && !_mostrandoConfirmacion) repintarHojaConservando();
+        nubeLista("aj");
       })
-      .catch(function () { /* sin ajustes: valores por defecto */ });
+      .catch(function () { nubeLista("aj"); /* sin ajustes: valores por defecto */ });
   }
 
   // Los horarios cambian con la hora: repintamos cada minuto (y al volver a la pestaña).

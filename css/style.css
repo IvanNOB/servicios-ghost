@@ -1815,3 +1815,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .vit-tile__accion .add-btn, .vit-tile__accion .stepper { width: 100%; justify-content: space-between; }
 .vit-tile__accion .add-btn { justify-content: center; }
 @media (min-width: 700px) { .vit-tile__foto { aspect-ratio: 4 / 3; } }
+
+/* Al recargar: mientras llegan los datos de la nube no se muestra la copia vieja */
+.esperando-nube #gridRestaurantes, .esperando-nube #promos, .esperando-nube #recomendado,
+.esperando-nube #populares, .esperando-nube #almuerzos, .esperando-nube #vitrinaShow,
+.esperando-nube #resumenAbiertos, .esperando-nube #chips { visibility: hidden; }
+.esperando-nube #restaurantes { position: relative; min-height: 180px; }
+.esperando-nube #restaurantes::after {
+  content: "Cargando restaurantes…"; position: absolute; left: 0; right: 0; top: 70px; text-align: center;
+  color: var(--text-2); font-weight: 600; animation: pulso-carga 1.2s ease-in-out infinite;
+}
+@keyframes pulso-carga { 50% { opacity: .35; } }
