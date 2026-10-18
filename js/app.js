@@ -1744,11 +1744,7 @@
             '<label class="field__label" for="fRReferencia">Referencia del lugar de entrega (opcional)</label>' +
             '<input class="field__input" id="fRReferencia" name="r_referencia" type="text" maxlength="160" placeholder="Ej: Hospital, entrada principal · Yamaha · Supergiros de la calle principal" autocomplete="off" />' +
           "</div>" +
-          '<div class="field">' +
-            '<label class="field__label" for="fRMensaje">Mensaje de regalo (opcional)</label>' +
-            '<textarea class="field__textarea" id="fRMensaje" name="r_mensaje" maxlength="250" placeholder="Ej: ¡Feliz cumpleaños! Con cariño, Juan ❤"></textarea>' +
-            '<small class="muted">Los mensajes en vaso o tarjeta se escriben arriba, en cada producto (💌).</small>' +
-          "</div>" +
+          '<small class="muted">💌 Si quieres un mensaje en el vaso o en una tarjeta, escríbelo arriba, en cada producto.</small>' +
           '<p class="form__hint">📲 Le escribiremos por WhatsApp a quien recibe para confirmar la dirección de entrega. No tienes que saberla tú. El pago y las dudas del pedido se hablan contigo.</p>' +
         "</div>" +
         '<div class="field">' +
