@@ -2996,15 +2996,27 @@
     return new Promise(function (resolve, reject) {
       var img = new Image();
       img.onload = function () {
-        var W = 1200, H = 630, c = document.createElement("canvas");
-        c.width = W; c.height = H;
-        var ctx = c.getContext("2d");
-        ctx.fillStyle = "#0b0b0b"; ctx.fillRect(0, 0, W, H);
-        var e = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-        var w = img.naturalWidth * e, h = img.naturalHeight * e;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
-        c.toBlob(function (b) { b ? resolve(b) : reject(new Error("No se pudo preparar la imagen")); }, "image/jpeg", 0.85);
+        // WhatsApp solo muestra la foto GRANDE si es horizontal y pesa poco
+        // (menos de ~300 KB). Bajamos la calidad, y si hace falta el tamaño, hasta lograrlo.
+        var LIMITE = 250 * 1024;
+        var pasos = [[1200, 0.85], [1200, 0.75], [1200, 0.65], [1200, 0.55], [1000, 0.6], [900, 0.55], [800, 0.5]];
+        function intento(i) {
+          var W = pasos[i][0], H = Math.round(W * 630 / 1200), c = document.createElement("canvas");
+          c.width = W; c.height = H;
+          var ctx = c.getContext("2d");
+          ctx.fillStyle = "#0b0b0b"; ctx.fillRect(0, 0, W, H);
+          var e = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+          var w = img.naturalWidth * e, h = img.naturalHeight * e;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+          c.toBlob(function (b) {
+            if (!b) { reject(new Error("No se pudo preparar la imagen")); return; }
+            if (b.size > LIMITE && i < pasos.length - 1) { intento(i + 1); return; }
+            b._ancho = W; b._alto = H;
+            resolve(b);
+          }, "image/jpeg", pasos[i][1]);
+        }
+        intento(0);
       };
       img.onerror = function () { reject(new Error("Ese archivo no es una imagen que el navegador pueda abrir (prueba con JPG o PNG).")); };
       img.src = src;
