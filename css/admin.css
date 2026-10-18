@@ -114,10 +114,22 @@ code {
   color: #fff;
 }
 
-.admin-card__info { flex: 1 1 auto; min-width: 0; }
-.admin-card__name { font-weight: 700; }
-.admin-card__meta { color: var(--text-2); font-size: 0.85rem; }
-.admin-card__actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.admin-card__info { flex: 1 1 0; min-width: 0; }
+.admin-card__name { font-weight: 700; line-height: 1.25; }
+.admin-card__meta { color: var(--text-2); font-size: 0.85rem; line-height: 1.45; margin-top: 2px; }
+/* Botones en su propia fila, debajo: así el nombre y los datos usan todo el ancho
+   y ningún botón se sale de la tarjeta. */
+.admin-card { flex-wrap: wrap; align-items: center; align-content: flex-start; }
+.admin-card__actions > button { min-height: 38px; padding: 8px 14px; font-size: 0.84rem; line-height: 1.2; }
+.admin-card__actions {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  flex: 1 1 100%;
+  padding-top: 10px; margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+.admin-card__actions [data-borrar] { margin-left: auto; }
+/* "Revisar carta nueva" pide atención: va arriba, a lo ancho. */
+.admin-card__actions [data-sincronizar] { order: -1; flex: 1 1 100%; }
 
 /* Editor más ancho en escritorio */
 .sheet__panel--wide { width: min(100%, 720px); }
