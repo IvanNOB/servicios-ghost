@@ -395,6 +395,7 @@
 
   // Vacía el carrito por completo (tras enviar un pedido).
   function vaciarCarrito() {
+    ubicacion = null; _ubiEstado = "";
     cart = {};
     notasCart = {};
     tarjetasCart = {};
@@ -1505,6 +1506,73 @@
       "</div>";
   }
 
+  /* ---------------- Ubicación del cliente (opcional) ---------------- */
+  // El cliente puede mandar su ubicación GPS con el pedido. Solo se guarda en
+  // memoria mientras arma este pedido (no en el celular) y vence a los 30 min.
+  var ubicacion = null;          // { lat, lng, acc, t }
+  var _ubiEstado = "";           // "", "buscando", "error:<texto>"
+  var UBI_VENCE_MS = 30 * 60 * 1000;
+  function ubicacionVigente() {
+    return ubicacion && Date.now() - ubicacion.t < UBI_VENCE_MS ? ubicacion : null;
+  }
+  function enlaceMapa(u) { return "https://maps.google.com/?q=" + u.lat + "," + u.lng; }
+  function ubicacionHTML() {
+    var u = ubicacionVigente();
+    var cuerpo;
+    if (u) {
+      cuerpo = '<div class="ubi__ok">' +
+          '<span>✓ Ubicación agregada <small class="muted">(precisión ±' + u.acc + " m)</small></span>" +
+          '<a class="btn-link" href="' + esc(enlaceMapa(u)) + '" target="_blank" rel="noopener">Ver</a>' +
+          '<button type="button" class="btn-link" data-ubi-quitar>Quitar</button>' +
+        "</div>" +
+        (u.acc > 100 ? '<p class="ubi__aviso">La señal está débil. Si puedes, acércate a una ventana o sal un momento y toca <button type="button" class="btn-link" data-ubi-pedir>actualizar</button>.</p>' : "");
+    } else if (_ubiEstado === "buscando") {
+      cuerpo = '<button type="button" class="ubi__btn" disabled><span class="spinner"></span> Buscando tu ubicación…</button>';
+    } else {
+      cuerpo = '<button type="button" class="ubi__btn" data-ubi-pedir>📍 Estoy en el lugar de entrega: enviar mi ubicación</button>' +
+        (_ubiEstado.indexOf("error:") === 0 ? '<p class="ubi__aviso">' + esc(_ubiEstado.slice(6)) + "</p>" : "");
+    }
+    return '<div class="ubi" id="ubiBox">' + cuerpo +
+      '<small class="muted ubi__ayuda">Opcional. Ayuda al domiciliario a llegar más rápido.</small></div>';
+  }
+  function pintarUbicacion() {
+    var box = document.getElementById("ubiBox");
+    if (box) box.outerHTML = ubicacionHTML();
+  }
+  function pedirUbicacion() {
+    if (!("geolocation" in navigator) || window.isSecureContext === false) {
+      _ubiEstado = "error:Este navegador no permite compartir la ubicación. Escribe tu dirección y referencias.";
+      pintarUbicacion();
+      return;
+    }
+    _ubiEstado = "buscando";
+    pintarUbicacion();
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      ubicacion = {
+        lat: Math.round(pos.coords.latitude * 1e6) / 1e6,
+        lng: Math.round(pos.coords.longitude * 1e6) / 1e6,
+        acc: Math.max(1, Math.round(pos.coords.accuracy || 0)),
+        t: Date.now(),
+      };
+      _ubiEstado = "";
+      pintarUbicacion();
+    }, function (err) {
+      var msg = err && err.code === 1
+        ? "No diste permiso. Para activarlo, toca el candado 🔒 junto a la dirección de la página → Ubicación → Permitir. O sigue con la dirección escrita."
+        : err && err.code === 3
+          ? "Tardó demasiado en encontrar tu ubicación. Intenta de nuevo, idealmente cerca de una ventana."
+          : "No pudimos obtener tu ubicación. Revisa que el GPS esté encendido e intenta de nuevo.";
+      _ubiEstado = "error:" + msg;
+      pintarUbicacion();
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    if (t.closest("[data-ubi-pedir]")) { e.preventDefault(); pedirUbicacion(); return; }
+    if (t.closest("[data-ubi-quitar]")) { e.preventDefault(); ubicacion = null; _ubiEstado = ""; pintarUbicacion(); }
+  });
+
   // Lee el formulario en un objeto (lo usan el envío, el copiado y la nube).
   function leerFormulario(form) {
     var data = new FormData(form);
@@ -1516,6 +1584,7 @@
       nombre: v("nombre"), telefono: v("telefono"), direccion: v("direccion"), barrio: barrio,
       pago: v("pago") || "Efectivo", notas: v("notas"),
       domicilio: tarifa, // número, o null si se confirma por WhatsApp
+      ubicacion: ubicacionVigente(),
     };
   }
 
@@ -1636,6 +1705,7 @@
         '<div class="field">' +
           '<label class="field__label" for="fDireccion">Dirección de entrega (opcional)</label>' +
           '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" value="' + esc(c.direccion || "") + '" />' +
+          ubicacionHTML() +
         "</div>" +
         '<div class="field">' +
           '<span class="field__label">Forma de pago</span>' +
@@ -1769,6 +1839,7 @@
         nombre: datos.nombre, telefono: datos.telefono, direccion: datos.direccion,
         barrio: datos.barrio, pago: datos.pago, notas: datos.notas,
         domicilio: datos.domicilio, // null = se confirma por WhatsApp
+        ubicacion: datos.ubicacion ? { lat: datos.ubicacion.lat, lng: datos.ubicacion.lng, precision: datos.ubicacion.acc } : undefined,
       },
       items: lineasDelCarrito(),
       total: totalPesos(),
@@ -1826,6 +1897,7 @@
     lines.push("Telefono: " + datos.telefono);
     if (datos.barrio) lines.push("Barrio: " + datos.barrio);
     if (datos.direccion) lines.push("Direccion: " + datos.direccion);
+    if (datos.ubicacion) lines.push("Ubicacion: " + enlaceMapa(datos.ubicacion) + " (+/- " + datos.ubicacion.acc + " m)");
     lines.push("Pago: " + datos.pago);
     if (datos.notas) lines.push("Nota: " + datos.notas);
     lines.push("");

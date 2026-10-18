@@ -2517,6 +2517,12 @@
     } catch (e) { return ""; }
   }
 
+  // Ubicación GPS que mandó el cliente (viene del navegador: se valida antes de usarla).
+  function ubicacionValida(u) {
+    return !!(u && typeof u.lat === "number" && typeof u.lng === "number" &&
+      isFinite(u.lat) && isFinite(u.lng) && Math.abs(u.lat) <= 90 && Math.abs(u.lng) <= 180);
+  }
+
   function pedidoHTML(p) {
     var cliente = p.cliente || {};
     var items = p.items || [];
@@ -2564,6 +2570,11 @@
             ? '<a href="https://wa.me/' + esc(telWa(cliente.telefono)) + '" target="_blank" rel="noopener">' + esc(cliente.telefono) + "</a>"
             : "—") + "<br>" +
           "📍 " + esc(cliente.direccion || "—") + ", " + esc(cliente.barrio || "—") +
+          (ubicacionValida(cliente.ubicacion)
+            ? ' <a class="btn-copy btn-sm pedido__mapa" href="https://maps.google.com/?q=' + cliente.ubicacion.lat + "," + cliente.ubicacion.lng +
+              '" target="_blank" rel="noopener">🗺️ Ver en el mapa' +
+              (cliente.ubicacion.precision ? " (±" + esc(Math.round(cliente.ubicacion.precision)) + " m)" : "") + "</a>"
+            : "") +
           " · 💳 " + esc(cliente.pago || "—") +
           (cliente.notas ? "<br>📝 " + esc(cliente.notas) : "") +
           (p.incidencia ? '<br><span class="pedido__incidencia">⚠️ ' + esc(p.incidencia) + "</span>" : "") +
@@ -2779,7 +2790,7 @@
   function descargarCsv() {
     if (!ventasPedidos.length) { toast("No hay pedidos en este periodo", true); return; }
     var cab = ["fecha", "codigo", "estado", "cliente", "telefono", "barrio", "direccion", "pago",
-      "restaurante", "plato", "cantidad", "precio_unitario", "subtotal", "total_productos", "domicilio"];
+      "restaurante", "plato", "cantidad", "precio_unitario", "subtotal", "total_productos", "domicilio", "ubicacion"];
     function celda(x) {
       x = x == null ? "" : String(x);
       // Evita que Excel ejecute como fórmula lo que escribió un cliente (=, +, -, @).
@@ -2793,7 +2804,8 @@
         filas.push([fechaColombia(new Date(p.creado_en)) + " " + new Date(p.creado_en).toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit" }),
           p.codigo, p.estado, c.nombre, c.telefono, c.barrio, c.direccion, c.pago,
           it.restaurante, it.plato, it.cantidad, it.precio_unit, it.subtotal, p.total,
-          typeof c.domicilio === "number" ? c.domicilio : ""].map(celda).join(";"));
+          typeof c.domicilio === "number" ? c.domicilio : "",
+          ubicacionValida(c.ubicacion) ? "https://maps.google.com/?q=" + c.ubicacion.lat + "," + c.ubicacion.lng : ""].map(celda).join(";"));
       });
     });
     var blob = new Blob(["\ufeff" + filas.join("\n")], { type: "text/csv;charset=utf-8" });

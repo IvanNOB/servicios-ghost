@@ -1826,3 +1826,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   color: var(--text-2); font-weight: 600; animation: pulso-carga 1.2s ease-in-out infinite;
 }
 @keyframes pulso-carga { 50% { opacity: .35; } }
+
+/* Ubicación del cliente en el pedido */
+.ubi { display: grid; gap: 6px; margin-top: 8px; }
+.ubi__btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  padding: 11px 14px; border-radius: 12px; font: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  color: var(--text); background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--primary) 60%, transparent);
+}
+.ubi__btn:hover { border-style: solid; }
+.ubi__btn:disabled { opacity: .8; cursor: wait; }
+.ubi__ok {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 12px; border-radius: 12px;
+  font-weight: 700; color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent); border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+}
+.ubi__ok span { flex: 1 1 auto; }
+.ubi__aviso { margin: 0; font-size: 0.8rem; color: var(--advertencia); }
+.ubi__ayuda { font-size: 0.74rem; }
+.ubi__btn .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: ubi-gira .7s linear infinite; }
+@keyframes ubi-gira { to { transform: rotate(360deg); } }
