@@ -2496,9 +2496,32 @@
     }
   }
 
+  // Filtros en botones: cambian el <select> oculto (que ya recarga la lista).
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-ped-filtro]");
+    if (!b) return;
+    var sel = document.getElementById("filtroPedidos");
+    if (!sel) return;
+    sel.value = b.getAttribute("data-ped-filtro");
+    document.querySelectorAll("[data-ped-filtro]").forEach(function (x) { x.classList.toggle("is-on", x === b); });
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+
+  function haceCuanto(iso) {
+    var min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (!(min >= 0)) return "";
+    if (min < 1) return "ahora";
+    if (min < 60) return "hace " + min + " min";
+    var h = Math.floor(min / 60);
+    if (h < 24) return "hace " + h + " h";
+    return "";
+  }
+
   function pintarPedidos() {
     var cont = document.getElementById("listaPedidos");
     if (!cont) return;
+    var cnt = document.getElementById("pedContador");
+    if (cnt) cnt.textContent = pedidos.length ? pedidos.length + (pedidos.length === 1 ? " pedido" : " pedidos") : "";
     if (!pedidos.length) {
       cont.innerHTML = '<p class="muted">No hay pedidos para mostrar.</p>';
       return;
@@ -2535,64 +2558,90 @@
   }
 
   function pedidoHTML(p) {
-    var cliente = p.cliente || {};
+    var c = p.cliente || {};
     var items = p.items || [];
-    var lineas = "";
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i];
-      lineas += '<li>' + esc(it.cantidad) + " × " + esc(it.plato) +
-        ' <span class="muted">(' + esc(it.restaurante) + ")</span> — " + esc(money(it.subtotal)) +
-        (it.nota ? '<div class="pedido-nota">✏️ <strong>Nota del cliente:</strong> ' + esc(it.nota) + "</div>" : "") +
-        (Array.isArray(it.tarjeta) ? it.tarjeta : it.tarjeta ? [it.tarjeta] : []).map(function (t) {
-          return t && t.msg ? '<div class="pedido-nota pedido-nota--tarjeta">💌 <strong>Mensaje en vaso o tarjeta' + (t.u ? " #" + esc(t.u) : "") + "</strong>" +
-            (t.para ? "<br>Para: " + esc(t.para) : "") + (t.de ? "<br>De: " + esc(t.de) : "") +
-            "<br>“" + esc(t.msg) + "”</div>" : "";
-        }).join("") + "</li>";
-    }
+    var regalo = c.modo === "regalo" && c.destinatario;
 
-    // Botones de cambio de estado
+    // Productos
+    var lineas = items.map(function (it) {
+      var tarjetas = (Array.isArray(it.tarjeta) ? it.tarjeta : it.tarjeta ? [it.tarjeta] : []).map(function (t) {
+        return t && t.msg ? '<div class="pedido-nota pedido-nota--tarjeta">💌 <strong>Mensaje en vaso o tarjeta' + (t.u ? " #" + esc(t.u) : "") + "</strong>" +
+          (t.para ? "<br>Para: " + esc(t.para) : "") + (t.de ? "<br>De: " + esc(t.de) : "") +
+          "<br>“" + esc(t.msg) + "”</div>" : "";
+      }).join("");
+      return '<li class="ped-item">' +
+          '<span class="ped-item__qty">' + esc(it.cantidad) + "×</span>" +
+          '<span class="ped-item__n">' + esc(it.plato) + '<small class="muted">' + esc(it.restaurante || "") + "</small></span>" +
+          '<span class="ped-item__p">' + esc(money(it.subtotal)) + "</span>" +
+          (it.nota || tarjetas ? '<div class="ped-item__extra">' +
+            (it.nota ? '<div class="pedido-nota">✏️ ' + esc(it.nota) + "</div>" : "") + tarjetas + "</div>" : "") +
+        "</li>";
+    }).join("");
+
+    var total = p.total || 0, dom = typeof c.domicilio === "number" ? c.domicilio : null;
+    var totales = '<div class="ped-tot">' +
+        '<div><span>Productos</span><span>' + esc(money(total)) + "</span></div>" +
+        '<div><span>Domicilio</span><span>' + (dom == null ? '<em class="muted">por confirmar</em>' : esc(dom > 0 ? money(dom) : "gratis")) + "</span></div>" +
+        '<div class="ped-tot__final"><span>Total a cobrar</span><span>' + esc(money(total + (dom || 0))) + (dom == null ? " + dom." : "") + "</span></div>" +
+      "</div>";
+
+    // Personas
+    function fila(ico, html) { return html ? '<div class="ped-fila"><span class="ped-fila__ico">' + ico + "</span><span>" + html + "</span></div>" : ""; }
+    function tel(t) {
+      return t ? esc(t) + ' <a class="ped-wa" href="https://wa.me/' + esc(telWa(t)) + '" target="_blank" rel="noopener">WhatsApp</a>' : "";
+    }
+    var lugar = [c.barrio, c.direccion].filter(Boolean).map(esc).join(" · ");
+    var mapa = ubicacionValida(c.ubicacion)
+      ? '<a class="btn-copy btn-sm" href="https://maps.google.com/?q=' + c.ubicacion.lat + "," + c.ubicacion.lng + '" target="_blank" rel="noopener">🗺️ Ver en el mapa' +
+        (c.ubicacion.precision ? " (±" + esc(Math.round(c.ubicacion.precision)) + " m)" : "") + "</a>" : "";
+
+    var entrega = regalo
+      ? '<div class="ped-bloque ped-bloque--regalo"><h4>🎁 Entregar a</h4>' +
+          fila("👤", esc(c.destinatario.nombre || "")) +
+          fila("📞", tel(c.destinatario.telefono)) +
+          fila("📍", esc(c.destinatario.referencia || "") || '<em class="muted">Confirmar dirección con quien recibe</em>') +
+          (c.destinatario.mensaje ? fila("💌", "“" + esc(c.destinatario.mensaje) + "”") : "") +
+        "</div>"
+      : "";
+    var cliente = '<div class="ped-bloque"><h4>' + (regalo ? "🙋 Quien compra" : "🙋 Cliente") + "</h4>" +
+        fila("👤", esc(c.nombre || "—")) +
+        fila("📞", tel(c.telefono)) +
+        (regalo ? "" : fila("📍", lugar || '<em class="muted">Sin dirección: confirmar por WhatsApp</em>')) +
+        (mapa && !regalo ? '<div class="ped-fila ped-fila--btn">' + mapa + "</div>" : "") +
+        fila("💳", esc(c.pago || "—")) +
+        (c.notas ? fila("📝", esc(c.notas)) : "") +
+      "</div>";
+
+    // Progreso y acciones
+    var idx = ESTADOS.indexOf(p.estado);
+    var progreso = p.estado === "cancelado" ? "" : '<ol class="ped-prog">' + ESTADOS.map(function (e, i) {
+      return '<li class="' + (i < idx ? "hecho" : i === idx ? "actual" : "") + '">' + esc(ESTADO_LABEL[e]) + "</li>";
+    }).join("") + "</ol>";
     var acciones = "";
     if (p.estado !== "entregado" && p.estado !== "cancelado") {
-      var idx = ESTADOS.indexOf(p.estado);
       if (idx !== -1 && idx < ESTADOS.length - 1) {
         var sig = ESTADOS[idx + 1];
-        acciones += '<button type="button" class="btn-primary btn-sm" data-avanzar="' + esc(p.id) +
-          '" data-estado="' + esc(sig) + '">Marcar: ' + esc(ESTADO_LABEL[sig]) + "</button>";
+        acciones += '<button type="button" class="btn-primary" data-avanzar="' + esc(p.id) + '" data-estado="' + esc(sig) + '">Marcar: ' + esc(ESTADO_LABEL[sig]) + " →</button>";
       }
-      acciones += '<button type="button" class="btn-danger btn-sm" data-cancelar="' + esc(p.id) + '">Cancelar</button>';
+      acciones += '<button type="button" class="btn-danger btn-sm ped-cancelar" data-cancelar="' + esc(p.id) + '">Cancelar</button>';
     }
+    var hace = haceCuanto(p.creado_en);
 
     return (
       '<article class="pedido estado-' + esc(p.estado) + '">' +
-        '<div class="pedido__head">' +
+        '<header class="ped-head">' +
           '<span class="pedido__codigo">' + esc(p.codigo || p.id.slice(0, 6)) + "</span>" +
           '<span class="estado-badge estado-badge--' + esc(p.estado) + '">' + esc(ESTADO_LABEL[p.estado] || p.estado) + "</span>" +
-          '<span class="pedido__fecha">' + esc(fechaCorta(p.creado_en)) + "</span>" +
+          (regalo ? '<span class="ped-tag ped-tag--regalo">🎁 Regalo</span>' : "") +
+          '<span class="pedido__fecha">' + (hace ? "<strong>" + esc(hace) + "</strong> · " : "") + esc(fechaCorta(p.creado_en)) + "</span>" +
+        "</header>" +
+        progreso +
+        (p.incidencia ? '<p class="ped-incidencia">⚠️ ' + esc(p.incidencia) + "</p>" : "") +
+        '<div class="ped-cuerpo">' +
+          '<section class="ped-col"><h4>🛍️ Productos</h4><ul class="ped-items">' + lineas + "</ul>" + totales + "</section>" +
+          '<section class="ped-col">' + entrega + cliente + "</section>" +
         "</div>" +
-        '<ul class="pedido__items">' + lineas + "</ul>" +
-        '<div class="pedido__total">Productos: <strong>' + esc(money(p.total || 0)) + "</strong>" +
-          (typeof cliente.domicilio === "number"
-            ? " · Domicilio: <strong>" + esc(cliente.domicilio > 0 ? money(cliente.domicilio) : "gratis") + "</strong>" +
-              ' · <span class="pedido__pagar">Total a cobrar: ' + esc(money((p.total || 0) + cliente.domicilio)) + "</span>"
-            : ' <span class="muted">(domicilio por confirmar)</span>') + "</div>" +
-        regaloHTML(cliente) +
-        '<div class="pedido__cliente">' +
-          (cliente.modo === "regalo" ? '<strong class="muted">Quien compra:</strong> ' : "") +
-          "👤 " + esc(cliente.nombre || "—") + " · 📞 " +
-          (cliente.telefono
-            ? '<a href="https://wa.me/' + esc(telWa(cliente.telefono)) + '" target="_blank" rel="noopener">' + esc(cliente.telefono) + "</a>"
-            : "—") + "<br>" +
-          "📍 " + esc(cliente.direccion || "—") + ", " + esc(cliente.barrio || "—") +
-          (ubicacionValida(cliente.ubicacion)
-            ? ' <a class="btn-copy btn-sm pedido__mapa" href="https://maps.google.com/?q=' + cliente.ubicacion.lat + "," + cliente.ubicacion.lng +
-              '" target="_blank" rel="noopener">🗺️ Ver en el mapa' +
-              (cliente.ubicacion.precision ? " (±" + esc(Math.round(cliente.ubicacion.precision)) + " m)" : "") + "</a>"
-            : "") +
-          " · 💳 " + esc(cliente.pago || "—") +
-          (cliente.notas ? "<br>📝 " + esc(cliente.notas) : "") +
-          (p.incidencia ? '<br><span class="pedido__incidencia">⚠️ ' + esc(p.incidencia) + "</span>" : "") +
-        "</div>" +
-        (acciones ? '<div class="pedido__actions">' + acciones + "</div>" : "") +
+        (acciones ? '<footer class="ped-acciones">' + acciones + "</footer>" : "") +
       "</article>"
     );
   }

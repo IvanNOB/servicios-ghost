@@ -130,8 +130,23 @@
 
       <!-- Pestaña Pedidos -->
       <div id="tabPedidos" class="tab-panel" hidden>
-        <div class="panel__row">
-          <h2 class="panel__title">Pedidos</h2>
+        <div class="ped-top">
+          <div class="ped-top__titulo">
+            <h2 class="panel__title">Pedidos</h2>
+            <span class="muted" id="pedContador"></span>
+          </div>
+          <button type="button" class="btn-copy btn-sm" id="btnRefrescarPedidos" aria-label="Actualizar">🔄 Actualizar</button>
+        </div>
+        <div class="ped-filtros" role="tablist" aria-label="Filtrar pedidos por estado">
+          <button type="button" class="ped-filtro is-on" data-ped-filtro="todos">Todos</button>
+          <button type="button" class="ped-filtro" data-ped-filtro="recibido">🔵 Recibidos</button>
+          <button type="button" class="ped-filtro" data-ped-filtro="preparando">🟠 Preparando</button>
+          <button type="button" class="ped-filtro" data-ped-filtro="listo">🟣 Listos</button>
+          <button type="button" class="ped-filtro" data-ped-filtro="en-camino">🛵 En camino</button>
+          <button type="button" class="ped-filtro" data-ped-filtro="entregado">✅ Entregados</button>
+          <button type="button" class="ped-filtro" data-ped-filtro="cancelado">✖ Cancelados</button>
+        </div>
+        <div hidden>
           <div class="inline-actions">
             <select id="filtroPedidos" class="field__select" aria-label="Filtrar por estado">
               <option value="todos">Todos</option>
@@ -142,7 +157,6 @@
               <option value="entregado">Entregados</option>
               <option value="cancelado">Cancelados</option>
             </select>
-            <button type="button" class="btn-copy" id="btnRefrescarPedidos" aria-label="Actualizar">🔄 Actualizar</button>
           </div>
         </div>
         <div id="listaPedidos" class="pedidos-list" aria-live="polite"></div>
