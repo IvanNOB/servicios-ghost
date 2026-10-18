@@ -632,5 +632,35 @@ code {
 .editor-section__head { flex-wrap: wrap; }
 .editor-section__head .field__input { flex: 1 1 160px; }
 .pedido-nota--tarjeta { border-left-color: #e879a6; background: color-mix(in srgb, #e879a6 12%, transparent); }
-.plato-ded__max { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 600; margin: 4px 0 6px; }
-.plato-ded__max .field__input { width: 90px; }
+
+/* Secciones de cada producto (etiqueta, mensaje en vaso, opciones): filas tipo tarjeta */
+.plato-extra { margin-top: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); overflow: hidden; transition: border-color .15s ease; }
+.plato-extra[open], .plato-ded--on { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); }
+.plato-extra__head { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; list-style: none; color: var(--text); user-select: none; }
+.plato-extra__head::-webkit-details-marker { display: none; }
+.plato-extra__head:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.plato-extra__ico { flex: 0 0 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; font-size: 1.05rem; background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.plato-extra__txt { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+.plato-extra__txt strong { font-size: 0.9rem; font-weight: 700; }
+.plato-extra__txt small { font-size: 0.76rem; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plato-extra__flecha { flex: 0 0 auto; font-size: 1.3rem; line-height: 1; color: var(--text-2); transition: transform .15s ease; }
+.plato-extra[open] > .plato-extra__head .plato-extra__flecha { transform: rotate(90deg); color: var(--primary); }
+.plato-extra__body { padding: 4px 12px 12px; border-top: 1px solid var(--border); }
+.plato-extra.plato-opc summary { padding: 10px 12px; font-size: inherit; color: var(--text); }
+.plato-chip { flex: 0 1 auto; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; color: var(--text-2); background: color-mix(in srgb, var(--text-2) 12%, transparent); }
+.plato-chip--on { color: var(--success, #10b981); background: color-mix(in srgb, var(--success, #10b981) 15%, transparent); }
+
+/* Mensaje en vaso o tarjeta: interruptor + letras */
+.plato-ded .disp-toggle { flex: 0 0 46px; }
+.plato-ded__body { display: none; padding: 10px 12px 12px; border-top: 1px solid var(--border); }
+.plato-ded--on .plato-ded__body { display: block; }
+.plato-ded--on .plato-extra__txt small { color: var(--success, #10b981); }
+.plato-ded__lbl { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-2); margin-bottom: 8px; }
+.plato-ded__opts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.plato-ded__opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border-fuerte); background: transparent; color: var(--text); font: inherit; font-size: 0.82rem; cursor: pointer; }
+.plato-ded__opt b { font-weight: 800; color: var(--primary); }
+.plato-ded__opt:hover { border-color: var(--primary); }
+.plato-ded__opt.is-on { background: var(--primary); border-color: var(--primary); color: var(--text-oscuro); }
+.plato-ded__opt.is-on b { color: var(--text-oscuro); }
+.plato-ded__otro { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text-2); }
+.plato-ded__otro .field__input { width: 76px; padding: 7px 8px; text-align: center; }

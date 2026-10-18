@@ -1016,34 +1016,78 @@
   function platoMensajeHTML(it, key) {
     var m = it.msg && it.msg.texto ? it.msg : null;
     var on = m ? m.mostrar !== false : true;
-    return '<details class="plato-opc plato-msg"' + (m ? " open" : "") + ' data-msg-box="' + key + '">' +
-        "<summary>🏷️ Mensaje en el producto <span class=\"muted\">(opcional)</span>" +
-          (m ? (on ? ' · <span class="plato-msg__estado plato-msg__estado--on">Se muestra</span>' : ' · <span class="plato-msg__estado">Oculto</span>') : "") + "</summary>" +
+    return '<details class="plato-opc plato-msg plato-extra"' + (m ? " open" : "") + ' data-msg-box="' + key + '">' +
+        extraSummary("🏷", "Etiqueta en la carta", "Ej. 🔥 El más pedido, 🆕 Nuevo",
+          m ? (on ? chip("Se muestra", "on") : chip("Oculta")) : chip("Sin etiqueta")) +
+        '<div class="plato-extra__body">' +
         '<label class="plato-msg__on"><input type="checkbox" data-plato-msg-on' + (on ? " checked" : "") + " /> Mostrarlo a los clientes</label>" +
         '<input class="field__input" data-plato-msg maxlength="60" value="' + esc(m ? m.texto : "") + '" placeholder="Ej: 🔥 El más pedido · Solo fines de semana · Pídelo bien frío" aria-label="Mensaje en el producto" />' +
         '<div class="op-plantillas"><span class="muted">Ideas:</span>' +
           MENSAJES_LISTOS.map(function (t) { return '<button type="button" class="btn-copy btn-sm" data-msg-listo="' + esc(t) + '">' + esc(t) + "</button>"; }).join("") +
         "</div>" +
         '<p class="muted plato-opc__ayuda">Sale en la carta junto al producto. Para quitarlo un tiempo sin borrarlo, desmarca “Mostrarlo a los clientes”.</p>' +
-      "</details>";
+      "</div></details>";
   }
   // Mensaje en vaso o tarjeta: el negocio decide en qué productos el cliente
   // puede escribir un mensaje (bebidas, tortas…) y cuántas letras caben.
   var DED_MAX_DEF = 100, DED_MAX_TOPE = 500;
+  var DED_LISTOS = [{ t: "🥤 Vaso pequeño", n: 30 }, { t: "🥤 Vaso grande", n: 60 }, { t: "💌 Tarjeta", n: 150 }];
+  function dedSub(on, n) { return on ? "El cliente puede escribir hasta " + n + " letras" : "Apagado · el cliente no ve esta opción"; }
   function platoDedicatoriaHTML(it) {
     var on = !!(it.ded && it.ded.max > 0);
     var max = on ? it.ded.max : DED_MAX_DEF;
-    return '<details class="plato-opc plato-msg"' + (on ? " open" : "") + ">" +
-        "<summary>💌 Mensaje en vaso o tarjeta <span class=\"muted\">(opcional)</span>" +
-          (on ? ' · <span class="plato-msg__estado plato-msg__estado--on">Activo · ' + max + " letras</span>" : "") + "</summary>" +
-        '<label class="plato-msg__on"><input type="checkbox" data-plato-ded-on' + (on ? " checked" : "") + " /> El cliente puede escribir un mensaje en este producto</label>" +
-        '<label class="plato-ded__max">Máximo de letras ' +
-          '<input class="field__input" type="number" inputmode="numeric" min="5" max="' + DED_MAX_TOPE + '" step="1" data-plato-ded-max value="' + max + '" /></label>' +
-        '<p class="muted plato-opc__ayuda">Actívalo solo donde se pueda escribir (bebidas, tortas, regalos…). ' +
-          "Pon las letras que caben: un vaso pequeño quizás 30, una tarjeta 150. " +
-          "Si el producto tiene varios tamaños con espacio distinto, usa el del más pequeño.</p>" +
-      "</details>";
+    return '<div class="plato-extra plato-ded' + (on ? " plato-ded--on" : "") + '" data-ded-box>' +
+        '<label class="plato-extra__head">' +
+          '<span class="plato-extra__ico" aria-hidden="true">💌</span>' +
+          '<span class="plato-extra__txt"><strong>Mensaje en vaso o tarjeta</strong><small data-ded-sub>' + dedSub(on, max) + "</small></span>" +
+          '<span class="disp-toggle"><input type="checkbox" data-plato-ded-on' + (on ? " checked" : "") + ' aria-label="Permitir mensaje en vaso o tarjeta" /><span class="disp-switch"></span></span>' +
+        "</label>" +
+        '<div class="plato-ded__body">' +
+          '<span class="plato-ded__lbl">¿Cuántas letras caben?</span>' +
+          '<div class="plato-ded__opts">' +
+            DED_LISTOS.map(function (d) {
+              return '<button type="button" class="plato-ded__opt' + (d.n === max ? " is-on" : "") + '" data-ded-listo="' + d.n + '">' +
+                esc(d.t) + " <b>" + d.n + "</b></button>";
+            }).join("") +
+            '<label class="plato-ded__otro">Otro: <input class="field__input" type="number" inputmode="numeric" min="5" max="' + DED_MAX_TOPE + '" step="1" data-plato-ded-max value="' + max + '" aria-label="Máximo de letras" /></label>' +
+          "</div>" +
+          '<p class="muted plato-opc__ayuda">Si tiene varios tamaños, usa las letras del más pequeño.</p>' +
+        "</div>" +
+      "</div>";
   }
+  // Interruptor y letras: el cambio se ve al instante.
+  function pintarDed(box) {
+    var on = box.querySelector("[data-plato-ded-on]").checked;
+    var n = Math.min(DED_MAX_TOPE, Math.max(5, Math.round(Number(box.querySelector("[data-plato-ded-max]").value) || DED_MAX_DEF)));
+    box.classList.toggle("plato-ded--on", on);
+    box.querySelector("[data-ded-sub]").textContent = dedSub(on, n);
+    box.querySelectorAll("[data-ded-listo]").forEach(function (b) { b.classList.toggle("is-on", Number(b.getAttribute("data-ded-listo")) === n); });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-ded-listo]");
+    if (!b) return;
+    var box = b.closest("[data-ded-box]");
+    box.querySelector("[data-plato-ded-max]").value = b.getAttribute("data-ded-listo");
+    pintarDed(box);
+  });
+  ["change", "input"].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      var t = e.target;
+      if (!t || !t.matches || !t.matches("[data-plato-ded-on], [data-plato-ded-max]")) return;
+      var box = t.closest("[data-ded-box]");
+      if (box) pintarDed(box);
+    });
+  });
+
+  // Encabezado común de las secciones de un producto: ícono, título, ayuda y estado.
+  function extraSummary(ico, titulo, sub, estado) {
+    return '<summary class="plato-extra__head">' +
+      '<span class="plato-extra__ico" aria-hidden="true">' + ico + "</span>" +
+      '<span class="plato-extra__txt"><strong>' + esc(titulo) + "</strong><small>" + esc(sub) + "</small></span>" +
+      (estado || "") + '<span class="plato-extra__flecha" aria-hidden="true">›</span>' +
+    "</summary>";
+  }
+  function chip(txt, tipo) { return '<span class="plato-chip' + (tipo ? " plato-chip--" + tipo : "") + '">' + esc(txt) + "</span>"; }
 
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-msg-listo]");
@@ -1134,8 +1178,10 @@
   function platoOpcionesHTML(it, key) {
     var grupos = Array.isArray(it.opciones) ? it.opciones : [];
     var base = Number(it.p) || 0;
-    var html = '<details class="plato-opc"' + (grupos.length ? " open" : "") + ' data-po="' + key + '">' +
-      "<summary>⚙️ ¿El cliente elige algo? <span class=\"muted\">(tamaño, sabor, salsa…)</span>" + (grupos.length ? " · " + grupos.length : "") + "</summary>";
+    var html = '<details class="plato-opc plato-extra"' + (grupos.length ? " open" : "") + ' data-po="' + key + '">' +
+      extraSummary("⚙", "¿El cliente elige algo?", "Tamaño, sabor, salsa…",
+        grupos.length ? chip(grupos.map(function (g) { return g.nombre || "Opción"; }).join(" · "), "on") : chip("No")) +
+      '<div class="plato-extra__body">';
     grupos.forEach(function (g, gi) {
       var k = key + "|" + gi;
       html += '<div class="op-grupo" data-po-g="' + k + '">' +
@@ -1153,7 +1199,7 @@
         return '<button type="button" class="btn-copy btn-sm" data-po-plantilla="' + key + "|" + k + '">' + PLANTILLAS_OPC[k].t + "</button>";
       }).join("") + "</div>" +
       '<p class="muted plato-opc__ayuda">En <strong>+ $</strong> pon cuánto <strong>más</strong> cuesta esa opción (ej. Grande + $3.000). Si cuesta lo mismo, déjalo vacío.</p>' +
-      "</details>";
+      "</div></details>";
     return html;
   }
 
