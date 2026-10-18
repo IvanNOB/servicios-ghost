@@ -195,10 +195,11 @@ drop policy if exists "leer ajustes"         on public.ajustes;
 drop policy if exists "editar ajustes admin" on public.ajustes;
 
 -- El público solo ve lo que usa la tienda (la comisión, por ejemplo, NO).
+-- 'vitrina' = modo lanzamiento: la tienda muestra solo algunos negocios por un tiempo.
 create policy "leer ajustes"
   on public.ajustes for select
   to anon, authenticated
-  using (clave in ('domicilios', 'promos', 'populares') or public.es_admin());
+  using (clave in ('domicilios', 'promos', 'populares', 'vitrina') or public.es_admin());
 
 create policy "editar ajustes admin"
   on public.ajustes for all

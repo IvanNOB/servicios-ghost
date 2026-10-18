@@ -2815,6 +2815,7 @@
       promos: Array.isArray(a.promos) ? a.promos.slice()
         : (typeof PROMOCIONES !== "undefined" ? PROMOCIONES.map(function (p) { return Object.assign({ activo: true }, p); }) : []),
       comision: Number(a.comision) || 0,
+      vitrina: vitrinaLocal(a.vitrina),
     };
     renderAjustes();
     cargarAliados();
@@ -2831,6 +2832,7 @@
     var avisoSql = sinSql ? '<p class="aviso-sql aviso-sql--inline">Para guardar esto, ejecuta <code>supabase-mejoras.sql</code> en Supabase (una sola vez).</p>' : "";
     var a = ajLocal;
     $("#contAjustes").innerHTML =
+      vitrinaHTML(a.vitrina, avisoSql) +
       // Domicilios
       '<section class="aj-card">' +
         "<h3>🛵 Domicilio por barrio</h3>" +
@@ -2927,6 +2929,128 @@
     if (document.querySelector("#ajPromos")) ajLocal.promos = ps;
     var c = $("#ajComision");
     if (c) ajLocal.comision = Number(c.value) || 0;
+    if ($("#ajVitrina")) {
+      var v = ajLocal.vitrina;
+      v.activo = $("#ajVitOn").checked;
+      v.ids = [].map.call(document.querySelectorAll("#ajVitrina [data-vit-id]:checked"), function (x) { return x.value; });
+      v.desdeF = $("#ajVitDesdeF").value; v.desdeH = $("#ajVitDesdeH").value;
+      v.hastaF = $("#ajVitHastaF").value; v.hastaH = $("#ajVitHastaH").value;
+      v.mensaje = $("#ajVitMsg").value.trim();
+    }
+  }
+
+  /* ------------------ Modo vitrina (lanzamiento) ------------------ */
+  // Por un tiempo la tienda muestra SOLO los negocios elegidos (y se puede pedir).
+  // Se apaga sola a la hora fijada. Las horas son de Colombia (UTC-5).
+  var VIT_MSG_DEF = "✨ Muy pronto más negocios en Servicios Ghost";
+  function isoCol(fecha, hora) { return fecha ? fecha + "T" + (hora || "00:00") + ":00-05:00" : ""; }
+  function partesCol(iso) {
+    var t = Date.parse(iso || "");
+    if (isNaN(t)) return { f: "", h: "" };
+    var d = new Date(t - 5 * 3600000).toISOString();
+    return { f: d.slice(0, 10), h: d.slice(11, 16) };
+  }
+  function vitrinaLocal(v) {
+    v = v || {};
+    var hoy = partesCol(new Date().toISOString()).f;
+    var de = partesCol(v.desde), ha = partesCol(v.hasta);
+    return {
+      activo: !!v.activo,
+      ids: Array.isArray(v.ids) ? v.ids.slice() : [],
+      desdeF: de.f, desdeH: de.h,
+      hastaF: ha.f || hoy, hastaH: ha.h || "23:59",
+      mensaje: v.mensaje || "",
+    };
+  }
+  function vitrinaGuardable(v) {
+    return {
+      activo: !!v.activo,
+      ids: v.ids.slice(),
+      desde: isoCol(v.desdeF, v.desdeH) || null,
+      hasta: isoCol(v.hastaF, v.hastaH || "23:59"),
+      mensaje: (v.mensaje || "").slice(0, 100),
+    };
+  }
+  function fechaBonita(iso) {
+    var t = Date.parse(iso);
+    if (isNaN(t)) return "";
+    try {
+      return new Date(t).toLocaleString("es-CO", { timeZone: "America/Bogota", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+    } catch (e) { return new Date(t).toLocaleString(); }
+  }
+  // Estado legible de lo que está GUARDADO (no de lo que se está escribiendo).
+  function vitrinaEstado(g) {
+    if (!g || !g.activo || !g.ids || !g.ids.length) return { cls: "off", txt: "⚪ Apagado: la tienda muestra todos los negocios." };
+    var nombres = g.ids.map(function (id) { var r = restaurantes.filter(function (x) { return x.id === id; })[0]; return r ? r.nombre : id; }).join(", ");
+    var ahora = Date.now(), de = g.desde ? Date.parse(g.desde) : 0, ha = Date.parse(g.hasta);
+    if (!(ahora < ha)) return { cls: "off", txt: "⏹ Terminó el " + fechaBonita(g.hasta) + " · La tienda ya muestra todos los negocios." };
+    if (de && ahora < de) return { cls: "prog", txt: "⏳ Programado: desde el " + fechaBonita(g.desde) + " hasta el " + fechaBonita(g.hasta) + " · Solo se verá: " + nombres };
+    return { cls: "on", txt: "🟢 Activo ahora: la tienda solo muestra " + nombres + " hasta el " + fechaBonita(g.hasta) + " · Se puede pedir normal" };
+  }
+  function vitrinaHTML(_guardada, avisoSql) {
+    var v = ajLocal.vitrina;
+    var est = vitrinaEstado((window.Store._ajustesCache() || {}).vitrina);
+    return '<section class="aj-card aj-vitrina" id="ajVitrina">' +
+      "<h3>🎪 Modo vitrina (lanzamiento)</h3>" +
+      '<p class="muted">Por un tiempo la tienda muestra <strong>solo</strong> los negocios que elijas, y la gente puede hacer sus pedidos normal. ' +
+        "Los demás no se borran ni se tocan: solo no se ven. Se apaga solo a la hora que pongas.</p>" +
+      avisoSql +
+      '<p class="vit-estado vit-estado--' + est.cls + '" id="ajVitEstado">' + esc(est.txt) + "</p>" +
+      '<label class="vit-on"><span class="disp-toggle"><input type="checkbox" id="ajVitOn"' + (v.activo ? " checked" : "") + ' /><span class="disp-switch"></span></span> Activar modo vitrina</label>' +
+      '<div class="vit-campo"><span class="vit-lbl">Mostrar solo:</span><div class="vit-rests">' +
+        restaurantes.map(function (r) {
+          return '<label class="vit-rest"><input type="checkbox" data-vit-id value="' + esc(r.id) + '"' + (v.ids.indexOf(r.id) !== -1 ? " checked" : "") + " /> " + esc(r.nombre) + "</label>";
+        }).join("") +
+      "</div></div>" +
+      '<div class="vit-fechas">' +
+        '<label class="vit-campo"><span class="vit-lbl">Empieza <small class="muted">(vacío = ya mismo)</small></span>' +
+          '<span class="vit-fh"><input class="field__input" type="date" id="ajVitDesdeF" value="' + esc(v.desdeF) + '" /><input class="field__input" type="time" id="ajVitDesdeH" value="' + esc(v.desdeH) + '" /></span></label>' +
+        '<label class="vit-campo"><span class="vit-lbl">Termina solo</span>' +
+          '<span class="vit-fh"><input class="field__input" type="date" id="ajVitHastaF" value="' + esc(v.hastaF) + '" /><input class="field__input" type="time" id="ajVitHastaH" value="' + esc(v.hastaH) + '" /></span></label>' +
+      "</div>" +
+      '<label class="vit-campo"><span class="vit-lbl">Aviso en la tienda</span>' +
+        '<input class="field__input" id="ajVitMsg" maxlength="100" value="' + esc(v.mensaje) + '" placeholder="' + esc(VIT_MSG_DEF) + '" /></label>' +
+      '<p class="muted plato-opc__ayuda">Hora de Colombia. Tú (con sesión en el panel) sigues viendo todo con “Ver cómo se ve”.</p>' +
+      '<div class="inline-actions">' +
+        '<button type="button" class="btn-primary btn-sm" data-aj="guardar-vitrina">Guardar modo vitrina</button>' +
+        '<button type="button" class="btn-copy btn-sm" data-aj="apagar-vitrina">Apagar ya</button>' +
+        '<a class="btn-copy btn-sm" href="index.html" target="_blank" rel="noopener">👀 Abrir la tienda</a>' +
+      "</div>" +
+    "</section>";
+  }
+  // ¿Lo ve el público? Se consulta SIN sesión, como un cliente cualquiera.
+  async function vitrinaPublica() {
+    if (typeof SUPABASE_URL === "undefined" || typeof SUPABASE_ANON_KEY === "undefined" || !SUPABASE_URL) return null;
+    try {
+      var r = await fetch(SUPABASE_URL + "/rest/v1/ajustes?select=valor&clave=eq.vitrina", {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + SUPABASE_ANON_KEY },
+        cache: "no-store",
+      });
+      if (!r.ok) return null;
+      var d = await r.json();
+      return Array.isArray(d) && d.length > 0;
+    } catch (e) { return null; }
+  }
+  async function guardarVitrina(el, apagar) {
+    var v = ajLocal.vitrina;
+    if (apagar) { v.activo = false; var on = $("#ajVitOn"); if (on) on.checked = false; }
+    var g = vitrinaGuardable(v);
+    if (g.activo) {
+      if (!g.ids.length) { toast("Elige al menos un negocio para mostrar", true); return; }
+      if (isNaN(Date.parse(g.hasta))) { toast("Pon la fecha y hora en que termina", true); return; }
+      if (Date.parse(g.hasta) <= Date.now()) { toast("La hora de terminar ya pasó: pon una más adelante", true); return; }
+      if (g.desde && Date.parse(g.desde) >= Date.parse(g.hasta)) { toast("Debe empezar antes de terminar", true); return; }
+    }
+    if (!(await guardarAj("vitrina", g, el, apagar ? "Modo vitrina apagado ✓ La tienda muestra todo" : g.activo ? "Modo vitrina guardado ✓" : "Guardado ✓ (apagado)"))) return;
+    var est = vitrinaEstado(g), p = $("#ajVitEstado");
+    if (p) { p.className = "vit-estado vit-estado--" + est.cls; p.textContent = est.txt; }
+    if (g.activo) {
+      var publico = await vitrinaPublica();
+      if (publico === false) {
+        toast("⚠️ Se guardó, pero los clientes aún NO lo ven: falta correr el SQL nuevo en Supabase", true);
+        if (p) { p.className = "vit-estado vit-estado--error"; p.textContent = "⚠️ Guardado, pero los clientes todavía no lo ven. En Supabase → SQL Editor ejecuta supabase-mejoras.sql (permite que la tienda lea el modo vitrina) y vuelve a guardar."; }
+      }
+    }
   }
 
   async function guardarAj(clave, valor, boton, okMsg) {
@@ -2936,8 +3060,10 @@
     try {
       await window.Store.guardarAjuste(clave, valor);
       toast(okMsg);
+      return true;
     } catch (ex) {
       toast(ex && ex.message ? ex.message : "No se pudo guardar", true);
+      return false;
     } finally {
       boton.disabled = false;
       boton.textContent = texto;
@@ -2980,6 +3106,8 @@
         await guardarAj("promos", promos, el, "Promociones guardadas ✓");
         return;
       }
+      case "guardar-vitrina": return guardarVitrina(el, false);
+      case "apagar-vitrina": return guardarVitrina(el, true);
       case "guardar-comision": {
         if (ajLocal.comision < 0 || ajLocal.comision > 100) { toast("La comisión debe estar entre 0 y 100", true); return; }
         await guardarAj("comision", ajLocal.comision, el, "Comisión guardada ✓");

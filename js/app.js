@@ -95,9 +95,29 @@
     if (window.opener && !window.opener.closed) { try { window.close(); } catch (e) { /* nada */ } }
     location.href = location.pathname.replace(/[^/]*$/, "") + "admin.html";
   }
+  // Modo vitrina (lanzamiento): por un tiempo la tienda muestra SOLO algunos
+  // negocios. Se configura en el panel (Ajustes) y se apaga solo a la hora fijada.
+  // No toca la carta ni la visibilidad de los demás: solo no se pintan.
+  function vitrinaActiva() {
+    var v = typeof AJUSTES !== "undefined" && AJUSTES ? AJUSTES.vitrina : null;
+    if (MODO_PANEL || !v || !v.activo || !Array.isArray(v.ids) || !v.ids.length) return null;
+    var ahora = Date.now();
+    if (v.desde && ahora < Date.parse(v.desde)) return null;
+    if (!v.hasta || !(ahora < Date.parse(v.hasta))) return null;
+    return v;
+  }
+  var _vitrinaClave = "";
+  var _vitrinaOcultos = {};  // negocios que la vitrina esconde (su carrito no se borra)
   function cargarRestaurantes(lista) {
     TODOS = lista.slice();
-    DATA = TODOS.filter(function (r) { return r.visible !== false; });
+    var v = vitrinaActiva();
+    _vitrinaClave = v ? v.ids.join(",") + "|" + v.hasta : "";
+    _vitrinaOcultos = {};
+    DATA = TODOS.filter(function (r) {
+      if (r.visible === false) return false;
+      if (v && v.ids.indexOf(r.id) === -1) { _vitrinaOcultos[r.id] = true; return false; }
+      return true;
+    });
     if (PREVIA) PREVIA = TODOS.filter(function (r) { return r.id === PREVIA.id; })[0] || null;
   }
 
@@ -336,6 +356,7 @@
         if (!nuevo) vencido = true;
         else if (nuevo.p !== arm.p || nuevo.n !== arm.n) { almuerzosArmados[p.itemId].item = nuevo; cambio = true; }
       }
+      if (!r && _vitrinaOcultos[p.restId]) continue;  // solo está escondido por la vitrina: se conserva
       var plano = !arm && r ? findItem(r.id, p.itemId) : null;
       if (plano && plano.agotado) vencido = true;
       if (!r || !findItem(p.restId, p.itemId) || vencido) {
@@ -2327,6 +2348,7 @@
     for (var i = 0; i < lista.length; i++) {
       var p = lista[i];
       var destino = p.rest && findRest(p.rest);
+      if (p.rest && !destino && _vitrinaOcultos[p.rest]) continue;  // promo de un negocio escondido por la vitrina
       var interior =
         '<span class="promo__emoji" aria-hidden="true">' + esc(p.emoji || "✨") + "</span>" +
         '<div class="promo__text">' +
@@ -2339,6 +2361,7 @@
         : '<div class="promo">' + interior + "</div>";
     }
     cont.innerHTML = html;
+    if (!html) cont.hidden = true;
   }
 
   /* ------------------------- Lo más pedido ------------------------ */
@@ -2864,7 +2887,37 @@
   // Seguridad: aseguramos que la hoja empiece SIEMPRE cerrada al cargar.
   closeSheet();
 
+  // Si la vitrina empezó o terminó, se recalcula qué negocios se ven y se repinta.
+  function aplicarVitrina() {
+    var v = vitrinaActiva();
+    var clave = v ? v.ids.join(",") + "|" + v.hasta : "";
+    if (clave !== _vitrinaClave) {
+      cargarRestaurantes(TODOS);
+      if (vistaActual && !findRest(vistaActual)) irAInicio();
+      pintarTodo();
+    } else renderVitrina();
+  }
+  // Aviso en el inicio mientras la vitrina está activa.
+  function renderVitrina() {
+    var v = vitrinaActiva();
+    var el = document.getElementById("vitrinaAviso");
+    if (!v) { if (el) el.remove(); document.documentElement.classList.remove("modo-vitrina"); return; }
+    document.documentElement.classList.add("modo-vitrina");
+    if (!el) {
+      var ancla = document.querySelector("#vistaInicio .inicio");
+      if (!ancla) return;
+      el = document.createElement("div");
+      el.id = "vitrinaAviso";
+      el.className = "vitrina-aviso";
+      el.setAttribute("role", "status");
+      ancla.appendChild(el);
+    }
+    var txt = String(v.mensaje || "").trim() || "✨ Muy pronto más negocios en Servicios Ghost";
+    el.innerHTML = '<span class="vitrina-aviso__txt">' + esc(txt) + "</span>";
+  }
+
   function pintarTodo() {
+    renderVitrina();
     // actualizarVista pinta promos, recomendado, populares, chips y restaurantes
     // (o solo los resultados si el cliente está buscando o filtrando).
     renderMenuDia();
@@ -2903,6 +2956,7 @@
       .then(function (a) {
         if (!a) return;
         AJUSTES = a;
+        aplicarVitrina();
         renderPromos();
         renderPopulares();
         if (!elSheet.hidden && !_mostrandoConfirmacion) repintarHojaConservando();
@@ -2912,6 +2966,7 @@
 
   // Los horarios cambian con la hora: repintamos cada minuto (y al volver a la pestaña).
   function refrescarHorarios() {
+    aplicarVitrina();  // la vitrina empieza o termina sola a la hora fijada
     if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); }
   }
   setInterval(refrescarHorarios, 60000);
