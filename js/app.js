@@ -623,6 +623,7 @@
     if (menu) menu.hidden = esMenu ? false : (filtrando || sinMenus);
     if (esMenu && tipoMenuDia !== filtroCategoria) { tipoMenuDia = filtroCategoria; renderMenuDia(); }
     if (!filtrando) { renderPromos(); renderRecomendado(); renderPopulares(); }
+    renderVitrinaShow();
     renderChips();
     renderResultadosPlatos();
     renderGrid();
@@ -1361,6 +1362,9 @@
       if (slot) slot.innerHTML = controlHTML(r, it, qty);
       // Platos con opciones no tienen stepper propio; su selector no se toca.
     }
+    // En la vitrina del inicio
+    var vt = document.querySelector('#vitrinaShow [data-vit-rest="' + cssId(restId) + '"][data-vit-item="' + cssId(itemId) + '"] .vit-tile__accion');
+    if (vt && !armable(r, it)) vt.innerHTML = controlHTML(r, it, qty);
   }
 
   // Escapa un id para usarlo dentro de un selector CSS (sin depender de CSS.escape).
@@ -2914,6 +2918,67 @@
     }
     var txt = String(v.mensaje || "").trim() || "✨ Muy pronto más negocios en Servicios Ghost";
     el.innerHTML = '<span class="vitrina-aviso__txt">' + esc(txt) + "</span>";
+  }
+
+  // Vitrina de productos: en el inicio, TODOS los productos de los negocios
+  // elegidos con su foto (solo mientras el modo vitrina está activo).
+  function vitrinaTileHTML(r, it) {
+    var img = it.foto
+      ? '<img class="vit-tile__img" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
+      : '<span class="vit-tile__img vit-tile__img--ini" style="' + coverStyle({ color: r.color }) + '">' + esc(iniciales(it.n)) + "</span>";
+    var precio = it.p > 0 ? (tieneOpciones(it) ? "desde " : "") + money(it.p) : precioTxt(0);
+    var accion = armable(r, it)
+      ? '<button type="button" class="add-btn" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">Elegir</button>'
+      : controlHTML(r, it, getQty(r.id, it.id));
+    return '<article class="vit-tile" data-vit-rest="' + esc(r.id) + '" data-vit-item="' + esc(it.id) + '">' +
+        '<button type="button" class="vit-tile__foto" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '" aria-label="Ver ' + esc(it.n) + '">' + img +
+          (it.msg && it.msg.texto && it.msg.mostrar !== false ? '<span class="vit-tile__tag">' + esc(it.msg.texto) + "</span>" : "") +
+        "</button>" +
+        '<div class="vit-tile__info">' +
+          '<span class="vit-tile__n">' + esc(it.n) + "</span>" +
+          '<span class="vit-tile__p">' + esc(precio) + "</span>" +
+        "</div>" +
+        '<div class="vit-tile__accion">' + accion + "</div>" +
+      "</article>";
+  }
+  function renderVitrinaShow() {
+    var v = vitrinaActiva();
+    var sec = document.getElementById("vitrinaShow");
+    if (!v || enModoFiltro()) { if (sec) { sec.hidden = true; sec.innerHTML = ""; } return; }
+    if (!sec) {
+      var antes = document.getElementById("recomendado") || document.getElementById("restaurantes");
+      if (!antes) return;
+      sec = document.createElement("section");
+      sec.id = "vitrinaShow";
+      sec.className = "bloque bloque--compacto vit-show";
+      antes.parentNode.insertBefore(sec, antes);
+    }
+    var html = "";
+    v.ids.forEach(function (id) {
+      var r = findRest(id);
+      if (!r) return;
+      var cabeza = r.logo && window.LogoGhost ? LogoGhost.recuadro(r, "vit-head__logo", { sinLazy: true })
+        : '<span class="vit-head__logo" style="' + coverStyle(r) + '">' + esc(iniciales(r.nombre)) + "</span>";
+      var cuerpo = "";
+      (r.carta || []).forEach(function (s) {
+        var items = (s.items || []).filter(function (it) { return it.n && !it.agotado; });
+        if (!items.length) return;
+        cuerpo += '<h3 class="vit-sec">' + esc(s.sec || "Productos") + ' <span class="muted">' + items.length + "</span></h3>" +
+          '<div class="vit-grid">' + items.map(function (it) { return vitrinaTileHTML(r, it); }).join("") + "</div>";
+      });
+      if (!cuerpo) return;
+      html += '<div class="vit-rest">' +
+        '<div class="vit-head">' + cabeza +
+          '<div class="vit-head__txt"><span class="vit-head__kicker">✨ Solo por hoy en Servicios Ghost</span>' +
+            '<h2 class="vit-head__n">' + esc(r.nombre) + "</h2>" +
+            (r.desc ? '<p class="vit-head__d">' + esc(r.desc) + "</p>" : "") +
+            '<span class="vit-head__estado' + (abiertoAhora(r) ? "" : " vit-head__estado--off") + '">' + (abiertoAhora(r) ? "● Abierto · pide ya" : "● Cerrado ahora") + "</span>" +
+          "</div>" +
+          '<button type="button" class="btn-link vit-head__ver" data-ir-rest="' + esc(r.id) + '">Ver carta →</button>' +
+        "</div>" + cuerpo + "</div>";
+    });
+    sec.innerHTML = html;
+    sec.hidden = !html;
   }
 
   function pintarTodo() {
