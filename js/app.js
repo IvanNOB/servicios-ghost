@@ -1754,10 +1754,6 @@
             '<label class="pay__option"><input type="radio" name="pago" value="Transferencia"' + (c.pago === "Transferencia" ? " checked" : "") + ' /> 📲 Transferencia</label>' +
           "</div>" +
         "</div>" +
-        '<div class="field">' +
-          '<label class="field__label" for="fNotas">Notas (opcional)</label>' +
-          '<textarea class="field__textarea" id="fNotas" name="notas" placeholder="Ej: sin cebolla, timbre dañado, etc."></textarea>' +
-        "</div>" +
         '<div class="actions">' +
           '<button type="submit" class="btn-whatsapp" id="btnWhatsapp" disabled><span aria-hidden="true">🟢</span> Enviar pedido por WhatsApp</button>' +
           '<button type="button" class="btn-copy" data-copy>Copiar el pedido</button>' +
