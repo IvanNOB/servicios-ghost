@@ -408,6 +408,17 @@
     return res.data && res.data[0];
   }
 
+  // Borra pedidos (solo admin). Devuelve cuántos se borraron de verdad: si la
+  // base no tiene permiso de borrar (falta el SQL), devuelve 0 sin error.
+  async function borrarPedidos(ids) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    if (!ids || !ids.length) return 0;
+    var res = await sb.from("pedidos").delete().in("id", ids).select("id");
+    if (res.error) throw res.error;
+    return (res.data || []).length;
+  }
+
   // Seguimiento público: el cliente consulta SOLO el estado de su pedido
   // con el código (función segura en la base de datos, sin datos personales).
   // Devuelve el pedido, null si no existe, o lanza { code: "SIN_SQL" }.
@@ -545,6 +556,7 @@
     crearPedido: crearPedido,
     listarPedidos: listarPedidos,
     actualizarEstadoPedido: actualizarEstadoPedido,
+    borrarPedidos: borrarPedidos,
     estadoPedido: estadoPedido,
     subirFoto: subirFoto,
     urlPortadaEnlace: urlPortadaEnlace,

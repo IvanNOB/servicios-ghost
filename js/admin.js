@@ -2517,20 +2517,103 @@
     return "";
   }
 
+  /* ---- Dividir por restaurante y borrar pedidos de prueba ---- */
+  var pedRest = "";          // "" = todos los negocios
+  var pedSel = {};           // ids seleccionados para borrar
+  function restDeItem(it) { return String(it.restaurante_id || it.restaurante || "?"); }
+  function restaurantesEnPedidos() {
+    var m = {}, orden = [];
+    pedidos.forEach(function (p) {
+      var vistos = {};
+      (p.items || []).forEach(function (it) {
+        var k = restDeItem(it);
+        if (vistos[k]) return;
+        vistos[k] = true;
+        if (!m[k]) { m[k] = { id: k, nombre: it.restaurante || k, n: 0 }; orden.push(m[k]); }
+        m[k].n++;
+      });
+    });
+    return orden.sort(function (a, b) { return b.n - a.n; });
+  }
+  function pintarFiltroRest() {
+    var cont = document.getElementById("pedFiltroRest");
+    if (!cont) return;
+    var lista = restaurantesEnPedidos();
+    if (pedRest && !lista.some(function (r) { return r.id === pedRest; })) pedRest = "";
+    cont.hidden = lista.length < 2;
+    cont.innerHTML = '<button type="button" class="ped-filtro' + (pedRest ? "" : " is-on") + '" data-ped-rest="">🏪 Todos los negocios</button>' +
+      lista.map(function (r) {
+        return '<button type="button" class="ped-filtro' + (pedRest === r.id ? " is-on" : "") + '" data-ped-rest="' + esc(r.id) + '">' +
+          esc(r.nombre) + ' <span class="ped-filtro__n">' + r.n + "</span></button>";
+      }).join("");
+  }
+  function pintarSeleccion() {
+    var n = Object.keys(pedSel).length;
+    var bar = document.getElementById("pedSelBar");
+    if (bar) bar.hidden = !n;
+    var t = document.getElementById("pedSelTxt");
+    if (t) t.textContent = n + (n === 1 ? " pedido seleccionado" : " pedidos seleccionados");
+  }
+  function pedidosVisibles() {
+    return pedRest ? pedidos.filter(function (p) { return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; }); }) : pedidos;
+  }
+  async function borrarPedidosUI(ids) {
+    var lista = pedidos.filter(function (p) { return ids.indexOf(p.id) !== -1; });
+    if (!lista.length) return;
+    var codigos = lista.map(function (p) { return p.codigo || p.id.slice(0, 6); });
+    if (!confirm("¿Borrar " + (lista.length === 1 ? "el pedido " + codigos[0] : "estos " + lista.length + " pedidos") + " para siempre?\n\n" +
+      codigos.slice(0, 12).join(", ") + (codigos.length > 12 ? " y " + (codigos.length - 12) + " más" : "") +
+      "\n\nÚsalo solo para pedidos de prueba: también desaparecen de Ventas. No se puede deshacer.")) return;
+    try {
+      var n = await window.Store.borrarPedidos(ids);
+      if (!n) {
+        toast("No se borró nada: falta dar permiso en Supabase. Ejecuta de nuevo supabase-mejoras.sql (SQL Editor → Run).", true);
+        return;
+      }
+      ids.forEach(function (id) { delete pedSel[id]; });
+      toast(n === 1 ? "Pedido borrado ✓" : n + " pedidos borrados ✓");
+      await recargarPedidos();
+    } catch (ex) {
+      toast("No se pudo borrar: " + (ex && ex.message ? ex.message : "error"), true);
+    }
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var r = t.closest("[data-ped-rest]");
+    if (r) { pedRest = r.getAttribute("data-ped-rest"); pintarPedidos(); return; }
+    var b1 = t.closest("[data-ped-borrar]");
+    if (b1) { borrarPedidosUI([b1.getAttribute("data-ped-borrar")]); return; }
+    if (t.closest("[data-ped-borrar-sel]")) { borrarPedidosUI(Object.keys(pedSel)); return; }
+    if (t.closest("[data-ped-sel-todos]")) { pedidosVisibles().forEach(function (p) { pedSel[p.id] = true; }); pintarPedidos(); return; }
+    if (t.closest("[data-ped-sel-nada]")) { pedSel = {}; pintarPedidos(); }
+  });
+  document.addEventListener("change", function (e) {
+    var c = e.target;
+    if (!c || !c.hasAttribute || !c.hasAttribute("data-ped-sel")) return;
+    var id = c.getAttribute("data-ped-sel");
+    if (c.checked) pedSel[id] = true; else delete pedSel[id];
+    var art = c.closest(".pedido");
+    if (art) art.classList.toggle("pedido--sel", c.checked);
+    pintarSeleccion();
+  });
+
   function pintarPedidos() {
     var cont = document.getElementById("listaPedidos");
     if (!cont) return;
+    var ids = {};
+    pedidos.forEach(function (p) { ids[p.id] = true; });
+    Object.keys(pedSel).forEach(function (id) { if (!ids[id]) delete pedSel[id]; });
+    pintarFiltroRest();
+    var lista = pedidosVisibles();
     var cnt = document.getElementById("pedContador");
-    if (cnt) cnt.textContent = pedidos.length ? pedidos.length + (pedidos.length === 1 ? " pedido" : " pedidos") : "";
-    if (!pedidos.length) {
+    if (cnt) cnt.textContent = lista.length ? lista.length + (lista.length === 1 ? " pedido" : " pedidos") : "";
+    pintarSeleccion();
+    if (!lista.length) {
       cont.innerHTML = '<p class="muted">No hay pedidos para mostrar.</p>';
       return;
     }
-    var html = "";
-    for (var i = 0; i < pedidos.length; i++) {
-      html += pedidoHTML(pedidos[i]);
-    }
-    cont.innerHTML = html;
+    cont.innerHTML = lista.map(function (p) { return pedidoHTML(p, pedRest); }).join("");
   }
 
   function fechaCorta(iso) {
@@ -2557,9 +2640,13 @@
       "</div>";
   }
 
-  function pedidoHTML(p) {
+  function pedidoHTML(p, soloRest) {
     var c = p.cliente || {};
-    var items = p.items || [];
+    var todos = p.items || [];
+    var items = soloRest ? todos.filter(function (it) { return restDeItem(it) === soloRest; }) : todos;
+    var otros = soloRest ? todos.filter(function (it) { return restDeItem(it) !== soloRest; })
+      .map(function (it) { return it.restaurante || restDeItem(it); })
+      .filter(function (n, i, a) { return a.indexOf(n) === i; }) : [];
     var regalo = c.modo === "regalo" && c.destinatario;
 
     // Productos
@@ -2579,11 +2666,15 @@
     }).join("");
 
     var total = p.total || 0, dom = typeof c.domicilio === "number" ? c.domicilio : null;
-    var totales = '<div class="ped-tot">' +
+    var subRest = soloRest ? items.reduce(function (s, it) { return s + (Number(it.subtotal) || 0); }, 0) : 0;
+    var totales = (soloRest && otros.length
+      ? '<div class="ped-tot"><div class="ped-tot__final"><span>Subtotal de ' + esc(items[0] ? items[0].restaurante || soloRest : soloRest) + "</span><span>" + esc(money(subRest)) + "</span></div>" +
+        '<div class="muted">También pidió en: ' + esc(otros.join(", ")) + " · pedido completo " + esc(money(total)) + "</div></div>"
+      : "") + (soloRest && otros.length ? "" : '<div class="ped-tot">' +
         '<div><span>Productos</span><span>' + esc(money(total)) + "</span></div>" +
         '<div><span>Domicilio</span><span>' + (dom == null ? '<em class="muted">por confirmar</em>' : esc(dom > 0 ? money(dom) : "gratis")) + "</span></div>" +
         '<div class="ped-tot__final"><span>Total a cobrar</span><span>' + esc(money(total + (dom || 0))) + (dom == null ? " + dom." : "") + "</span></div>" +
-      "</div>";
+      "</div>");
 
     // Personas
     function fila(ico, html) { return html ? '<div class="ped-fila"><span class="ped-fila__ico">' + ico + "</span><span>" + html + "</span></div>" : ""; }
@@ -2625,11 +2716,13 @@
       }
       acciones += '<button type="button" class="btn-danger btn-sm ped-cancelar" data-cancelar="' + esc(p.id) + '">Cancelar</button>';
     }
+    acciones += '<button type="button" class="btn-link btn-sm ped-borrar' + (acciones ? "" : " ped-cancelar") + '" data-ped-borrar="' + esc(p.id) + '" title="Borrar para siempre (pedidos de prueba)">🗑 Borrar</button>';
     var hace = haceCuanto(p.creado_en);
 
     return (
-      '<article class="pedido estado-' + esc(p.estado) + '">' +
+      '<article class="pedido estado-' + esc(p.estado) + (pedSel[p.id] ? " pedido--sel" : "") + '">' +
         '<header class="ped-head">' +
+          '<label class="ped-check" title="Seleccionar para borrar"><input type="checkbox" data-ped-sel="' + esc(p.id) + '"' + (pedSel[p.id] ? " checked" : "") + " /></label>" +
           '<span class="pedido__codigo">' + esc(p.codigo || p.id.slice(0, 6)) + "</span>" +
           '<span class="estado-badge estado-badge--' + esc(p.estado) + '">' + esc(ESTADO_LABEL[p.estado] || p.estado) + "</span>" +
           (regalo ? '<span class="ped-tag ped-tag--regalo">🎁 Regalo</span>' : "") +

@@ -755,3 +755,18 @@ code {
 .ped-acciones { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
 .ped-acciones .btn-primary { flex: 1 1 auto; max-width: 320px; }
 .ped-cancelar { margin-left: auto; }
+
+/* Pedidos por restaurante y borrado */
+.ped-filtros--rest { margin-top: -6px; }
+.ped-filtros--rest[hidden] { display: none; }
+.ped-filtro__n { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 0.72rem; background: color-mix(in srgb, var(--text-2) 20%, transparent); }
+.ped-filtro.is-on .ped-filtro__n { background: rgba(0,0,0,.18); }
+.ped-sel { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid #ef4444; background: color-mix(in srgb, #ef4444 12%, var(--surface)); font-weight: 700; }
+.ped-sel[hidden] { display: none; }
+.ped-sel [data-ped-borrar-sel] { margin-left: auto; }
+.ped-check { display: inline-flex; cursor: pointer; }
+.ped-check input { width: 18px; height: 18px; accent-color: #ef4444; cursor: pointer; }
+.pedido--sel { outline: 2px solid #ef4444; outline-offset: -2px; }
+.ped-borrar { color: var(--text-2); }
+.ped-borrar:hover { color: #fca5a5; }
+.ped-acciones .ped-cancelar + .ped-borrar { margin-left: 0; }

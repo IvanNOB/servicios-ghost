@@ -146,6 +146,13 @@
           <button type="button" class="ped-filtro" data-ped-filtro="entregado">✅ Entregados</button>
           <button type="button" class="ped-filtro" data-ped-filtro="cancelado">✖ Cancelados</button>
         </div>
+        <div class="ped-filtros ped-filtros--rest" id="pedFiltroRest" aria-label="Filtrar por restaurante"></div>
+        <div class="ped-sel" id="pedSelBar" hidden>
+          <span id="pedSelTxt"></span>
+          <button type="button" class="btn-link btn-sm" data-ped-sel-todos>Seleccionar todos</button>
+          <button type="button" class="btn-link btn-sm" data-ped-sel-nada>Quitar selección</button>
+          <button type="button" class="btn-danger btn-sm" data-ped-borrar-sel>🗑 Borrar seleccionados</button>
+        </div>
         <div hidden>
           <div class="inline-actions">
             <select id="filtroPedidos" class="field__select" aria-label="Filtrar por estado">

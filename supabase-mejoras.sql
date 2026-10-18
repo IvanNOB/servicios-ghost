@@ -172,6 +172,13 @@ create policy "actualizar pedidos admin"
   using (public.es_admin())
   with check (public.es_admin());
 
+-- Borrar pedidos (ej. los de prueba): solo administradores.
+drop policy if exists "borrar pedidos admin" on public.pedidos;
+create policy "borrar pedidos admin"
+  on public.pedidos for delete
+  to authenticated
+  using (public.es_admin());
+
 create index if not exists pedidos_codigo_idx on public.pedidos (codigo);
 
 -- Código único (si ya hubiera códigos repetidos de antes, se omite sin error).
