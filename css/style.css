@@ -1767,3 +1767,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .cart-tarj input, .cart-tarj textarea { font-size: 0.88rem; padding: 8px 10px; }
 .cart-tarj textarea { min-height: 70px; resize: vertical; }
 .cart-tarj__n { text-align: right; font-size: 0.72rem; }
+.cart-tarj__u { display: grid; gap: 6px; }
+.cart-tarj__u + .cart-tarj__u { padding-top: 8px; border-top: 1px dashed color-mix(in srgb, var(--primary) 35%, transparent); }
+.cart-tarj__num { font-size: 0.74rem; font-weight: 800; color: var(--text-2); }

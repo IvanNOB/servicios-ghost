@@ -231,16 +231,38 @@
   var LS_NOTAS = "ghost_notas_v1";
   var notasCart = (function () { try { return JSON.parse(localStorage.getItem(LS_NOTAS) || "{}") || {}; } catch (e) { return {}; } })();
   function notaDe(key) { return String(notasCart[key] || "").trim(); }
-  // Tarjeta con mensaje personalizado, por producto: { para, de, msg }.
+  // Mensaje en vaso o tarjeta: uno por cada unidad del producto
+  // (2 jugos = 2 mensajes distintos). tarjetasCart[key] = [{ para, de, msg }, …].
   var LS_TARJ = "ghost_tarjetas_v1";
-  var tarjetasCart = (function () { try { return JSON.parse(localStorage.getItem(LS_TARJ) || "{}") || {}; } catch (e) { return {}; } })();
-  function tarjetaDe(key) {
-    var t = tarjetasCart[key];
-    if (!t || !String(t.msg || "").trim()) return null;
-    return { para: String(t.para || "").trim(), de: String(t.de || "").trim(), msg: String(t.msg).trim() };
+  var tarjetasCart = (function () {
+    var d;
+    try { d = JSON.parse(localStorage.getItem(LS_TARJ) || "{}") || {}; } catch (e) { d = {}; }
+    for (var k in d) if (d[k] && !Array.isArray(d[k])) d[k] = [d[k]];  // formato viejo: un solo mensaje
+    return d;
+  })();
+  function tieneTexto(t) { return !!(t && (String(t.msg || "").trim() || String(t.para || "").trim() || String(t.de || "").trim())); }
+  // Letras máximas del mensaje para ese producto (0 = el negocio no lo ofrece).
+  function dedMax(restId, item) {
+    var base = item && item._base ? findItem(restId, item._base) : item;
+    return base && base.ded && Number(base.ded.max) > 0 ? Number(base.ded.max) : 0;
+  }
+  // Mensajes listos para enviar: solo los que tienen texto, con su número de unidad.
+  function tarjetasDe(key) {
+    var p = parseKey(key), item = findItem(p.restId, p.itemId), max = dedMax(p.restId, item);
+    var lista = tarjetasCart[key], qty = Number(cart[key]) || 0;
+    if (!max || !Array.isArray(lista)) return [];
+    var out = [];
+    for (var i = 0; i < Math.min(lista.length, qty); i++) {
+      var t = lista[i], msg = t ? String(t.msg || "").trim().slice(0, max) : "";
+      if (!msg) continue;
+      var x = { para: String(t.para || "").trim().slice(0, 40), de: String(t.de || "").trim().slice(0, 40), msg: msg };
+      if (qty > 1) x.u = i + 1;
+      out.push(x);
+    }
+    return out;
   }
   function guardarTarjetas() {
-    for (var k in tarjetasCart) if (!cart[k] || !tarjetasCart[k] || !(tarjetasCart[k].msg || tarjetasCart[k].para || tarjetasCart[k].de)) delete tarjetasCart[k];
+    for (var k in tarjetasCart) if (!cart[k] || !Array.isArray(tarjetasCart[k]) || !tarjetasCart[k].some(tieneTexto)) delete tarjetasCart[k];
     try { localStorage.setItem(LS_TARJ, JSON.stringify(tarjetasCart)); } catch (e) { /* sin almacenamiento */ }
   }
   function guardarNotas() {
@@ -1480,6 +1502,28 @@
     return html;
   }
 
+  // Casillas de "Mensaje en vaso o tarjeta": una por unidad, con el máximo de
+  // letras que puso el negocio para ese producto.
+  function tarjetasHTML(key, qty, max, lista) {
+    var html = '<div class="cart-tarj"' + (lista ? "" : " hidden") + ">" +
+      '<span class="cart-tarj__tit">💌 Mensaje en vaso o tarjeta <button type="button" class="btn-link cart-tarj__quitar" data-tarj-quitar="' + esc(key) + '">Quitar</button></span>' +
+      (qty > 1 ? '<small class="muted">Puedes poner un mensaje distinto en cada uno. Deja vacío el que no lleve.</small>' : "");
+    for (var i = 0; i < qty; i++) {
+      var t = (lista && lista[i]) || {}, msg = String(t.msg || "").slice(0, max);
+      var attrs = ' data-tarj="' + esc(key) + '" data-tarj-i="' + i + '"';
+      html += '<div class="cart-tarj__u">' +
+        (qty > 1 ? '<span class="cart-tarj__num">#' + (i + 1) + " de " + qty + "</span>" : "") +
+        '<div class="cart-tarj__fila">' +
+          '<input class="field__input"' + attrs + ' data-campo-t="para" maxlength="40" value="' + esc(t.para || "") + '" placeholder="Para (ej. Mamá)" />' +
+          '<input class="field__input"' + attrs + ' data-campo-t="de" maxlength="40" value="' + esc(t.de || "") + '" placeholder="De (ej. Juan)" />' +
+        "</div>" +
+        '<textarea class="field__textarea"' + attrs + ' data-campo-t="msg" maxlength="' + max + '" rows="' + (max > 80 ? 3 : 2) + '" placeholder="Escribe el mensaje ❤ (máx. ' + max + ' letras)">' + esc(msg) + "</textarea>" +
+        '<small class="muted cart-tarj__n" data-max="' + max + '">' + msg.length + "/" + max + "</small>" +
+      "</div>";
+    }
+    return html + "</div>";
+  }
+
   function renderSheet() {
     var groups = groupedCart();
 
@@ -1495,7 +1539,9 @@
       for (var i = 0; i < g.items.length; i++) {
         var item = g.items[i].item;
         var qty = g.items[i].qty;
-        var kNota = cartKey(g.rest.id, item.id), nota = notaDe(kNota), tarj = tarjetaDe(kNota) || (tarjetasCart[kNota] ? { para: tarjetasCart[kNota].para || "", de: tarjetasCart[kNota].de || "", msg: tarjetasCart[kNota].msg || "" } : null);
+        var kNota = cartKey(g.rest.id, item.id), nota = notaDe(kNota);
+        var maxDed = dedMax(g.rest.id, item);
+        var tarj = maxDed && Array.isArray(tarjetasCart[kNota]) && tarjetasCart[kNota].some(tieneTexto) ? tarjetasCart[kNota] : null;
         lineas +=
           '<div class="cart-line">' +
             '<div class="cart-line__info">' +
@@ -1510,22 +1556,14 @@
             '<div class="cart-nota' + (nota ? " cart-nota--abierta" : "") + '">' +
               '<div class="cart-nota__btns">' +
                 '<button type="button" class="cart-nota__btn" data-nota-abrir' + (nota ? " hidden" : "") + ">✏️ Nota (ej. sin cebolla)</button>" +
-                '<button type="button" class="cart-nota__btn" data-tarj-abrir' + (tarj ? " hidden" : "") + ">💌 Tarjeta con mensaje</button>" +
+                (maxDed ? '<button type="button" class="cart-nota__btn" data-tarj-abrir' + (tarj ? " hidden" : "") + ">💌 Mensaje en vaso o tarjeta</button>" : "") +
               "</div>" +
               '<label class="cart-nota__campo"' + (nota ? "" : " hidden") + ">" +
                 '<span>✏️ Nota para ' + esc(g.rest.nombre) + "</span>" +
                 '<input class="field__input" data-nota="' + esc(kNota) + '" maxlength="120" value="' + esc(nota) + '" placeholder="Ej: sin cebolla, la carne bien asada, salsa aparte" enterkeyhint="done" />' +
               "</label>" +
-              // Tarjeta con mensaje personalizado (para regalos, cumpleaños…)
-              '<div class="cart-tarj"' + (tarj ? "" : " hidden") + ">" +
-                '<span class="cart-tarj__tit">💌 Tarjeta con mensaje <button type="button" class="btn-link cart-tarj__quitar" data-tarj-quitar="' + esc(kNota) + '">Quitar</button></span>' +
-                '<div class="cart-tarj__fila">' +
-                  '<input class="field__input" data-tarj="' + esc(kNota) + '" data-campo-t="para" maxlength="40" value="' + esc(tarj ? tarj.para : "") + '" placeholder="Para (ej. Mamá)" />' +
-                  '<input class="field__input" data-tarj="' + esc(kNota) + '" data-campo-t="de" maxlength="40" value="' + esc(tarj ? tarj.de : "") + '" placeholder="De (ej. Juan)" />' +
-                "</div>" +
-                '<textarea class="field__textarea" data-tarj="' + esc(kNota) + '" data-campo-t="msg" maxlength="250" rows="3" placeholder="Escribe el mensaje que irá en la tarjeta ❤️">' + esc(tarj ? tarj.msg : "") + "</textarea>" +
-                '<small class="muted cart-tarj__n">' + (tarj ? tarj.msg.length : 0) + "/250</small>" +
-              "</div>" +
+              // Mensaje en vaso o tarjeta (solo si el negocio lo activó en este producto)
+              (maxDed ? tarjetasHTML(kNota, qty, maxDed, tarj) : "") +
             "</div>" +
           "</div>";
       }
@@ -1660,7 +1698,7 @@
           cantidad: x.qty,
           subtotal: x.item.p * x.qty,
           nota: notaDe(cartKey(g.rest.id, x.item.id)) || undefined,
-          tarjeta: tarjetaDe(cartKey(g.rest.id, x.item.id)) || undefined,
+          tarjeta: (function (l) { return l.length ? l : undefined; })(tarjetasDe(cartKey(g.rest.id, x.item.id))),
         });
       });
     });
@@ -1720,13 +1758,12 @@
           (item.p > 0 ? money(item.p * qty) : "precio a confirmar"));
         var notaLinea = notaDe(cartKey(g.rest.id, item.id));
         if (notaLinea) lines.push("   > Nota: " + notaLinea);
-        var tarjLinea = tarjetaDe(cartKey(g.rest.id, item.id));
-        if (tarjLinea) {
-          lines.push("   > TARJETA CON MENSAJE:");
-          if (tarjLinea.para) lines.push("     Para: " + tarjLinea.para);
-          if (tarjLinea.de) lines.push("     De: " + tarjLinea.de);
-          lines.push("     \"" + tarjLinea.msg + "\"");
-        }
+        tarjetasDe(cartKey(g.rest.id, item.id)).forEach(function (t) {
+          lines.push("   > MENSAJE EN VASO O TARJETA" + (t.u ? " (#" + t.u + ")" : "") + ":");
+          if (t.para) lines.push("     Para: " + t.para);
+          if (t.de) lines.push("     De: " + t.de);
+          lines.push("     \"" + t.msg + "\"");
+        });
       }
       lines.push("Subtotal: " + money(g.subtotal));
       lines.push("");
@@ -1955,7 +1992,7 @@
     if (ok) ok.textContent = " ✓";
   });
 
-  // Tarjeta con mensaje: abrir, escribir, quitar
+  // Mensaje en vaso o tarjeta: abrir, escribir, quitar
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest("[data-tarj-abrir]");
     if (a) {
@@ -1963,7 +2000,7 @@
       a.hidden = true;
       var t = box.querySelector(".cart-tarj");
       t.hidden = false;
-      var m = t.querySelector('[data-campo-t="para"]');
+      var m = t.querySelector('[data-campo-t="msg"]');
       if (m) m.focus();
       return;
     }
@@ -1981,11 +2018,13 @@
     var t = e.target;
     if (!t || !t.hasAttribute || !t.hasAttribute("data-tarj")) return;
     var k = t.getAttribute("data-tarj");
-    var o = tarjetasCart[k] || (tarjetasCart[k] = {});
+    var i = Number(t.getAttribute("data-tarj-i")) || 0;
+    var lista = Array.isArray(tarjetasCart[k]) ? tarjetasCart[k] : (tarjetasCart[k] = []);
+    var o = lista[i] || (lista[i] = {});
     o[t.getAttribute("data-campo-t")] = t.value;
     if (t.getAttribute("data-campo-t") === "msg") {
       var n = t.parentNode.querySelector(".cart-tarj__n");
-      if (n) n.textContent = t.value.length + "/250";
+      if (n) n.textContent = t.value.length + "/" + n.getAttribute("data-max");
     }
     guardarTarjetas();
   });
@@ -2563,7 +2602,9 @@
           items.map(function (x) {
             return "<li>" + esc(x.cantidad) + " × " + esc(x.plato) + ' <span class="muted">· ' + esc(x.restaurante) + "</span>" +
               (x.nota ? '<br><span class="muted">✏️ ' + esc(x.nota) + "</span>" : "") +
-              (x.tarjeta ? '<br><span class="muted">💌 Tarjeta' + (x.tarjeta.para ? " para " + esc(x.tarjeta.para) : "") + ": “" + esc(x.tarjeta.msg) + "”</span>" : "") + "</li>";
+              (Array.isArray(x.tarjeta) ? x.tarjeta : x.tarjeta ? [x.tarjeta] : []).map(function (t) {
+                return t && t.msg ? '<br><span class="muted">💌 Mensaje' + (t.u ? " #" + esc(t.u) : "") + (t.para ? " para " + esc(t.para) : "") + ": “" + esc(t.msg) + "”</span>" : "";
+              }).join("") + "</li>";
           }).join("") + "</ul>" +
           (p.total ? '<p class="track-total">Productos: <strong>' + esc(money(p.total)) + "</strong></p>" : "") +
           "</details>" : "") +

@@ -632,3 +632,5 @@ code {
 .editor-section__head { flex-wrap: wrap; }
 .editor-section__head .field__input { flex: 1 1 160px; }
 .pedido-nota--tarjeta { border-left-color: #e879a6; background: color-mix(in srgb, #e879a6 12%, transparent); }
+.plato-ded__max { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 600; margin: 4px 0 6px; }
+.plato-ded__max .field__input { width: 90px; }

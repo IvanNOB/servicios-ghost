@@ -1005,6 +1005,7 @@
           (it.foto ? '<button type="button" class="btn-danger btn-sm" data-plato-foto-quitar="' + si + "-" + pi + '">Quitar</button>' : "") +
         "</div>" +
         platoMensajeHTML(it, si + "-" + pi) +
+        platoDedicatoriaHTML(it) +
         platoOpcionesHTML(it, si + "-" + pi) +
       "</div>"
     );
@@ -1026,6 +1027,24 @@
         '<p class="muted plato-opc__ayuda">Sale en la carta junto al producto. Para quitarlo un tiempo sin borrarlo, desmarca “Mostrarlo a los clientes”.</p>' +
       "</details>";
   }
+  // Mensaje en vaso o tarjeta: el negocio decide en qué productos el cliente
+  // puede escribir un mensaje (bebidas, tortas…) y cuántas letras caben.
+  var DED_MAX_DEF = 100, DED_MAX_TOPE = 500;
+  function platoDedicatoriaHTML(it) {
+    var on = !!(it.ded && it.ded.max > 0);
+    var max = on ? it.ded.max : DED_MAX_DEF;
+    return '<details class="plato-opc plato-msg"' + (on ? " open" : "") + ">" +
+        "<summary>💌 Mensaje en vaso o tarjeta <span class=\"muted\">(opcional)</span>" +
+          (on ? ' · <span class="plato-msg__estado plato-msg__estado--on">Activo · ' + max + " letras</span>" : "") + "</summary>" +
+        '<label class="plato-msg__on"><input type="checkbox" data-plato-ded-on' + (on ? " checked" : "") + " /> El cliente puede escribir un mensaje en este producto</label>" +
+        '<label class="plato-ded__max">Máximo de letras ' +
+          '<input class="field__input" type="number" inputmode="numeric" min="5" max="' + DED_MAX_TOPE + '" step="1" data-plato-ded-max value="' + max + '" /></label>' +
+        '<p class="muted plato-opc__ayuda">Actívalo solo donde se pueda escribir (bebidas, tortas, regalos…). ' +
+          "Pon las letras que caben: un vaso pequeño quizás 30, una tarjeta 150. " +
+          "Si el producto tiene varios tamaños con espacio distinto, usa el del más pequeño.</p>" +
+      "</details>";
+  }
+
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-msg-listo]");
     if (!b) return;
@@ -1237,6 +1256,7 @@
         if (p && p.foto && !it.foto) it.foto = p.foto;
         if (p && p.agotado) it.agotado = true;
         if (p && p.msg && !it.msg) it.msg = p.msg;
+        if (p && p.ded && !it.ded) it.ded = p.ded;
       });
     });
     conservarAdiciones(r.carta, nueva);
@@ -1332,6 +1352,12 @@
         if (msgEl && msgEl.value.trim()) {
           var msgOn = pEl.querySelector("[data-plato-msg-on]");
           plato.msg = { texto: msgEl.value.trim().slice(0, 60), mostrar: msgOn ? msgOn.checked : true };
+        }
+        var dedOn = pEl.querySelector("[data-plato-ded-on]");
+        if (dedOn && dedOn.checked) {
+          var dedMax = pEl.querySelector("[data-plato-ded-max]");
+          var nMax = Math.round(Number(dedMax && dedMax.value) || DED_MAX_DEF);
+          plato.ded = { max: Math.min(DED_MAX_TOPE, Math.max(5, nMax)) };
         }
         // Opciones del plato (salsa, tamaño…). Antes se perdían al guardar.
         var gruposOpc = leerOpcionesPlato(pEl);
@@ -2451,9 +2477,11 @@
       lineas += '<li>' + esc(it.cantidad) + " × " + esc(it.plato) +
         ' <span class="muted">(' + esc(it.restaurante) + ")</span> — " + esc(money(it.subtotal)) +
         (it.nota ? '<div class="pedido-nota">✏️ <strong>Nota del cliente:</strong> ' + esc(it.nota) + "</div>" : "") +
-        (it.tarjeta && it.tarjeta.msg ? '<div class="pedido-nota pedido-nota--tarjeta">💌 <strong>Tarjeta con mensaje</strong>' +
-          (it.tarjeta.para ? "<br>Para: " + esc(it.tarjeta.para) : "") + (it.tarjeta.de ? "<br>De: " + esc(it.tarjeta.de) : "") +
-          "<br>“" + esc(it.tarjeta.msg) + "”</div>" : "") + "</li>";
+        (Array.isArray(it.tarjeta) ? it.tarjeta : it.tarjeta ? [it.tarjeta] : []).map(function (t) {
+          return t && t.msg ? '<div class="pedido-nota pedido-nota--tarjeta">💌 <strong>Mensaje en vaso o tarjeta' + (t.u ? " #" + esc(t.u) : "") + "</strong>" +
+            (t.para ? "<br>Para: " + esc(t.para) : "") + (t.de ? "<br>De: " + esc(t.de) : "") +
+            "<br>“" + esc(t.msg) + "”</div>" : "";
+        }).join("") + "</li>";
     }
 
     // Botones de cambio de estado
