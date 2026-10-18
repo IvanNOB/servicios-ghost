@@ -2523,6 +2523,17 @@
       isFinite(u.lat) && isFinite(u.lng) && Math.abs(u.lat) <= 90 && Math.abs(u.lng) <= 180);
   }
 
+  // Pedido de regalo: datos de quien recibe, aparte de los de quien compra.
+  function regaloHTML(c) {
+    var d = c && c.modo === "regalo" ? c.destinatario : null;
+    if (!d) return "";
+    return '<div class="pedido-regalo">🎁 <strong>Es un regalo · entregar a:</strong> ' + esc(d.nombre || "—") + " · 📞 " +
+      (d.telefono ? '<a href="https://wa.me/' + esc(telWa(d.telefono)) + '" target="_blank" rel="noopener">' + esc(d.telefono) + "</a>" : "—") +
+      (d.referencia ? "<br>📍 " + esc(d.referencia) : "") +
+      (d.mensaje ? "<br>💌 “" + esc(d.mensaje) + "”" : "") +
+      "</div>";
+  }
+
   function pedidoHTML(p) {
     var cliente = p.cliente || {};
     var items = p.items || [];
@@ -2564,7 +2575,9 @@
             ? " · Domicilio: <strong>" + esc(cliente.domicilio > 0 ? money(cliente.domicilio) : "gratis") + "</strong>" +
               ' · <span class="pedido__pagar">Total a cobrar: ' + esc(money((p.total || 0) + cliente.domicilio)) + "</span>"
             : ' <span class="muted">(domicilio por confirmar)</span>') + "</div>" +
+        regaloHTML(cliente) +
         '<div class="pedido__cliente">' +
+          (cliente.modo === "regalo" ? '<strong class="muted">Quien compra:</strong> ' : "") +
           "👤 " + esc(cliente.nombre || "—") + " · 📞 " +
           (cliente.telefono
             ? '<a href="https://wa.me/' + esc(telWa(cliente.telefono)) + '" target="_blank" rel="noopener">' + esc(cliente.telefono) + "</a>"
@@ -2790,7 +2803,7 @@
   function descargarCsv() {
     if (!ventasPedidos.length) { toast("No hay pedidos en este periodo", true); return; }
     var cab = ["fecha", "codigo", "estado", "cliente", "telefono", "barrio", "direccion", "pago",
-      "restaurante", "plato", "cantidad", "precio_unitario", "subtotal", "total_productos", "domicilio", "ubicacion"];
+      "restaurante", "plato", "cantidad", "precio_unitario", "subtotal", "total_productos", "domicilio", "ubicacion", "tipo", "recibe", "telefono_recibe", "referencia"];
     function celda(x) {
       x = x == null ? "" : String(x);
       // Evita que Excel ejecute como fórmula lo que escribió un cliente (=, +, -, @).
@@ -2805,7 +2818,10 @@
           p.codigo, p.estado, c.nombre, c.telefono, c.barrio, c.direccion, c.pago,
           it.restaurante, it.plato, it.cantidad, it.precio_unit, it.subtotal, p.total,
           typeof c.domicilio === "number" ? c.domicilio : "",
-          ubicacionValida(c.ubicacion) ? "https://maps.google.com/?q=" + c.ubicacion.lat + "," + c.ubicacion.lng : ""].map(celda).join(";"));
+          ubicacionValida(c.ubicacion) ? "https://maps.google.com/?q=" + c.ubicacion.lat + "," + c.ubicacion.lng : "",
+          c.modo === "regalo" ? "regalo" : "personal",
+          c.destinatario ? c.destinatario.nombre : "", c.destinatario ? c.destinatario.telefono : "",
+          c.destinatario ? c.destinatario.referencia : ""].map(celda).join(";"));
       });
     });
     var blob = new Blob(["\ufeff" + filas.join("\n")], { type: "text/csv;charset=utf-8" });

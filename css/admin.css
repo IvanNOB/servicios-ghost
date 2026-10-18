@@ -693,3 +693,6 @@ code {
 .vit-fechas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 14px; }
 .vit-fh { display: flex; gap: 6px; }
 .vit-fh .field__input { flex: 1 1 auto; min-width: 0; }
+
+.pedido-regalo { margin: 8px 0; padding: 10px 12px; border-radius: 10px; font-size: 0.9rem;
+  border-left: 3px solid #e879a6; background: color-mix(in srgb, #e879a6 12%, transparent); }

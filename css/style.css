@@ -1847,3 +1847,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .ubi__ayuda { font-size: 0.74rem; }
 .ubi__btn .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: ubi-gira .7s linear infinite; }
 @keyframes ubi-gira { to { transform: rotate(360deg); } }
+
+/* Consumo personal / Es un regalo */
+.modo .pay__option { flex: 1 1 0; justify-content: center; }
+.regalo-box { display: grid; gap: 14px; padding: 14px; border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 55%, transparent);
+  background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.regalo-box[hidden], .modo-sec[hidden] { display: none; }
+.regalo-box .form__heading { margin: 0; }
+.modo-sec { display: grid; gap: 14px; }

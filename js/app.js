@@ -395,7 +395,7 @@
 
   // Vacía el carrito por completo (tras enviar un pedido).
   function vaciarCarrito() {
-    ubicacion = null; _ubiEstado = "";
+    ubicacion = null; _ubiEstado = ""; modoEntrega = "personal";
     cart = {};
     notasCart = {};
     tarjetasCart = {};
@@ -1506,6 +1506,9 @@
       "</div>";
   }
 
+  // "personal" (el cliente recibe) o "regalo" (lo recibe otra persona).
+  var modoEntrega = "personal";
+
   /* ---------------- Ubicación del cliente (opcional) ---------------- */
   // El cliente puede mandar su ubicación GPS con el pedido. Solo se guarda en
   // memoria mientras arma este pedido (no en el celular) y vence a los 30 min.
@@ -1579,12 +1582,20 @@
     function v(k) { return (data.get(k) || "").toString().trim(); }
     var barrio = v("barrio");
     if (barrio === BARRIO_OTRO) barrio = v("barrio_otro");
+    var regalo = v("modo") === "regalo";
+    if (regalo) barrio = "";  // a quien recibe no se le pide barrio: el domicilio se confirma
     var tarifa = barrio ? tarifaBarrio(barrio) : null;
     return {
-      nombre: v("nombre"), telefono: v("telefono"), direccion: v("direccion"), barrio: barrio,
+      modo: regalo ? "regalo" : "personal",
+      nombre: v("nombre"), telefono: v("telefono"),
+      direccion: regalo ? "" : v("direccion"), barrio: barrio,
       pago: v("pago") || "Efectivo", notas: v("notas"),
       domicilio: tarifa, // número, o null si se confirma por WhatsApp
-      ubicacion: ubicacionVigente(),
+      ubicacion: regalo ? null : ubicacionVigente(),
+      destinatario: regalo ? {
+        nombre: v("r_nombre"), telefono: v("r_telefono"),
+        referencia: v("r_referencia"), mensaje: v("r_mensaje"),
+      } : null,
     };
   }
 
@@ -1690,22 +1701,55 @@
       (hayPorConfirmar()
         ? '<p class="cart-note">Algunos productos tienen precio a confirmar: te lo decimos por WhatsApp.</p>' : "") +
       '<button type="button" class="btn-link cart-vaciar" data-vaciar-pedido>🗑️ Vaciar todo el pedido</button>' +
-      '<h3 class="form__heading">Tus datos de entrega</h3>' +
-      (c.nombre ? '<p class="form__hint form__hint--ok">✓ Usamos tus datos del último pedido. Revísalos.</p>' : "") +
       '<form class="form" id="pedidoForm" novalidate>' +
+        // ¿Para quién es? (antes de los datos de entrega)
         '<div class="field">' +
-          '<label class="field__label" for="fNombre">Nombre *</label>' +
-          '<input class="field__input" id="fNombre" name="nombre" type="text" placeholder="¿A nombre de quién?" autocomplete="name" required value="' + esc(c.nombre || "") + '" />' +
+          '<span class="field__label">¿Para quién es el pedido?</span>' +
+          '<div class="pay modo">' +
+            '<label class="pay__option"><input type="radio" name="modo" value="personal"' + (modoEntrega === "regalo" ? "" : " checked") + " /> 🙋 Consumo personal</label>" +
+            '<label class="pay__option"><input type="radio" name="modo" value="regalo"' + (modoEntrega === "regalo" ? " checked" : "") + " /> 🎁 Es un regalo</label>" +
+          "</div>" +
+        "</div>" +
+        '<h3 class="form__heading" data-modo-titulo>' + (modoEntrega === "regalo" ? "Tus datos (quien compra)" : "Tus datos de entrega") + "</h3>" +
+        (c.nombre ? '<p class="form__hint form__hint--ok">✓ Usamos tus datos del último pedido. Revísalos.</p>' : "") +
+        '<div class="field">' +
+          '<label class="field__label" for="fNombre" data-modo-lbl-nombre>' + (modoEntrega === "regalo" ? "Tu nombre *" : "Nombre *") + "</label>" +
+          '<input class="field__input" id="fNombre" name="nombre" type="text" placeholder="¿A nombre de quién?" autocomplete="name" maxlength="80" required value="' + esc(c.nombre || "") + '" />' +
         "</div>" +
         '<div class="field">' +
-          '<label class="field__label" for="fTelefono">Teléfono (WhatsApp) *</label>' +
-          '<input class="field__input" id="fTelefono" name="telefono" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" autocomplete="tel" required value="' + esc(c.telefono || "") + '" />' +
+          '<label class="field__label" for="fTelefono" data-modo-lbl-tel>' + (modoEntrega === "regalo" ? "Tu teléfono (WhatsApp) *" : "Teléfono (WhatsApp) *") + "</label>" +
+          '<input class="field__input" id="fTelefono" name="telefono" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" autocomplete="tel" maxlength="20" required value="' + esc(c.telefono || "") + '" />' +
         "</div>" +
-        campoBarrioHTML(c.barrio) +
-        '<div class="field">' +
-          '<label class="field__label" for="fDireccion">Dirección de entrega (opcional)</label>' +
-          '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" value="' + esc(c.direccion || "") + '" />' +
-          ubicacionHTML() +
+        // Consumo personal: entrega al mismo cliente
+        '<div class="modo-sec" data-modo-sec="personal"' + (modoEntrega === "regalo" ? " hidden" : "") + ">" +
+          campoBarrioHTML(c.barrio) +
+          '<div class="field">' +
+            '<label class="field__label" for="fDireccion">Dirección de entrega (opcional)</label>' +
+            '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" maxlength="160" value="' + esc(c.direccion || "") + '" />' +
+            ubicacionHTML() +
+          "</div>" +
+        "</div>" +
+        // Regalo: datos de quien recibe
+        '<div class="modo-sec regalo-box" data-modo-sec="regalo"' + (modoEntrega === "regalo" ? "" : " hidden") + ">" +
+          '<h3 class="form__heading">🎁 ¿Quién recibe el regalo?</h3>' +
+          '<div class="field">' +
+            '<label class="field__label" for="fRNombre">Nombre de quien recibe *</label>' +
+            '<input class="field__input" id="fRNombre" name="r_nombre" type="text" maxlength="80" placeholder="Ej: María Gómez" autocomplete="off" />' +
+          "</div>" +
+          '<div class="field">' +
+            '<label class="field__label" for="fRTelefono">Teléfono de quien recibe *</label>' +
+            '<input class="field__input" id="fRTelefono" name="r_telefono" type="tel" inputmode="numeric" maxlength="20" placeholder="Ej: 310 987 6543" autocomplete="off" />' +
+          "</div>" +
+          '<div class="field">' +
+            '<label class="field__label" for="fRReferencia">Referencia del lugar de entrega (opcional)</label>' +
+            '<input class="field__input" id="fRReferencia" name="r_referencia" type="text" maxlength="160" placeholder="Ej: Hospital, entrada principal · Yamaha · Supergiros de la calle principal" autocomplete="off" />' +
+          "</div>" +
+          '<div class="field">' +
+            '<label class="field__label" for="fRMensaje">Mensaje de regalo (opcional)</label>' +
+            '<textarea class="field__textarea" id="fRMensaje" name="r_mensaje" maxlength="250" placeholder="Ej: ¡Feliz cumpleaños! Con cariño, Juan ❤"></textarea>' +
+            '<small class="muted">Los mensajes en vaso o tarjeta se escriben arriba, en cada producto (💌).</small>' +
+          "</div>" +
+          '<p class="form__hint">No le pedimos ubicación ni barrio a quien recibe. Tú sigues siendo el contacto del pedido por WhatsApp.</p>' +
         "</div>" +
         '<div class="field">' +
           '<span class="field__label">Forma de pago</span>' +
@@ -1740,8 +1784,27 @@
     if (!form || !btnWa || !fNombre || !fTelefono) return;
 
     function validar() {
-      // Solo nombre y teléfono son obligatorios (dirección y barrio, opcionales).
-      btnWa.disabled = !(fNombre.value.trim() && fTelefono.value.trim());
+      // Personal: solo nombre y teléfono. Regalo: además nombre y teléfono de quien recibe.
+      var ok = fNombre.value.trim() && fTelefono.value.trim();
+      if (modoEntrega === "regalo") {
+        var rn = $("#fRNombre"), rt = $("#fRTelefono");
+        ok = ok && rn && rn.value.trim() && rt && rt.value.trim();
+      }
+      btnWa.disabled = !ok;
+    }
+    function aplicarModo() {
+      var m = form.querySelector('input[name="modo"]:checked');
+      modoEntrega = m && m.value === "regalo" ? "regalo" : "personal";
+      var regalo = modoEntrega === "regalo";
+      form.querySelectorAll("[data-modo-sec]").forEach(function (el) {
+        el.hidden = el.getAttribute("data-modo-sec") !== modoEntrega;
+      });
+      var t = form.querySelector("[data-modo-titulo]");
+      if (t) t.textContent = regalo ? "Tus datos (quien compra)" : "Tus datos de entrega";
+      var ln = form.querySelector("[data-modo-lbl-nombre]");
+      if (ln) ln.textContent = regalo ? "Tu nombre *" : "Nombre *";
+      var lt = form.querySelector("[data-modo-lbl-tel]");
+      if (lt) lt.textContent = regalo ? "Tu teléfono (WhatsApp) *" : "Teléfono (WhatsApp) *";
     }
     function actualizarTotales() {
       if (fOtro && fBarrio) {
@@ -1753,7 +1816,15 @@
       if (cont) cont.innerHTML = resumenTotalesHTML(leerFormulario(form));
     }
     form.addEventListener("input", function () { validar(); actualizarTotales(); });
-    form.addEventListener("change", actualizarTotales);
+    form.addEventListener("change", function (e) {
+      if (e.target && e.target.name === "modo") {
+        aplicarModo();
+        validar();
+        if (modoEntrega === "regalo") { var rn = $("#fRNombre"); if (rn && !rn.value) rn.focus(); }
+      }
+      actualizarTotales();
+    });
+    aplicarModo();
     validar();
 
     form.addEventListener("submit", function (e) {
@@ -1814,8 +1885,10 @@
 
   // Guarda en el teléfono: datos del cliente, último pedido y su código.
   function recordarPedido(datos, codigo) {
+    var previo = leerLS(LS_CLIENTE, {});
     escribirLS(LS_CLIENTE, { nombre: datos.nombre, telefono: datos.telefono,
-      direccion: datos.direccion, barrio: datos.barrio, pago: datos.pago });
+      direccion: datos.modo === "regalo" ? previo.direccion || "" : datos.direccion,
+      barrio: datos.modo === "regalo" ? previo.barrio || "" : datos.barrio, pago: datos.pago });
     var lineas = [];
     for (var key in cart) {
       var p = parseKey(key);
@@ -1840,10 +1913,19 @@
         barrio: datos.barrio, pago: datos.pago, notas: datos.notas,
         domicilio: datos.domicilio, // null = se confirma por WhatsApp
         ubicacion: datos.ubicacion ? { lat: datos.ubicacion.lat, lng: datos.ubicacion.lng, precision: datos.ubicacion.acc } : undefined,
+        modo: datos.modo,
+        destinatario: datos.destinatario || undefined,
       },
       items: lineasDelCarrito(),
       total: totalPesos(),
     }).catch(function (e) { console.warn("No se pudo guardar el pedido en la nube:", e && e.message); });
+  }
+
+  // ¿Algún producto de estos grupos lleva mensaje en vaso o tarjeta?
+  function hayTarjetas(groups) {
+    return (groups || []).some(function (g) {
+      return g.items.some(function (x) { return tarjetasDe(cartKey(g.rest.id, x.item.id)).length > 0; });
+    });
   }
 
   function construirMensaje(datos, codigo, soloGrupos) {
@@ -1892,14 +1974,34 @@
       lines.push("(el domicilio se confirma segun el barrio)");
     }
     lines.push("");
-    lines.push("DATOS DE ENTREGA");
-    lines.push("Nombre: " + datos.nombre);
-    lines.push("Telefono: " + datos.telefono);
-    if (datos.barrio) lines.push("Barrio: " + datos.barrio);
-    if (datos.direccion) lines.push("Direccion: " + datos.direccion);
-    if (datos.ubicacion) lines.push("Ubicacion: " + enlaceMapa(datos.ubicacion) + " (+/- " + datos.ubicacion.acc + " m)");
-    lines.push("Pago: " + datos.pago);
-    if (datos.notas) lines.push("Nota: " + datos.notas);
+    if (datos.modo === "regalo" && datos.destinatario) {
+      var d = datos.destinatario;
+      lines.push("*** ES UN REGALO ***");
+      lines.push("");
+      lines.push("ENTREGAR A (quien recibe)");
+      lines.push("Nombre: " + d.nombre);
+      lines.push("Telefono: " + d.telefono);
+      if (d.referencia) lines.push("Referencia del lugar: " + d.referencia);
+      if (d.mensaje) lines.push("Mensaje de regalo: \"" + d.mensaje + "\"");
+      if (hayTarjetas(groups)) lines.push("(los mensajes en vaso o tarjeta van arriba, en cada producto)");
+      lines.push("");
+      lines.push("QUIEN COMPRA (contacto y pago)");
+      lines.push("Nombre: " + datos.nombre);
+      lines.push("Telefono: " + datos.telefono);
+      lines.push("Pago: " + datos.pago);
+      if (datos.notas) lines.push("Nota: " + datos.notas);
+    } else {
+      lines.push("CONSUMO PERSONAL");
+      lines.push("");
+      lines.push("DATOS DE ENTREGA");
+      lines.push("Nombre: " + datos.nombre);
+      lines.push("Telefono: " + datos.telefono);
+      if (datos.barrio) lines.push("Barrio: " + datos.barrio);
+      if (datos.direccion) lines.push("Direccion: " + datos.direccion);
+      if (datos.ubicacion) lines.push("Ubicacion: " + enlaceMapa(datos.ubicacion) + " (+/- " + datos.ubicacion.acc + " m)");
+      lines.push("Pago: " + datos.pago);
+      if (datos.notas) lines.push("Nota: " + datos.notas);
+    }
     lines.push("");
     lines.push("Sigue tu pedido: " + urlSeguimiento(codigo));
 
