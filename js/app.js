@@ -1749,7 +1749,7 @@
             '<textarea class="field__textarea" id="fRMensaje" name="r_mensaje" maxlength="250" placeholder="Ej: ¡Feliz cumpleaños! Con cariño, Juan ❤"></textarea>' +
             '<small class="muted">Los mensajes en vaso o tarjeta se escriben arriba, en cada producto (💌).</small>' +
           "</div>" +
-          '<p class="form__hint">No le pedimos ubicación ni barrio a quien recibe. Tú sigues siendo el contacto del pedido por WhatsApp.</p>' +
+          '<p class="form__hint">📲 Le escribiremos por WhatsApp a quien recibe para confirmar la dirección de entrega. No tienes que saberla tú. El pago y las dudas del pedido se hablan contigo.</p>' +
         "</div>" +
         '<div class="field">' +
           '<span class="field__label">Forma de pago</span>' +
@@ -1982,6 +1982,7 @@
       lines.push("Nombre: " + d.nombre);
       lines.push("Telefono: " + d.telefono);
       if (d.referencia) lines.push("Referencia del lugar: " + d.referencia);
+      lines.push("(escribirle a quien recibe para confirmar la direccion)");
       if (d.mensaje) lines.push("Mensaje de regalo: \"" + d.mensaje + "\"");
       if (hayTarjetas(groups)) lines.push("(los mensajes en vaso o tarjeta van arriba, en cada producto)");
       lines.push("");
