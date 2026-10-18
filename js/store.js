@@ -442,6 +442,25 @@
     return pub.data.publicUrl;
   }
 
+  // Imagen que sale al compartir el enlace de la tienda (WhatsApp, Facebook…).
+  // Siempre en la misma ruta: index.html apunta a ella y el panel la reemplaza.
+  var RUTA_PORTADA_ENLACE = "portada/og.jpg";
+  function urlPortadaEnlace() {
+    return typeof SUPABASE_URL === "string" && SUPABASE_URL
+      ? SUPABASE_URL + "/storage/v1/object/public/" + SUPABASE_BUCKET + "/" + RUTA_PORTADA_ENLACE : "";
+  }
+  async function subirPortadaEnlace(blob) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var up = await sb.storage.from(SUPABASE_BUCKET).upload(RUTA_PORTADA_ENLACE, blob, {
+      cacheControl: "300",   // 5 min: así el cambio se ve pronto
+      upsert: true,
+      contentType: "image/jpeg",
+    });
+    if (up.error) throw up.error;
+    return urlPortadaEnlace();
+  }
+
   /* ------------------------------ Auth ----------------------------- */
 
   async function sesionActual() {
@@ -528,6 +547,8 @@
     actualizarEstadoPedido: actualizarEstadoPedido,
     estadoPedido: estadoPedido,
     subirFoto: subirFoto,
+    urlPortadaEnlace: urlPortadaEnlace,
+    subirPortadaEnlace: subirPortadaEnlace,
     sesionActual: sesionActual,
     entrar: entrar,
     salir: salir,

@@ -2849,6 +2849,7 @@
       vitrina: vitrinaLocal(a.vitrina),
     };
     renderAjustes();
+    asegurarPortadaEnlace();
     cargarAliados();
   }
 
@@ -2863,6 +2864,7 @@
     var avisoSql = sinSql ? '<p class="aviso-sql aviso-sql--inline">Para guardar esto, ejecuta <code>supabase-mejoras.sql</code> en Supabase (una sola vez).</p>' : "";
     var a = ajLocal;
     $("#contAjustes").innerHTML =
+      portadaEnlaceHTML() +
       vitrinaHTML(a.vitrina, avisoSql) +
       // Domicilios
       '<section class="aj-card">' +
@@ -2968,6 +2970,74 @@
       v.hastaF = $("#ajVitHastaF").value; v.hastaH = $("#ajVitHastaH").value;
       v.mensaje = $("#ajVitMsg").value.trim();
     }
+  }
+
+  /* ------------- Portada del enlace (vista previa al compartir) ------------- */
+  function portadaEnlaceHTML() {
+    var url = window.Store.urlPortadaEnlace ? window.Store.urlPortadaEnlace() : "";
+    return '<section class="aj-card" id="ajPortada">' +
+      "<h3>🖼️ Portada del enlace</h3>" +
+      '<p class="muted">Es la imagen que sale cuando compartes el enlace de la tienda por WhatsApp, Facebook o Instagram. ' +
+        "Se recorta sola a 1200 × 630 (horizontal). Pon lo importante en el centro.</p>" +
+      '<figure class="og-prev"><img id="ajPortadaImg" src="' + esc(url ? url + "?t=" + Date.now() : "assets/og.jpg") + '" alt="Portada actual del enlace" ' +
+        'onerror="this.onerror=null;this.src=\'assets/og.jpg\';" />' +
+        '<figcaption class="og-prev__txt"><strong>Servicios Ghost · Domicilios en Cartagena del Chairá</strong>' +
+        "<span>ivannob.github.io</span></figcaption></figure>" +
+      '<div class="inline-actions">' +
+        '<label class="btn-primary btn-sm" style="cursor:pointer">📷 Cambiar portada<input type="file" accept="image/*" hidden id="ajPortadaFile" /></label>' +
+        '<button type="button" class="btn-copy btn-sm" data-aj="portada-original">↩ Volver a la original</button>' +
+      "</div>" +
+      '<p class="muted plato-opc__ayuda">WhatsApp guarda la vista previa un tiempo: los enlaces que ya compartiste pueden seguir mostrando la anterior. ' +
+        "Para ver la nueva ya, comparte <code>ivannob.github.io/servicios-ghost/?v=2</code> (cambia el número cada vez).</p>" +
+    "</section>";
+  }
+  // Recorta y ajusta cualquier imagen a 1200 × 630 JPEG (lo que piden WhatsApp y Facebook).
+  function imagenParaEnlace(src) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var W = 1200, H = 630, c = document.createElement("canvas");
+        c.width = W; c.height = H;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#0b0b0b"; ctx.fillRect(0, 0, W, H);
+        var e = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+        var w = img.naturalWidth * e, h = img.naturalHeight * e;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+        c.toBlob(function (b) { b ? resolve(b) : reject(new Error("No se pudo preparar la imagen")); }, "image/jpeg", 0.85);
+      };
+      img.onerror = function () { reject(new Error("Ese archivo no es una imagen que el navegador pueda abrir (prueba con JPG o PNG).")); };
+      img.src = src;
+    });
+  }
+  async function cambiarPortadaEnlace(src, okMsg) {
+    var img = $("#ajPortadaImg");
+    try {
+      var blob = await imagenParaEnlace(src);
+      var url = await window.Store.subirPortadaEnlace(blob);
+      if (img) img.src = url + "?t=" + Date.now();
+      toast(okMsg);
+    } catch (ex) {
+      toast(ex && ex.message ? ex.message : "No se pudo cambiar la portada", true);
+    }
+  }
+  document.addEventListener("change", function (e) {
+    var f = e.target;
+    if (!f || f.id !== "ajPortadaFile" || !f.files || !f.files[0]) return;
+    var u = URL.createObjectURL(f.files[0]);
+    toast("Subiendo portada…");
+    cambiarPortadaEnlace(u, "Portada del enlace cambiada ✓").then(function () { URL.revokeObjectURL(u); f.value = ""; });
+  });
+  // Si la portada aún no está en la nube (primera vez), se sube la original para que el enlace nunca quede sin imagen.
+  async function asegurarPortadaEnlace() {
+    var url = window.Store.urlPortadaEnlace && window.Store.urlPortadaEnlace();
+    if (!url || !window.Store.subirPortadaEnlace) return;
+    try {
+      var r = await fetch(url, { method: "HEAD", cache: "no-store" });
+      if (r.ok) return;
+      if (r.status !== 400 && r.status !== 404) return;
+      await cambiarPortadaEnlace("assets/og.jpg", "Portada del enlace lista ✓");
+    } catch (e) { /* sin conexión: se intenta la próxima vez */ }
   }
 
   /* ------------------ Modo vitrina (lanzamiento) ------------------ */
@@ -3137,6 +3207,7 @@
         await guardarAj("promos", promos, el, "Promociones guardadas ✓");
         return;
       }
+      case "portada-original": return cambiarPortadaEnlace("assets/og.jpg", "Se volvió a la portada original ✓");
       case "guardar-vitrina": return guardarVitrina(el, false);
       case "apagar-vitrina": return guardarVitrina(el, true);
       case "guardar-comision": {
