@@ -770,3 +770,11 @@ code {
 .ped-borrar { color: var(--text-2); }
 .ped-borrar:hover { color: #fca5a5; }
 .ped-acciones .ped-cancelar + .ped-borrar { margin-left: 0; }
+
+/* Estado del envío a map */
+.ped-map-slot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 16px; }
+.ped-map-slot:not(:empty) { padding-bottom: 12px; }
+.ped-map { font-size: 0.78rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+.ped-map--ok { color: #6ee7b7; background: rgba(16,185,129,.16); }
+.ped-map--error { color: #fca5a5; background: rgba(239,68,68,.16); }
+.ped-map--enviando { color: #fcd34d; background: rgba(245,158,11,.16); }

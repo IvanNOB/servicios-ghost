@@ -419,6 +419,18 @@
     return (res.data || []).length;
   }
 
+  // Integración con map (si se ejecutó supabase-map.sql). null = no disponible.
+  async function reenviarPedidoMap(id) { return rpcAdmin("reenviar_pedido_map", { p_id: id }); }
+  async function estadoEnviosMap(ids) {
+    if (!ids || !ids.length) return {};
+    try {
+      var d = await rpcAdmin("estado_envios_map", { p_ids: ids });
+      var out = {};
+      (d || []).forEach(function (x) { out[x.pedido_id] = x; });
+      return out;
+    } catch (e) { if (e && e.code === "SIN_SQL") return null; throw e; }
+  }
+
   // Seguimiento público: el cliente consulta SOLO el estado de su pedido
   // con el código (función segura en la base de datos, sin datos personales).
   // Devuelve el pedido, null si no existe, o lanza { code: "SIN_SQL" }.
@@ -557,6 +569,8 @@
     listarPedidos: listarPedidos,
     actualizarEstadoPedido: actualizarEstadoPedido,
     borrarPedidos: borrarPedidos,
+    reenviarPedidoMap: reenviarPedidoMap,
+    estadoEnviosMap: estadoEnviosMap,
     estadoPedido: estadoPedido,
     subirFoto: subirFoto,
     urlPortadaEnlace: urlPortadaEnlace,

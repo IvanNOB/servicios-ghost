@@ -2614,7 +2614,41 @@
       return;
     }
     cont.innerHTML = lista.map(function (p) { return pedidoHTML(p, pedRest); }).join("");
+    pintarEnviosMap(lista);
   }
+
+  /* ---- ¿Llegó a map? (si está conectada la integración) ---- */
+  var _mapActivo = true;
+  var MAP_TXT = { ok: "🛵 En map", error: "⚠️ No llegó a map", enviando: "⏳ Enviando a map…" };
+  async function pintarEnviosMap(lista) {
+    if (!_mapActivo || !window.Store.estadoEnviosMap) return;
+    var ids = lista.slice(0, 200).map(function (p) { return p.id; });
+    var est;
+    try { est = await window.Store.estadoEnviosMap(ids); } catch (e) { return; }
+    if (est === null) { _mapActivo = false; return; }  // falta supabase-map.sql: no se muestra nada
+    lista.forEach(function (p) {
+      var slot = document.querySelector('[data-map-slot="' + cssEsc(p.id) + '"]');
+      if (!slot) return;
+      var e = est[p.id], tipo = e ? e.estado : "";
+      slot.innerHTML = (tipo ? '<span class="ped-map ped-map--' + esc(tipo) + '">' + esc(MAP_TXT[tipo] || tipo) + "</span>" : "") +
+        (tipo !== "ok" && p.estado !== "cancelado"
+          ? '<button type="button" class="btn-copy btn-sm" data-map-enviar="' + esc(p.id) + '">' + (tipo ? "Reenviar a map" : "🛵 Enviar a map") + "</button>" : "");
+    });
+  }
+  function cssEsc(v) { return String(v).replace(/["\\]/g, "\\$&"); }
+  document.addEventListener("click", async function (e) {
+    var b = e.target.closest && e.target.closest("[data-map-enviar]");
+    if (!b) return;
+    b.disabled = true; b.textContent = "Enviando…";
+    try {
+      var ok = await window.Store.reenviarPedidoMap(b.getAttribute("data-map-enviar"));
+      toast(ok ? "Enviado a map ✓ (revisa en unos segundos)" : "La integración con map está apagada", !ok);
+      setTimeout(function () { pintarEnviosMap(pedidosVisibles()); }, 6000);
+    } catch (ex) {
+      toast("No se pudo enviar: " + (ex && ex.message ? ex.message : "error"), true);
+      b.disabled = false; b.textContent = "Reenviar a map";
+    }
+  });
 
   function fechaCorta(iso) {
     try {
@@ -2729,6 +2763,7 @@
           '<span class="pedido__fecha">' + (hace ? "<strong>" + esc(hace) + "</strong> · " : "") + esc(fechaCorta(p.creado_en)) + "</span>" +
         "</header>" +
         progreso +
+        '<div class="ped-map-slot" data-map-slot="' + esc(p.id) + '"></div>' +
         (p.incidencia ? '<p class="ped-incidencia">⚠️ ' + esc(p.incidencia) + "</p>" : "") +
         '<div class="ped-cuerpo">' +
           '<section class="ped-col"><h4>🛍️ Productos</h4><ul class="ped-items">' + lineas + "</ul>" + totales + "</section>" +
