@@ -210,6 +210,7 @@
         esc(nuevas.map(function (r) { return r.nombre; }).join(", ")) +
         '. La tienda muestra la copia guardada en el panel. Toca <strong>“Revisar carta nueva”</strong> para ver qué cambia en cada una; si la diferencia son correcciones que hiciste tú en el panel, toca Cancelar y no pasa nada.</div>';
     }
+    if (esAliado()) { elListaRest.innerHTML = html; return; }
     for (var i = 0; i < restaurantes.length; i++) {
       var r = restaurantes[i];
       var cover = estiloPortada(r);
@@ -251,11 +252,13 @@
     if (hechos === pasos.length) {
       return '<p class="bienvenida__ok" style="grid-column:1/-1">🎉 ¡Todo listo! ' + esc(r.nombre) + ' está publicado. Usa las herramientas de arriba en tu día a día.</p>';
     }
-    return '<section class="bienvenida" style="grid-column:1/-1">' +
-        "<h3>👋 ¡Bienvenidos, " + esc(r.nombre) + "!</h3>" +
-        '<div class="progreso" aria-label="Avance"><span style="width:' + Math.round(hechos / pasos.length * 100) + '%"></span></div>' +
-        '<p class="muted" style="margin:4px 0 0;font-size:.85rem">' + hechos + " de " + pasos.length + " pasos listos</p>" +
-        '<p class="muted">Este es el panel de tu negocio. Aquí organizas tu carta como quieras; los cambios se ven en la tienda al pulsar <strong>Guardar cambios</strong>.</p>' +
+    return '<details class="bienvenida" style="grid-column:1/-1"' + (hechos >= 3 ? "" : " open") + ">" +
+        '<summary class="bienvenida__head">' +
+          '<strong>👋 Primeros pasos</strong>' +
+          '<span class="muted">' + hechos + " de " + pasos.length + " listos</span>" +
+          '<div class="progreso" aria-label="Avance"><span style="width:' + Math.round(hechos / pasos.length * 100) + '%"></span></div>' +
+        "</summary>" +
+        '<p class="muted" style="margin:2px 0 0;font-size:.85rem">Completa estos pasos para vender mejor. Los cambios se ven en la tienda al pulsar <strong>Guardar cambios</strong>.</p>' +
         '<ol class="bienvenida__pasos">' + pasos.map(function (p) {
           return '<li class="' + (p[0] ? "hecho" : "") + '">' + (p[0] ? "✅ " : "⬜ ") + esc(p[1]) + "</li>";
         }).join("") + "</ol>" +
@@ -271,7 +274,7 @@
             "<li>Debajo verás <strong>👀 El cliente ve</strong> con el precio final de cada opción. Puedes agregar tamaños y chantilly en el mismo producto.</li>" +
           "</ol>" +
         "</details>" +
-      "</section>";
+      "</details>";
   }
 
   function contarPlatos(r) {
@@ -1701,33 +1704,64 @@
     var abierto = r.abierto !== false;
     var agotados = 0;
     (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (it.agotado) agotados++; }); });
+    var platos = contarPlatos(r);
     var hoyMenu = (menuHoy(r, "desayuno") ? "🍳 " : "") + (almuerzoHoy(r) ? "🍲 " : "");
-    // Su portada, en grande, tal como sale en la carta.
+    var logo = r.logo
+      ? LogoGhost.recuadro(r, "negocio-head__logo", { mosaico: true })
+      : '<div class="negocio-head__logo negocio-head__logo--vacio" style="background:' + esc(r.color || "#3b82f6") + '">' + esc(iniciales(r.nombre)) + "</div>";
     var portada = r.logo
-      ? LogoGhost.recuadro(r, "tablero__portada-img", { sinLazy: true })
-      : '<div class="tablero__portada-img tablero__portada-img--vacia">📷 Aún no tienes foto de portada</div>';
+      ? LogoGhost.recuadro(r, "portada-caja__img", { sinLazy: true })
+      : '<div class="portada-caja__img portada-caja__img--vacia">📷 Aún no tienes foto de portada</div>';
     return '<section class="tablero" style="grid-column:1/-1">' +
-        '<div class="tablero__portada">' + portada +
-          '<div class="tablero__portada-pie"><span><strong>Tu portada</strong> · así la ven tus clientes</span>' +
-            '<button type="button" class="btn-copy btn-sm" data-editar="' + esc(r.id) + '">' + (r.logo ? "📷 Cambiar o acomodar" : "📷 Subir foto") + "</button></div>" +
-        "</div>" +
+        // 1) Quién es el negocio y las acciones principales.
+        '<header class="negocio-head">' + logo +
+          '<div class="negocio-head__info">' +
+            '<h3 class="negocio-head__nombre">' + esc(r.nombre) +
+              (r.visible === false ? ' <span class="estado-badge estado-badge--preparando">🙈 Sin publicar</span>' : "") + "</h3>" +
+            '<p class="muted negocio-head__meta">' + esc(r.cat) + " · " + platos + (platos === 1 ? " producto" : " productos") +
+              (agotados ? ' · <span class="falta-precio">' + agotados + " agotado(s)</span>" : "") + "</p>" +
+          "</div>" +
+          '<div class="negocio-head__acc">' +
+            '<button type="button" class="btn-primary" data-editar="' + esc(r.id) + '">✏️ Editar mi carta</button>' +
+            '<a class="btn-copy" href="' + esc(urlVistaPrevia(r.id)) + '" target="_blank" rel="noopener">👁️ Ver</a>' +
+          "</div>" +
+        "</header>" +
+        // 2) ¿Está recibiendo pedidos ahora?
         '<div class="tablero__estado' + (abierto ? " tablero__estado--on" : "") + '">' +
           "<div><strong>" + (abierto ? "🟢 Recibiendo pedidos" : "🔴 Cerrado temporalmente") + "</strong>" +
             "<small>" + esc(horarioHoyTexto(r)) + (r.visible === false ? " · 🙈 Aún no publicado en la tienda" : "") + "</small></div>" +
           '<button type="button" class="' + (abierto ? "btn-danger" : "btn-primary") + '" data-ali-abrir="' + esc(r.id) + '">' +
             (abierto ? "⏸️ Cerrar ahora" : "▶️ Abrir ahora") + "</button>" +
         "</div>" +
-        '<div class="tablero__grid">' +
-          tile("⚡", "Disponibilidad rápida", agotados ? agotados + " agotado(s) · toca para cambiar" : "Marca agotados y ajusta precios en segundos", "data-ali-disp", r.id, agotados > 0) +
-          tile("🔥", "Mi promoción", promoVigente(r) ? "“" + r.promo.texto + "”" + (r.promo.hasta ? " · hasta " + fechaBonita(r.promo.hasta) : "") : "Destaca una oferta en tu tarjeta", "data-ali-promo", r.id, promoVigente(r)) +
-          tile("📊", "Mis ventas", "Pedidos, ventas y lo que más se vende", "data-ali-ventas", r.id) +
-          tile("📲", "Compartir mi carta", "Enlace y código QR para redes y mesas", "data-ali-compartir", r.id) +
-          tile("🍽️", "Menú del día", hoyMenu ? hoyMenu + "publicado hoy" : "Publica tu desayuno o almuerzo de hoy", "data-tab-ir", "almuerzos", !!hoyMenu) +
-          tile("✏️", "Editar mi carta", contarPlatos(r) + " productos · fotos, horario y más", "data-editar", r.id) +
-          tileWa(r) +
+        // 3) Portada plegada: no quita espacio en el día a día.
+        '<details class="portada-caja"' + (r.logo ? "" : " open") + ">" +
+          '<summary>🖼️ Tu portada <span class="muted">· así la ven tus clientes</span></summary>' +
+          '<div class="portada-caja__body">' + portada +
+            '<button type="button" class="btn-copy btn-sm" data-editar="' + esc(r.id) + '">' + (r.logo ? "📷 Cambiar o acomodar" : "📷 Subir foto") + "</button>" +
+          "</div>" +
+        "</details>" +
+        // 4) Herramientas, agrupadas por para qué sirven.
+        '<div class="tablero__grupo">' +
+          '<h4 class="tablero__rotulo">Pedidos y clientes</h4>' +
+          '<div class="tablero__grid">' +
+            tile("📋", "Pedidos", "Mira y avanza los pedidos que llegan", "data-tab-ir", "pedidos") +
+            tileWa(r) +
+            tile("📲", "Compartir mi carta", "Enlace y código QR para redes y mesas", "data-ali-compartir", r.id) +
+            tile("📊", "Mis ventas", "Pedidos, ventas y lo que más se vende", "data-ali-ventas", r.id) +
+          "</div>" +
+        "</div>" +
+        '<div class="tablero__grupo">' +
+          '<h4 class="tablero__rotulo">Tu carta</h4>' +
+          '<div class="tablero__grid">' +
+            tile("⚡", "Disponibilidad rápida", agotados ? agotados + " agotado(s) · toca para cambiar" : "Marca agotados y ajusta precios en segundos", "data-ali-disp", r.id, agotados > 0) +
+            tile("🔥", "Mi promoción", promoVigente(r) ? "“" + r.promo.texto + "”" + (r.promo.hasta ? " · hasta " + fechaBonita(r.promo.hasta) : "") : "Destaca una oferta en tu tarjeta", "data-ali-promo", r.id, promoVigente(r)) +
+            tile("🍽️", "Menú del día", hoyMenu ? hoyMenu + "publicado hoy" : "Publica tu desayuno o almuerzo de hoy", "data-tab-ir", "almuerzos", !!hoyMenu) +
+            tile("✏️", "Editar mi carta", platos + " productos · fotos, precios y horario", "data-editar", r.id) +
+          "</div>" +
         "</div>" +
       "</section>";
   }
+
 
   /* ---- Abrir / cerrar ya ---- */
   async function alternarAbierto(id, boton) {

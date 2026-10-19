@@ -823,3 +823,46 @@ code {
 .plato-row__precio { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .plato-mas { border-top: 1px dashed var(--border); padding-top: 6px; }
 .plato-mas > summary { cursor: pointer; font-size: .85rem; color: var(--text-2); padding: 4px 0; }
+
+/* =====================================================================
+   Mi negocio: tablero ordenado (cabecera, grupos y secciones plegables)
+   ===================================================================== */
+.negocio-head {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px;
+}
+.negocio-head__logo { width: 56px; height: 56px; border-radius: 14px; overflow: hidden; flex: 0 0 auto; }
+.negocio-head__logo img { width: 100%; height: 100%; object-fit: cover; }
+.negocio-head__logo--vacio { display: grid; place-items: center; font-weight: 800; color: #fff; font-size: 1.1rem; }
+.negocio-head__info { flex: 1 1 160px; min-width: 0; }
+.negocio-head__nombre { margin: 0; font-size: 1.1rem; line-height: 1.25; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.negocio-head__meta { margin: 2px 0 0; font-size: .85rem; }
+.negocio-head__acc { display: flex; gap: 8px; flex: 0 0 auto; }
+@media (max-width: 420px) { .negocio-head__acc { width: 100%; } .negocio-head__acc > * { flex: 1 1 0; text-align: center; justify-content: center; } }
+
+.tablero__grupo { display: grid; gap: 8px; }
+.tablero__rotulo { margin: 2px 0 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); }
+
+.portada-caja { border: 1px solid var(--border); border-radius: 16px; background: var(--surface); padding: 0 14px; }
+.portada-caja > summary { cursor: pointer; padding: 12px 0; font-weight: 600; list-style: none; }
+.portada-caja > summary::-webkit-details-marker { display: none; }
+.portada-caja > summary::after { content: "›"; float: right; color: var(--text-2); font-size: 1.2rem; line-height: 1; transition: transform .2s; }
+.portada-caja[open] > summary::after { transform: rotate(90deg); }
+.portada-caja__body { padding-bottom: 12px; display: grid; gap: 8px; justify-items: start; }
+.portada-caja__img { width: 100%; max-height: 200px; aspect-ratio: 5 / 2; border-radius: 12px; border: 1px solid var(--border); background: #111; }
+.portada-caja__img--vacia { display: grid; place-items: center; color: var(--text-2); font-size: .9rem; border-style: dashed; }
+
+.bienvenida { padding: 0 16px; }
+.bienvenida__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 0; cursor: pointer; list-style: none; }
+.bienvenida__head::-webkit-details-marker { display: none; }
+.bienvenida__head::after { content: "›"; margin-left: auto; color: var(--text-2); font-size: 1.2rem; line-height: 1; transition: transform .2s; }
+.bienvenida[open] .bienvenida__head::after { transform: rotate(90deg); }
+.bienvenida__head .progreso { flex: 1 1 100%; margin-top: 4px; }
+
+/* Tablero aliado: más compacto y sin título repetido */
+body.modo-aliado #tabRestaurantes .panel__title { display: none; }
+body.modo-aliado .tablero__grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+body.modo-aliado .tile { padding: 12px; border-radius: 14px; }
+body.modo-aliado .tile__ico { font-size: 1.35rem; margin-bottom: 2px; }
+body.modo-aliado .tile strong { font-size: .92rem; }
+body.modo-aliado .tablero { gap: 12px; }
