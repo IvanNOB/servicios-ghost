@@ -778,3 +778,24 @@ code {
 .ped-map--ok { color: #6ee7b7; background: rgba(16,185,129,.16); }
 .ped-map--error { color: #fca5a5; background: rgba(239,68,68,.16); }
 .ped-map--enviando { color: #fcd34d; background: rgba(245,158,11,.16); }
+
+/* =====================================================================
+   Editor de carta por categorías
+   ===================================================================== */
+.carta-ayuda { font-size: .85rem; margin: 0 0 10px; }
+.cat-barra { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; position: sticky; top: 0; z-index: 2; background: var(--bg, #fff); }
+.cat-chip {
+  flex: 0 0 auto; border: 1px solid var(--border); background: transparent; color: inherit;
+  border-radius: 999px; padding: 8px 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.cat-chip.is-on { background: var(--primary, #3b82f6); border-color: var(--primary, #3b82f6); color: #fff; }
+.cat-chip__n { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: rgba(127,127,127,.25); font-size: .75rem; text-align: center; }
+.cat-chip--add { border-style: dashed; }
+.cat-sugeridas { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: .85rem; }
+.cat-vacia { text-align: center; padding: 14px 0; }
+.cat-add-prod { width: 100%; margin: 4px 0 10px; }
+.editor-section[hidden] { display: none; }
+.plato-row__nombre { font-weight: 600; }
+.plato-row__precio { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.plato-mas { border-top: 1px dashed var(--border); padding-top: 6px; }
+.plato-mas > summary { cursor: pointer; font-size: .85rem; color: var(--text-2); padding: 4px 0; }
