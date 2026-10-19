@@ -146,18 +146,17 @@
     aplicarRol();
     mostrar("panel");
     await recargarLista();
-    if (!esAliado()) {
-      revisarSql();
-      iniciarAvisos();
-    }
+    if (!esAliado()) revisarSql();
+    iniciarAvisos();
   }
 
   // Un aliado solo ve su restaurante y su almuerzo del día.
   function aplicarRol() {
     var aliado = esAliado();
     document.body.classList.toggle("modo-aliado", aliado);
-    document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado; });
+    document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado && el.getAttribute("data-tab") !== "pedidos"; });
     var tag = document.querySelector(".admin-header .logo__tag"); if (tag) tag.textContent = aliado ? "Mi negocio" : "Admin";
+    var tabP0 = document.querySelector("[data-tab=pedidos]"); if (tabP0) tabP0.hidden = false;
     var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR && aliado) tabR.textContent = "🏪 Mi negocio";
     var titR = document.querySelector("#tabRestaurantes .panel__title"); if (titR) titR.textContent = aliado ? "Mi negocio" : "Restaurantes";
     ["#btnNuevo", "#btnNuevoLugarAlm"].forEach(function (s) { var el = $(s); if (el) el.hidden = aliado; });
@@ -293,6 +292,7 @@
   function abrirEditor(rest) {
     editando = JSON.parse(JSON.stringify(rest));
     if (!editando.carta) editando.carta = [];
+    catActiva = 0;
     elEditorTitle.textContent = rest._esNuevo ? "Nuevo restaurante" : "Editar: " + rest.nombre;
     pintarEditor();
     elEditorSheet.hidden = false;
@@ -594,9 +594,10 @@
 
       almuerzoEditorHTML(r) +
 
-      '<h3 class="editor-section__title" style="margin:18px 0 10px">Carta</h3>' +
+      '<h3 class="editor-section__title" style="margin:18px 0 6px">Carta</h3>' +
+      '<p class="muted carta-ayuda">Organiza tus productos por <strong>categorías</strong> (Entradas, Bebidas, Postres…). Toca una categoría para ver y editar sus productos.</p>' +
+      categoriasBarraHTML(r) +
       '<div id="secciones">' + seccionesHTML + "</div>" +
-      '<button type="button" class="btn-copy" data-add-seccion style="margin-bottom:16px">+ Agregar sección</button>' +
 
       '<div class="actions">' +
         '<button type="button" class="btn-primary" id="btnGuardar">Guardar cambios</button>' +
@@ -604,6 +605,42 @@
 
     enlazarEditor();
     pintarLogoVistas();
+    mostrarCategoria(catActiva);
+  }
+
+  /* ------------------- Categorías de la carta --------------------- */
+  var catActiva = 0;
+  var CATEGORIAS_SUGERIDAS = ["🍽️ Platos fuertes", "🥗 Entradas", "🍔 Hamburguesas", "🍕 Pizzas", "🌭 Comidas rápidas", "🥤 Bebidas", "🍰 Postres", "🍟 Acompañamientos", "🍳 Desayunos"];
+  function categoriasBarraHTML(r) {
+    var chips = r.carta.map(function (sec, i) {
+      var n = (sec.items || []).filter(function (x) { return x.n; }).length;
+      return '<button type="button" class="cat-chip" data-cat-ir="' + i + '">' + esc(sec.sec || "Sin nombre") +
+        ' <span class="cat-chip__n">' + n + "</span></button>";
+    }).join("");
+    var sugeridas = CATEGORIAS_SUGERIDAS.filter(function (c) {
+      return !r.carta.some(function (s) { return (s.sec || "").toLowerCase() === c.toLowerCase(); });
+    }).slice(0, r.carta.length ? 5 : 9).map(function (c) {
+      return '<button type="button" class="btn-copy btn-sm" data-add-seccion="' + esc(c) + '">+ ' + esc(c) + "</button>";
+    }).join("");
+    return '<div class="cat-barra" id="catBarra">' + chips +
+        '<button type="button" class="cat-chip cat-chip--add" data-add-seccion="">+ Nueva categoría</button></div>' +
+      '<div class="cat-sugeridas"><span class="muted">Crear rápido:</span> ' + sugeridas + "</div>";
+  }
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (!t || !t.matches || !t.matches("[data-sec-nombre]")) return;
+    var chipEl = elEditorBody.querySelector('[data-cat-ir="' + t.getAttribute("data-sec-nombre") + '"]');
+    if (chipEl && chipEl.firstChild) chipEl.firstChild.textContent = (t.value.trim() || "Sin nombre") + " ";
+  });
+  function mostrarCategoria(i) {
+    var secs = elEditorBody.querySelectorAll("[data-seccion]");
+    if (!secs.length) return;
+    if (!(i >= 0 && i < secs.length)) i = 0;
+    catActiva = i;
+    secs.forEach(function (el, k) { el.hidden = k !== i; });
+    elEditorBody.querySelectorAll("[data-cat-ir]").forEach(function (b) {
+      b.classList.toggle("is-on", Number(b.getAttribute("data-cat-ir")) === i);
+    });
   }
 
   /* ---------------------------- Horario --------------------------- */
@@ -936,12 +973,13 @@
       '<div class="editor-section" data-seccion="' + idx + '">' +
         '<div class="editor-section__head">' +
           '<input class="field__input" data-sec-nombre="' + idx + '" value="' + esc(sec.sec || "") +
-            '" placeholder="Nombre de la sección (ej. Obleas)" style="font-weight:700" />' +
+            '" placeholder="Nombre de la categoría (ej. Bebidas)" style="font-weight:700" />' +
           ordenHTML("sec", String(idx), idx, editando.carta.length, "sección") +
-          '<button type="button" class="btn-danger" data-del-seccion="' + idx + '">Quitar</button>' +
+          '<button type="button" class="btn-danger" data-del-seccion="' + idx + '">Quitar categoría</button>' +
         "</div>" +
-        '<div data-platos="' + idx + '">' + platos + "</div>" +
-        '<button type="button" class="btn-copy" data-add-plato="' + idx + '">+ Agregar plato</button>' +
+        '<div data-platos="' + idx + '">' + platos +
+          ((sec.items || []).length ? "" : '<p class="muted cat-vacia">Esta categoría aún no tiene productos. Agrega el primero 👇</p>') + "</div>" +
+        '<button type="button" class="btn-primary cat-add-prod" data-add-plato="' + idx + '">+ Agregar producto</button>' +
         adicionesSeccionHTML(sec, idx) +
       "</div>"
     );
@@ -977,24 +1015,20 @@
   function platoHTML(it, si, pi) {
     return (
       '<div class="plato-row" data-plato="' + si + "-" + pi + '" data-plato-id="' + esc(it.id || "") + '">' +
-        '<span class="mini-label">Producto</span>' +
         '<div class="plato-row__top">' +
-          '<input class="field__input" data-plato-n="' + si + "-" + pi + '" value="' + esc(it.n || "") +
-            '" placeholder="Ej: Frappé de caramelo" aria-label="Nombre del producto" />' +
+          '<input class="field__input plato-row__nombre" data-plato-n="' + si + "-" + pi + '" value="' + esc(it.n || "") +
+            '" placeholder="Nombre del producto (ej: Frappé de caramelo)" aria-label="Nombre del producto" />' +
           '<button type="button" class="btn-danger" data-del-plato="' + si + "-" + pi + '" title="Quitar este producto">✕</button>' +
         "</div>" +
-        '<div class="orden-fila"><span class="muted">Posición ' + (pi + 1) + " de " + editando.carta[si].items.length + "</span>" +
-          ordenHTML("plato", si + "-" + pi, pi, editando.carta[si].items.length, "producto") +
+        '<div class="plato-row__precio">' +
+          '<label class="op-fila__p op-fila__p--grande"><span>$</span><input class="field__input" data-plato-p="' + si + "-" + pi + '" type="number" min="0" step="100" inputmode="numeric" value="' +
+            esc(it.p != null ? it.p : "") + '" placeholder="Precio" aria-label="Precio' + (Array.isArray(it.opciones) && it.opciones.length ? " (el más bajo)" : "") + '" /></label>' +
+          '<label class="agotado-check"><input type="checkbox" data-plato-ag="' + si + "-" + pi + '"' +
+            (it.agotado ? " checked" : "") + " /> Agotado</label>" +
         "</div>" +
-        '<span class="mini-label">Descripción <span class="muted">(opcional)</span></span>' +
-        '<input class="field__input" data-plato-d="' + si + "-" + pi + '" value="' + esc(it.d || "") +
-          '" placeholder="Ej: Con leche, 354 ml" aria-label="Descripción" />' +
-        '<span class="mini-label">Precio' + (Array.isArray(it.opciones) && it.opciones.length ? ' <span class="muted">(el más bajo)</span>' : "") + "</span>" +
-        '<label class="op-fila__p op-fila__p--grande"><span>$</span><input class="field__input" data-plato-p="' + si + "-" + pi + '" type="number" min="0" step="100" inputmode="numeric" value="' +
-          esc(it.p != null ? it.p : "") + '" placeholder="12000" aria-label="Precio" /></label>' +
-        '<label class="agotado-check"><input type="checkbox" data-plato-ag="' + si + "-" + pi + '"' +
-          (it.agotado ? " checked" : "") + " /> Agotado</label>" +
         (it.p > 0 || !it.n ? "" : '<span class="falta-precio">⚠️ Falta el precio</span>') +
+        '<input class="field__input" data-plato-d="' + si + "-" + pi + '" value="' + esc(it.d || "") +
+          '" placeholder="Descripción corta (opcional)" aria-label="Descripción" />' +
         '<div class="plato-foto">' +
           (it.foto ? '<img src="' + esc(it.foto) + '" alt="" loading="lazy" />' : "") +
           '<input type="hidden" data-plato-foto="' + si + "-" + pi + '" value="' + esc(it.foto || "") + '" />' +
@@ -1004,9 +1038,14 @@
           "</label>" +
           (it.foto ? '<button type="button" class="btn-danger btn-sm" data-plato-foto-quitar="' + si + "-" + pi + '">Quitar</button>' : "") +
         "</div>" +
-        platoMensajeHTML(it, si + "-" + pi) +
-        platoDedicatoriaHTML(it) +
-        platoOpcionesHTML(it, si + "-" + pi) +
+        '<details class="plato-mas"><summary>⚙️ Más opciones <span class="muted">(etiqueta, tamaños, mensaje, orden)</span></summary>' +
+          '<div class="orden-fila"><span class="muted">Posición ' + (pi + 1) + " de " + editando.carta[si].items.length + "</span>" +
+            ordenHTML("plato", si + "-" + pi, pi, editando.carta[si].items.length, "producto") +
+          "</div>" +
+          platoMensajeHTML(it, si + "-" + pi) +
+          platoDedicatoriaHTML(it) +
+          platoOpcionesHTML(it, si + "-" + pi) +
+        "</details>" +
       "</div>"
     );
   }
@@ -2196,13 +2235,25 @@
       toast("Orden cambiado ✓ (recuerda Guardar cambios)");
       return;
     }
-    if (t.closest("[data-add-seccion]")) {
-      leerEditor(); editando.carta.push({ sec: "", items: [] }); pintarEditor(); return;
+    var addSec = t.closest("[data-add-seccion]");
+    if (addSec) {
+      leerEditor();
+      var nombreCat = addSec.getAttribute("data-add-seccion") || "";
+      editando.carta.push({ sec: nombreCat, items: nombreCat ? [{ n: "", d: "", p: 0, agotado: false }] : [] });
+      catActiva = editando.carta.length - 1;
+      pintarEditor();
+      if (!nombreCat) { var inpC = elEditorBody.querySelector('[data-sec-nombre="' + catActiva + '"]'); if (inpC) inpC.focus(); }
+      return;
     }
+    var irCat = t.closest("[data-cat-ir]");
+    if (irCat) { mostrarCategoria(Number(irCat.getAttribute("data-cat-ir"))); return; }
     var delSec = t.closest("[data-del-seccion]");
     if (delSec) {
       leerEditor();
+      var nSec = ((editando.carta[Number(delSec.getAttribute("data-del-seccion"))] || {}).items || []).length;
+      if (nSec && !confirm("¿Quitar esta categoría y sus " + nSec + " productos? (Se aplica al pulsar Guardar cambios)")) return;
       editando.carta.splice(Number(delSec.getAttribute("data-del-seccion")), 1);
+      catActiva = Math.max(0, Math.min(catActiva, editando.carta.length - 1));
       pintarEditor(); return;
     }
     // Copiar las adiciones de una sección a todas
@@ -2605,6 +2656,10 @@
     pedidos.forEach(function (p) { ids[p.id] = true; });
     Object.keys(pedSel).forEach(function (id) { if (!ids[id]) delete pedSel[id]; });
     pintarFiltroRest();
+    if (esAliado()) {
+      pedRest = perfil.restaurante_id;
+      var fr = document.getElementById("pedFiltroRest"); if (fr) fr.hidden = true;
+    }
     var lista = pedidosVisibles();
     var cnt = document.getElementById("pedContador");
     if (cnt) cnt.textContent = lista.length ? lista.length + (lista.length === 1 ? " pedido" : " pedidos") : "";
@@ -2750,13 +2805,13 @@
       }
       acciones += '<button type="button" class="btn-danger btn-sm ped-cancelar" data-cancelar="' + esc(p.id) + '">Cancelar</button>';
     }
-    acciones += '<button type="button" class="btn-link btn-sm ped-borrar' + (acciones ? "" : " ped-cancelar") + '" data-ped-borrar="' + esc(p.id) + '" title="Borrar para siempre (pedidos de prueba)">🗑 Borrar</button>';
+    if (!esAliado()) acciones += '<button type="button" class="btn-link btn-sm ped-borrar' + (acciones ? "" : " ped-cancelar") + '" data-ped-borrar="' + esc(p.id) + '" title="Borrar para siempre (pedidos de prueba)">🗑 Borrar</button>';
     var hace = haceCuanto(p.creado_en);
 
     return (
       '<article class="pedido estado-' + esc(p.estado) + (pedSel[p.id] ? " pedido--sel" : "") + '">' +
         '<header class="ped-head">' +
-          '<label class="ped-check" title="Seleccionar para borrar"><input type="checkbox" data-ped-sel="' + esc(p.id) + '"' + (pedSel[p.id] ? " checked" : "") + " /></label>" +
+          (esAliado() ? "" : '<label class="ped-check" title="Seleccionar para borrar"><input type="checkbox" data-ped-sel="' + esc(p.id) + '"' + (pedSel[p.id] ? " checked" : "") + " /></label>") +
           '<span class="pedido__codigo">' + esc(p.codigo || p.id.slice(0, 6)) + "</span>" +
           '<span class="estado-badge estado-badge--' + esc(p.estado) + '">' + esc(ESTADO_LABEL[p.estado] || p.estado) + "</span>" +
           (regalo ? '<span class="ped-tag ped-tag--regalo">🎁 Regalo</span>' : "") +
