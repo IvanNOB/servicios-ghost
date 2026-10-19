@@ -592,8 +592,6 @@
         "queda cerrado hasta que lo vuelvas a marcar. Si tiene horario, se abre y se cierra solo según las horas.</p>" +
       horarioEditorHTML(r) +
 
-      almuerzoEditorHTML(r) +
-
       '<h3 class="editor-section__title" style="margin:18px 0 6px">Carta</h3>' +
       '<p class="muted carta-ayuda">Tus productos están agrupados por <strong>categorías</strong>. Toca una categoría para abrirla y editar sus productos.</p>' +
       '<div id="secciones" class="cat-lista">' + seccionesHTML + "</div>" +
@@ -830,68 +828,6 @@
   }
 
   // Editor del "almuerzo del día": activar, precio, grupos y opciones (con agotados).
-  function almuerzoEditorHTML(r) {
-    var a = r.almuerzo || {};
-    var activo = !!a.activo;
-    var grupos = Array.isArray(a.grupos) ? a.grupos : [];
-
-    var gruposHTML = "";
-    for (var gi = 0; gi < grupos.length; gi++) {
-      var g = grupos[gi];
-      var ops = Array.isArray(g.opciones) ? g.opciones : [];
-      var opsHTML = "";
-      for (var oi = 0; oi < ops.length; oi++) {
-        var op = ops[oi];
-        opsHTML +=
-          '<div class="alm-op-row" data-alm-op="' + gi + "-" + oi + '">' +
-            '<input class="field__input" data-alm-op-n="' + gi + "-" + oi + '" value="' + esc(op.n || "") +
-              '" placeholder="Opción (ej. Pollo frito)" />' +
-            '<input class="field__input alm-op-precio" data-alm-op-p="' + gi + "-" + oi + '" type="number" min="0" step="100" value="' +
-              esc(op.precio != null ? op.precio : "") + '" placeholder="Precio (opc.)" title="Precio solo si esta opción cambia el valor del almuerzo" />' +
-            '<label class="agotado-check"><input type="checkbox" data-alm-op-ag="' + gi + "-" + oi + '"' +
-              (op.agotado ? " checked" : "") + " /> Agotado</label>" +
-            '<button type="button" class="btn-danger btn-sm" data-alm-del-op="' + gi + "-" + oi + '">✕</button>' +
-          "</div>";
-      }
-      gruposHTML +=
-        '<div class="alm-grupo-edit" data-alm-g="' + gi + '">' +
-          '<div class="alm-grupo-edit__head">' +
-            '<input class="field__input" data-alm-g-n="' + gi + '" value="' + esc(g.nombre || "") +
-              '" placeholder="Grupo (ej. Proteína)" style="font-weight:700" />' +
-            '<button type="button" class="btn-danger btn-sm" data-alm-del-g="' + gi + '">Quitar grupo</button>' +
-          "</div>" +
-          '<div data-alm-ops="' + gi + '">' + opsHTML + "</div>" +
-          '<button type="button" class="btn-copy btn-sm" data-alm-add-op="' + gi + '">+ Opción</button>' +
-        "</div>";
-    }
-
-    return (
-      '<div class="editor-section" style="margin-top:16px">' +
-        '<div class="editor-section__head">' +
-          '<span class="editor-section__title">🍽️ Almuerzo del día</span>' +
-          '<label class="agotado-check"><input type="checkbox" id="almActivo"' +
-            (activo ? " checked" : "") + " /> Ofrece almuerzo</label>" +
-        "</div>" +
-        '<p class="muted" style="font-size:.85rem;margin:0 0 10px">Para publicar lo de cada día usa la pestaña ' +
-          "<strong>🍳🍲 Menú del día</strong> (ahí también publicas el desayuno)." +
-          (a.fecha ? " Última publicación: <strong>" + esc(a.fecha) + "</strong>." : "") + "</p>" +
-        '<div class="grid-2">' +
-          '<div class="field"><label class="field__label">Título</label>' +
-            '<input class="field__input" id="almTitulo" value="' + esc(a.titulo || "Almuerzo del día") + '" /></div>' +
-          '<div class="field"><label class="field__label">Precio</label>' +
-            '<input class="field__input" id="almPrecio" type="number" min="0" step="100" value="' +
-              esc(a.precio != null ? a.precio : "") + '" placeholder="Ej: 15000" /></div>' +
-        "</div>" +
-        '<div class="field"><label class="field__label">Descripción (opcional)</label>' +
-          '<input class="field__input" id="almDesc" value="' + esc(a.desc || "") +
-          '" placeholder="Ej: Incluye sopa, principio, proteína y bebida" /></div>' +
-        '<div id="almGrupos">' + gruposHTML + "</div>" +
-        '<button type="button" class="btn-copy btn-sm" data-alm-add-g>+ Agregar grupo de opciones</button>' +
-      "</div>"
-    );
-  }
-
-  // Mensaje grande junto a la casilla del WhatsApp (y la deja a la vista).
   function avisoWhatsapp(html) {
     var a = document.getElementById("campoWhatsappAyuda");
     var w = document.getElementById("campoWhatsapp");
@@ -1461,44 +1397,6 @@
       nuevasSecs.push(secNueva);
     });
     r.carta = nuevasSecs;
-
-    // Leer configuración del almuerzo
-    var anterior = r.almuerzo || {};
-    var almActivo = $("#almActivo");
-    var grupos = [];
-    elEditorBody.querySelectorAll("[data-alm-g]").forEach(function (gEl) {
-      var gi = gEl.getAttribute("data-alm-g");
-      var gn = gEl.querySelector('[data-alm-g-n="' + gi + '"]');
-      var opciones = [];
-      gEl.querySelectorAll("[data-alm-op]").forEach(function (oEl) {
-        var key = oEl.getAttribute("data-alm-op");
-        var on = oEl.querySelector('[data-alm-op-n="' + key + '"]');
-        var oag = oEl.querySelector('[data-alm-op-ag="' + key + '"]');
-        var opp = oEl.querySelector('[data-alm-op-p="' + key + '"]');
-        var nombre = on ? on.value.trim() : "";
-        if (!nombre) return;
-        var opObj = { n: nombre, agotado: oag ? oag.checked : false };
-        var precioOp = opp ? Number(opp.value) : 0;
-        if (precioOp > 0) opObj.precio = precioOp;
-        opciones.push(opObj);
-      });
-      // Conservar propiedades que el formulario no muestra (tipo, condición, opcional).
-      var previo = (anterior.grupos || [])[Number(gi)] || {};
-      var grupo = { nombre: gn ? gn.value.trim() : "Opciones", tipo: previo.tipo || "unico", opciones: opciones };
-      if (previo.mostrarSi) grupo.mostrarSi = previo.mostrarSi;
-      if (previo.opcional) grupo.opcional = true;
-      if (previo.obligatorio) grupo.obligatorio = true;
-      grupos.push(grupo);
-    });
-    r.almuerzo = {
-      activo: almActivo ? almActivo.checked : false,
-      titulo: ($("#almTitulo") && $("#almTitulo").value.trim()) || "Almuerzo del día",
-      desc: ($("#almDesc") && $("#almDesc").value.trim()) || "",
-      precio: ($("#almPrecio") && Number($("#almPrecio").value)) || 0,
-      fecha: anterior.fecha || "",
-      foto: anterior.foto || "",
-      grupos: grupos,
-    };
   }
 
   function enlazarEditor() {
@@ -2298,38 +2196,6 @@
       leerEditor();
       var parts = delPlato.getAttribute("data-del-plato").split("-");
       editando.carta[Number(parts[0])].items.splice(Number(parts[1]), 1);
-      pintarEditor(); return;
-    }
-
-    // Almuerzo: agregar grupo
-    if (t.closest("[data-alm-add-g]")) {
-      leerEditor();
-      if (!editando.almuerzo) editando.almuerzo = { activo: true, grupos: [] };
-      if (!editando.almuerzo.grupos) editando.almuerzo.grupos = [];
-      editando.almuerzo.grupos.push({ nombre: "", tipo: "unico", opciones: [{ n: "", agotado: false }] });
-      pintarEditor(); return;
-    }
-    // Almuerzo: quitar grupo
-    var delG = t.closest("[data-alm-del-g]");
-    if (delG) {
-      leerEditor();
-      editando.almuerzo.grupos.splice(Number(delG.getAttribute("data-alm-del-g")), 1);
-      pintarEditor(); return;
-    }
-    // Almuerzo: agregar opción
-    var addOp = t.closest("[data-alm-add-op]");
-    if (addOp) {
-      leerEditor();
-      var gi = Number(addOp.getAttribute("data-alm-add-op"));
-      editando.almuerzo.grupos[gi].opciones.push({ n: "", agotado: false });
-      pintarEditor(); return;
-    }
-    // Almuerzo: quitar opción
-    var delOp = t.closest("[data-alm-del-op]");
-    if (delOp) {
-      leerEditor();
-      var p = delOp.getAttribute("data-alm-del-op").split("-");
-      editando.almuerzo.grupos[Number(p[0])].opciones.splice(Number(p[1]), 1);
       pintarEditor(); return;
     }
 
