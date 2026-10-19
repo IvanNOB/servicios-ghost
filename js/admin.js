@@ -292,7 +292,7 @@
   function abrirEditor(rest) {
     editando = JSON.parse(JSON.stringify(rest));
     if (!editando.carta) editando.carta = [];
-    catActiva = 0;
+    catActiva = -1;
     elEditorTitle.textContent = rest._esNuevo ? "Nuevo restaurante" : "Editar: " + rest.nombre;
     pintarEditor();
     elEditorSheet.hidden = false;
@@ -595,9 +595,9 @@
       almuerzoEditorHTML(r) +
 
       '<h3 class="editor-section__title" style="margin:18px 0 6px">Carta</h3>' +
-      '<p class="muted carta-ayuda">Organiza tus productos por <strong>categorías</strong> (Entradas, Bebidas, Postres…). Toca una categoría para ver y editar sus productos.</p>' +
-      categoriasBarraHTML(r) +
-      '<div id="secciones">' + seccionesHTML + "</div>" +
+      '<p class="muted carta-ayuda">Tus productos están agrupados por <strong>categorías</strong>. Toca una categoría para abrirla y editar sus productos.</p>' +
+      '<div id="secciones" class="cat-lista">' + seccionesHTML + "</div>" +
+      categoriasPieHTML(r) +
 
       '<div class="actions">' +
         '<button type="button" class="btn-primary" id="btnGuardar">Guardar cambios</button>' +
@@ -611,37 +611,28 @@
   /* ------------------- Categorías de la carta --------------------- */
   var catActiva = 0;
   var CATEGORIAS_SUGERIDAS = ["🍽️ Platos fuertes", "🥗 Entradas", "🍔 Hamburguesas", "🍕 Pizzas", "🌭 Comidas rápidas", "🥤 Bebidas", "🍰 Postres", "🍟 Acompañamientos", "🍳 Desayunos"];
-  function categoriasBarraHTML(r) {
-    var chips = r.carta.map(function (sec, i) {
-      var n = (sec.items || []).filter(function (x) { return x.n; }).length;
-      return '<button type="button" class="cat-chip" data-cat-ir="' + i + '">' + esc(sec.sec || "Sin nombre") +
-        ' <span class="cat-chip__n">' + n + "</span></button>";
-    }).join("");
+  function categoriasPieHTML(r) {
     var sugeridas = CATEGORIAS_SUGERIDAS.filter(function (c) {
-      return !r.carta.some(function (s) { return (s.sec || "").toLowerCase() === c.toLowerCase(); });
-    }).slice(0, r.carta.length ? 5 : 9).map(function (c) {
+      return !r.carta.some(function (sc) { return (sc.sec || "").toLowerCase() === c.toLowerCase(); });
+    }).slice(0, 6).map(function (c) {
       return '<button type="button" class="btn-copy btn-sm" data-add-seccion="' + esc(c) + '">+ ' + esc(c) + "</button>";
     }).join("");
-    return '<div class="cat-barra" id="catBarra">' + chips +
-        '<button type="button" class="cat-chip cat-chip--add" data-add-seccion="">+ Nueva categoría</button></div>' +
-      '<div class="cat-sugeridas"><span class="muted">Crear rápido:</span> ' + sugeridas + "</div>";
+    return '<button type="button" class="btn-copy cat-nueva" data-add-seccion="">+ Nueva categoría</button>' +
+      (sugeridas ? '<div class="cat-sugeridas"><span class="muted">Crear rápido:</span> ' + sugeridas + "</div>" : "");
   }
-  document.addEventListener("input", function (e) {
-    var t = e.target;
-    if (!t || !t.matches || !t.matches("[data-sec-nombre]")) return;
-    var chipEl = elEditorBody.querySelector('[data-cat-ir="' + t.getAttribute("data-sec-nombre") + '"]');
-    if (chipEl && chipEl.firstChild) chipEl.firstChild.textContent = (t.value.trim() || "Sin nombre") + " ";
-  });
   function mostrarCategoria(i) {
     var secs = elEditorBody.querySelectorAll("[data-seccion]");
-    if (!secs.length) return;
-    if (!(i >= 0 && i < secs.length)) i = 0;
-    catActiva = i;
-    secs.forEach(function (el, k) { el.hidden = k !== i; });
-    elEditorBody.querySelectorAll("[data-cat-ir]").forEach(function (b) {
-      b.classList.toggle("is-on", Number(b.getAttribute("data-cat-ir")) === i);
+    if (i >= secs.length) i = secs.length - 1;
+    if (i < -1) i = -1;
+    catActiva = secs.length ? i : -1;
+    Array.prototype.forEach.call(secs, function (el, k) {
+      var abierta = k === catActiva;
+      var body = el.querySelector(".cat-row__body");
+      if (body) body.hidden = !abierta;
+      el.classList.toggle("is-open", abierta);
     });
   }
+
 
   /* ---------------------------- Horario --------------------------- */
   var DIAS_H = [
@@ -969,21 +960,33 @@
     for (var i = 0; i < (sec.items || []).length; i++) {
       platos += platoHTML(sec.items[i], idx, i);
     }
+    var n = (sec.items || []).length;
     return (
-      '<div class="editor-section" data-seccion="' + idx + '">' +
-        '<div class="editor-section__head">' +
-          '<input class="field__input" data-sec-nombre="' + idx + '" value="' + esc(sec.sec || "") +
-            '" placeholder="Nombre de la categoría (ej. Bebidas)" style="font-weight:700" />' +
-          ordenHTML("sec", String(idx), idx, editando.carta.length, "sección") +
-          '<button type="button" class="btn-danger" data-del-seccion="' + idx + '">Quitar categoría</button>' +
+      '<div class="editor-section cat-row" data-seccion="' + idx + '">' +
+        '<div class="cat-row__head">' +
+          '<button type="button" class="cat-row__toggle" data-cat-ir="' + idx + '" aria-label="Abrir o cerrar la categoría">' +
+            '<span class="cat-row__n">' + (idx + 1) + "</span>" +
+            '<span class="cat-row__chev" aria-hidden="true">›</span>' +
+          "</button>" +
+          '<input class="field__input cat-row__nombre" data-sec-nombre="' + idx + '" value="' + esc(sec.sec || "") +
+            '" placeholder="Ej. Bebidas frías, Postres…" aria-label="Nombre de la categoría" />' +
+          '<span class="cat-row__count">' + n + (n === 1 ? " producto" : " productos") + "</span>" +
+          '<button type="button" class="btn-danger btn-sm cat-row__quitar" data-del-seccion="' + idx + '" title="Quitar esta categoría">✕</button>' +
         "</div>" +
-        '<div data-platos="' + idx + '">' + platos +
-          ((sec.items || []).length ? "" : '<p class="muted cat-vacia">Esta categoría aún no tiene productos. Agrega el primero 👇</p>') + "</div>" +
-        '<button type="button" class="btn-primary cat-add-prod" data-add-plato="' + idx + '">+ Agregar producto</button>' +
-        adicionesSeccionHTML(sec, idx) +
+        '<div class="cat-row__body" hidden>' +
+          '<div class="cat-row__tools">' +
+            '<span class="muted">Posición ' + (idx + 1) + " de " + editando.carta.length + "</span>" +
+            ordenHTML("sec", String(idx), idx, editando.carta.length, "sección") +
+          "</div>" +
+          '<div data-platos="' + idx + '">' + platos +
+            (n ? "" : '<p class="muted cat-vacia">Esta categoría aún no tiene productos. Agrega el primero 👇</p>') + "</div>" +
+          '<button type="button" class="btn-primary cat-add-prod" data-add-plato="' + idx + '">+ Agregar producto</button>' +
+          adicionesSeccionHTML(sec, idx) +
+        "</div>" +
       "</div>"
     );
   }
+
 
   // Adiciones de la sección: el cliente puede marcar las que quiera en
   // cualquier plato de esta sección, y cada una suma su precio.
@@ -2246,7 +2249,16 @@
       return;
     }
     var irCat = t.closest("[data-cat-ir]");
-    if (irCat) { mostrarCategoria(Number(irCat.getAttribute("data-cat-ir"))); return; }
+    if (irCat) {
+      var kCat = Number(irCat.getAttribute("data-cat-ir"));
+      var estaba = catActiva;
+      mostrarCategoria(kCat === estaba ? -1 : kCat);
+      if (kCat !== estaba) {
+        var fila = irCat.closest("[data-seccion]");
+        if (fila) setTimeout(function () { fila.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, 30);
+      }
+      return;
+    }
     var delSec = t.closest("[data-del-seccion]");
     if (delSec) {
       leerEditor();

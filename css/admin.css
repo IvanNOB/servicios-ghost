@@ -780,21 +780,45 @@ code {
 .ped-map--enviando { color: #fcd34d; background: rgba(245,158,11,.16); }
 
 /* =====================================================================
-   Editor de carta por categorías
+   Editor de carta por categorías (lista plegable)
    ===================================================================== */
 .carta-ayuda { font-size: .85rem; margin: 0 0 10px; }
-.cat-barra { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 8px; position: sticky; top: 0; z-index: 2; background: var(--bg, #fff); }
-.cat-chip {
-  flex: 0 0 auto; border: 1px solid var(--border); background: transparent; color: inherit;
-  border-radius: 999px; padding: 8px 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
+.cat-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+/* Cada categoría es una fila con su número, su nombre y una flecha. */
+.editor-section.cat-row {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  background: var(--surface, #fff);
 }
-.cat-chip.is-on { background: var(--primary, #3b82f6); border-color: var(--primary, #3b82f6); color: #fff; }
-.cat-chip__n { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 4px; border-radius: 999px; background: rgba(127,127,127,.25); font-size: .75rem; text-align: center; }
-.cat-chip--add { border-style: dashed; }
-.cat-sugeridas { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: .85rem; }
+.cat-row__head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; }
+.cat-row__toggle {
+  display: flex; align-items: center; gap: 8px;
+  background: none; border: 0; padding: 0; cursor: pointer; color: inherit; flex: 0 0 auto;
+}
+.cat-row__n {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--primary, #b3123f); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: .78rem; font-weight: 700;
+}
+.cat-row__chev { font-size: 1.2rem; line-height: 1; color: var(--text-2); transition: transform .2s; }
+.cat-row.is-open .cat-row__chev { transform: rotate(90deg); }
+.cat-row.is-open { border-color: var(--primary, #b3123f); }
+.cat-row__nombre { flex: 1 1 auto; width: auto; min-width: 0; font-weight: 700; border-color: transparent; background: transparent; padding-left: 4px; }
+.cat-row__nombre:focus { border-color: var(--border); background: var(--bg, #fff); }
+.cat-row__count { flex: 0 0 auto; font-size: .75rem; color: var(--text-2); white-space: nowrap; }
+.cat-row__quitar { flex: 0 0 auto; }
+.cat-row__body { padding: 4px 10px 12px; border-top: 1px dashed var(--border); }
+.cat-row__tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: .78rem; padding: 6px 0; }
 .cat-vacia { text-align: center; padding: 14px 0; }
 .cat-add-prod { width: 100%; margin: 4px 0 10px; }
-.editor-section[hidden] { display: none; }
+.cat-nueva { width: 100%; margin-bottom: 10px; border-style: dashed; }
+.cat-sugeridas { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; font-size: .85rem; }
+@media (max-width: 380px) { .cat-row__count { display: none; } }
 .plato-row__nombre { font-weight: 600; }
 .plato-row__precio { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .plato-mas { border-top: 1px dashed var(--border); padding-top: 6px; }
