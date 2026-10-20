@@ -294,7 +294,14 @@
   </footer>
 
   <!-- Carga anti-caché de los scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Librería local: la tienda y el panel funcionan aunque un bloqueador de
+       anuncios o el antivirus bloquee el CDN. Si faltara el archivo, usa el CDN. -->
+  <script src="js/vendor/supabase-js.js?v=2.118.0"></script>
+  <script>
+    if (typeof window.supabase === "undefined") {
+      document.write('<scr' + 'ipt src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></scr' + 'ipt>');
+    }
+  </script>
   <script>
     (function () {
       var v = "?t=" + Date.now();
