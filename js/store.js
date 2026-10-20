@@ -541,6 +541,27 @@
   function asignarAliado(email, restauranteId) {
     return rpcAdmin("asignar_aliado", { p_email: email, p_restaurante: restauranteId });
   }
+
+  /* ----------------------------- Visitas --------------------------- */
+  // Cuenta una entrada a la tienda. Anónima y silenciosa: si falla, no pasa nada.
+  async function registrarVisita(datos) {
+    var sb = client();
+    if (!sb) return;
+    datos = datos || {};
+    var res = await sb.rpc("registrar_visita", {
+      p_visita: datos.visita || "",
+      p_pagina: datos.pagina || "tienda",
+      p_ref: datos.ref || null,
+      p_dispositivo: datos.dispositivo || null,
+    });
+    if (res.error) throw res.error;
+  }
+
+  // Resumen de visitas para el panel (solo administrador).
+  function resumenVisitas(desdeISO) {
+    return rpcAdmin("resumen_visitas", { p_desde: desdeISO || null }).then(function (d) { return d || {}; });
+  }
+
   // Ventas del negocio aliado con sesión (solo totales, sin datos de clientes).
   function misVentas(desdeISO) { return rpcAdmin("mis_ventas", { p_desde: desdeISO || null }).then(function (d) { return d || {}; }); }
   function quitarAliado(email) { return rpcAdmin("quitar_aliado", { p_email: email }); }
@@ -583,5 +604,7 @@
     asignarAliado: asignarAliado,
     quitarAliado: quitarAliado,
     misVentas: misVentas,
+    registrarVisita: registrarVisita,
+    resumenVisitas: resumenVisitas,
   };
 })();

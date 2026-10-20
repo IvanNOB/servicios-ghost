@@ -6,7 +6,7 @@
    para que la app abra igual y se pueda mirar la carta.
    No toca nada de otros dominios (Supabase, WhatsApp, fuentes).
    ===================================================================== */
-var CACHE = "ghost-v1";
+var CACHE = "ghost-v2";
 var BASICOS = [
   "./",
   "index.html",
@@ -15,6 +15,7 @@ var BASICOS = [
   "js/supabase-config.js",
   "js/logo.js",
   "js/store.js",
+  "js/visitas.js",
   "js/app.js",
   "assets/logo-sm.png",
   "assets/icon-192.png",

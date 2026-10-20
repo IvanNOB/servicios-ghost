@@ -2077,6 +2077,9 @@
     // Pedidos: refrescar
     if (t.closest("#btnRefrescarPedidos")) { recargarPedidos(); return; }
 
+    // Visitas: refrescar
+    if (t.closest("#btnRefrescarVisitas")) { cargarVisitas(); return; }
+
     // Pedidos: avanzar estado
     var av = t.closest("[data-avanzar]");
     if (av) { avanzarPedido(av.getAttribute("data-avanzar"), av.getAttribute("data-estado")); return; }
@@ -2248,6 +2251,12 @@
     if (!t) return;
     if (t.id === "filtroPedidos") { recargarPedidos(); return; }
     if (t.id === "rangoVentas") { cargarVentas(); return; }
+    if (t.id === "rangoVisitas") { cargarVisitas(); return; }
+    if (t.id === "noContarVisitas") {
+      try { localStorage.setItem("ghost-sin-visitas", t.checked ? "1" : "0"); } catch (e) { /* nada */ }
+      toast(t.checked ? "Listo: tus visitas desde este navegador no se contarán" : "Tus visitas volverán a contarse");
+      return;
+    }
 
     // Horario: activar/desactivar las horas del día
     var dia = t.getAttribute && t.getAttribute("data-hor-abre-dia");
@@ -2425,13 +2434,14 @@
       t.classList.toggle("tab--active", t.getAttribute("data-tab") === cual);
     });
     var paneles = { restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
-      ventas: "tabVentas", ajustes: "tabAjustes" };
+      ventas: "tabVentas", visitas: "tabVisitas", ajustes: "tabAjustes" };
     Object.keys(paneles).forEach(function (k) {
       var el = document.getElementById(paneles[k]);
       if (el) el.hidden = k !== cual;
     });
     if (cual === "almuerzos") pintarAlmuerzos();
     if (cual === "ventas") cargarVentas();
+    if (cual === "visitas") cargarVisitas();
     if (cual === "ajustes") pintarAjustes();
     if (cual === "pedidos") recargarPedidos();
   }
@@ -2787,6 +2797,71 @@
       return medianoche(fechaColombia(d));
     }
     return null;
+  }
+
+  /* --------------------------- Visitas ---------------------------- */
+  // Contador anónimo de entradas a la tienda (solo lo ve el administrador).
+  async function cargarVisitas() {
+    var cont = $("#contVisitas");
+    if (!cont) return;
+    var rango = ($("#rangoVisitas") || {}).value || "7";
+    var chk = $("#noContarVisitas");
+    if (chk) { try { chk.checked = localStorage.getItem("ghost-sin-visitas") === "1"; } catch (e) { /* nada */ } }
+    cont.innerHTML = '<p class="muted">Calculando visitas…</p>';
+    try {
+      var d = await window.Store.resumenVisitas(desdeRango(rango));
+      if (!$("#contVisitas")) return;
+      var kpis = [
+        ["👀 Visitas hoy", String(d.hoy || 0)],
+        ["🧍 Personas hoy", String(d.personas_hoy || 0)],
+        ["Visitas en el periodo", String(d.total || 0)],
+        ["Personas en el periodo", String(d.personas || 0)],
+      ];
+      var html = '<div class="kpis">' + kpis.map(function (k) {
+        return '<div class="kpi"><span class="kpi__etq">' + esc(k[0]) + '</span><strong class="kpi__val">' + esc(k[1]) + "</strong></div>";
+      }).join("") + "</div>";
+
+      if (!d.total) {
+        html += '<div class="ventas-card"><p class="muted" style="margin:0">Aún no hay visitas registradas en este periodo. En cuanto alguien abra la tienda, aparecerá aquí.</p></div>';
+        cont.innerHTML = html;
+        return;
+      }
+
+      // Visitas por día
+      var dias = Object.keys(d.por_dia || {}).sort().slice(-31);
+      if (dias.length) {
+        html += '<div class="ventas-card"><h3>Visitas por día</h3>' +
+          barrasHTML(dias.map(function (x) { return [x.slice(8, 10) + "/" + x.slice(5, 7), Number(d.por_dia[x]) || 0]; }), function (n) { return n + (n === 1 ? " visita" : " visitas"); }) + "</div>";
+      }
+
+      // Horas con más entradas
+      var horas = [];
+      for (var h = 0; h < 24; h++) horas.push([h + "h", Number((d.por_hora || {})[h]) || 0]);
+      if (horas.some(function (x) { return x[1] > 0; })) {
+        html += '<div class="ventas-card"><h3>Horas con más visitas</h3>' +
+          barrasHTML(horas, function (n) { return n + (n === 1 ? " visita" : " visitas"); }) + "</div>";
+      }
+
+      // Dispositivos y tipo de visitante
+      var disp = Object.keys(d.dispositivos || {}).map(function (k) {
+        var nombre = k === "movil" ? "📱 Móvil" : k === "escritorio" ? "💻 Computador" : "❔ Otro";
+        return { n: nombre, v: Number(d.dispositivos[k]) || 0 };
+      }).sort(function (a, b) { return b.v - a.v; });
+      var totDisp = disp.reduce(function (s, x) { return s + x.v; }, 0) || 1;
+      var filasDisp = disp.map(function (x) {
+        return '<div class="visita-disp"><span>' + esc(x.n) + '</span><strong>' + x.v + ' (' + Math.round(x.v / totDisp * 100) + '%)</strong></div>';
+      }).join("");
+      html += '<div class="ventas-card"><h3>¿Desde dónde entran?</h3>' + (filasDisp || '<p class="muted">Sin datos.</p>') +
+        '<p class="muted visitas-nota">' + (d.nuevas || 0) + " entraron por primera vez · " + (d.recurrentes || 0) + " ya habían entrado antes.</p>" +
+        (d.ultima ? '<p class="muted visitas-nota">Última visita: ' + esc(fechaCorta(d.ultima)) + " · " + esc(haceCuanto(d.ultima)) + "</p>" : "") +
+        "</div>";
+
+      cont.innerHTML = html;
+    } catch (ex) {
+      cont.innerHTML = ex && ex.code === "SIN_SQL"
+        ? '<p class="aviso-sql aviso-sql--inline">El contador de visitas se activa cuando se ejecute <code>supabase-visitas.sql</code> en Supabase (SQL Editor → Run).</p>'
+        : '<p class="muted">No se pudieron cargar las visitas: ' + esc(ex && ex.message ? ex.message : "error") + "</p>";
+    }
   }
 
   async function cargarVentas() {

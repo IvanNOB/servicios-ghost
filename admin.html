@@ -74,6 +74,7 @@
         <button type="button" class="tab" data-tab="almuerzos" role="tab">🍳🍲 Menú del día</button>
         <button type="button" class="tab" data-tab="pedidos" role="tab" >📋 Pedidos <span class="tab__badge" id="badgePedidos" hidden>0</span></button>
         <button type="button" class="tab" data-tab="ventas" role="tab" data-solo-admin>📊 Ventas</button>
+        <button type="button" class="tab" data-tab="visitas" role="tab" data-solo-admin>👀 Visitas</button>
         <button type="button" class="tab" data-tab="ajustes" role="tab" data-solo-admin>⚙️ Ajustes</button>
       </div>
 
@@ -93,6 +94,25 @@
           </div>
         </div>
         <div id="contVentas" aria-live="polite"></div>
+      </div>
+
+      <!-- Pestaña Visitas (contador anónimo de la tienda) -->
+      <div id="tabVisitas" class="tab-panel" hidden>
+        <div class="panel__row">
+          <h2 class="panel__title">Visitas a la tienda</h2>
+          <div class="inline-actions">
+            <select id="rangoVisitas" class="field__select" aria-label="Periodo de las visitas">
+              <option value="hoy">Hoy</option>
+              <option value="7" selected>Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="todo">Todo</option>
+            </select>
+            <button type="button" class="btn-copy" id="btnRefrescarVisitas">🔄 Actualizar</button>
+          </div>
+        </div>
+        <div id="contVisitas" aria-live="polite"></div>
+        <p class="muted visitas-privacidad">🔒 El contador es anónimo y discreto: el cliente no ve nada en la tienda. No se guardan IP, nombres, teléfonos ni correos, solo un identificador aleatorio del navegador para saber cuántas personas distintas entraron.</p>
+        <label class="pay__option visitas-off"><input type="checkbox" id="noContarVisitas" /> No contar mis visitas desde este navegador</label>
       </div>
 
       <!-- Pestaña Ajustes -->

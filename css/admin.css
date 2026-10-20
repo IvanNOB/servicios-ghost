@@ -866,3 +866,12 @@ body.modo-aliado .tile { padding: 12px; border-radius: 14px; }
 body.modo-aliado .tile__ico { font-size: 1.35rem; margin-bottom: 2px; }
 body.modo-aliado .tile strong { font-size: .92rem; }
 body.modo-aliado .tablero { gap: 12px; }
+
+/* =====================================================================
+   Visitas a la tienda (contador anónimo, solo en el panel)
+   ===================================================================== */
+.visitas-privacidad { font-size: .8rem; max-width: 720px; margin: 6px 0 10px; }
+.visitas-off { display: inline-flex; gap: 8px; align-items: center; font-size: .85rem; max-width: 420px; }
+.visita-disp { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.visita-disp:last-of-type { border-bottom: 0; }
+.visitas-nota { font-size: .82rem; margin: 8px 0 0; }
