@@ -2003,6 +2003,7 @@
     var lines = [];
     lines.push(emojiComercio(nombres.join(" ")) + " *" + nombres.join(" · ").toUpperCase() + "*");
     lines.push("*PEDIDO #" + String(codigo || "").replace(/^GH-/, "") + "*");
+    lines.push("*TIPO DE PEDIDO:* " + (regalo ? "🎁 REGALO" : "🙋 CONSUMO PERSONAL"));
     lines.push("");
     lines.push(linea);
     lines.push("");
