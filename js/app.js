@@ -1603,7 +1603,6 @@
       if (!d.nombre) f.push("el nombre de quien recibe");
       if (!d.telefono) f.push("el teléfono de quien recibe");
       else if (!telCol(d.telefono)) f.push("un celular colombiano válido de quien recibe (10 dígitos y empieza por 3)");
-      if (!d.referencia) f.push("la dirección o referencia del lugar de entrega");
     } else if (!datos.barrio && !datos.direccion && !datos.ubicacion) {
       f.push("tu barrio o la dirección de entrega");
     }
@@ -1800,7 +1799,7 @@
             '<small class="muted" data-tel-hint="r_telefono" hidden></small>' +
           "</div>" +
           '<div class="field">' +
-            '<label class="field__label" for="fRReferencia">Dirección o referencia del lugar de entrega *</label>' +
+            '<label class="field__label" for="fRReferencia">Dirección o referencia del lugar de entrega <span class="muted">(opcional)</span></label>' +
             '<input class="field__input" id="fRReferencia" name="r_referencia" type="text" maxlength="160" placeholder="Ej: Hospital, entrada principal · Yamaha · Supergiros de la calle principal" autocomplete="off" value="' + esc(destPrevio ? destPrevio.referencia : "") + '" />' +
             '<small class="muted">Lo mínimo para que el domiciliario encuentre el lugar. Si no la sabes, escribe un punto de referencia.</small>' +
           "</div>" +
