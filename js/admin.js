@@ -630,7 +630,7 @@
       // WhatsApp propio para recibir los pedidos (si está vacío, llegan a Servicios Ghost).
       '<div class="field campo-wa">' +
         '<label class="field__label" for="campoWhatsapp">📲 WhatsApp para recibir tus pedidos <span class="muted">(opcional)</span></label>' +
-        '<input class="field__input" id="campoWhatsapp" data-campo="whatsapp" type="tel" inputmode="tel" autocomplete="tel" value="' +
+        '<input class="field__input" id="campoWhatsapp" data-campo="whatsapp" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" value="' +
           esc(r.whatsapp ? String(r.whatsapp).replace(/^57(?=3\d{9}$)/, "") : "") + '" placeholder="Ej: 321 428 6626" />' +
         '<p class="muted campo-wa__ayuda" id="campoWhatsappAyuda">' + ayudaWhatsapp(r.whatsapp) + "</p>" +
       "</div>" +
@@ -887,13 +887,16 @@
   function ayudaWhatsapp(v) {
     var n = window.Store && window.Store.normalizarWhatsapp ? window.Store.normalizarWhatsapp(v) : "";
     if (n) return "✅ Los pedidos de este negocio le llegan directo a <strong>+" + esc(n.replace(/^(\d{2})(\d{3})(\d{3})(\d+)$/, "$1 $2 $3 $4")) + "</strong> por WhatsApp.";
-    if (String(v || "").replace(/\D/g, "")) return "⚠️ Ese número no parece válido. Escríbelo con sus 10 dígitos (ej. 321 428 6626).";
+    if (String(v || "").replace(/\D/g, "")) return "⚠️ Ese número no es válido. Escribe un celular colombiano de 10 dígitos que empiece por 3 (ej. 321 428 6626).";
     return "Si lo dejas vacío, los pedidos le llegan a Servicios Ghost y nosotros te avisamos.";
   }
   document.addEventListener("input", function (e) {
     if (e.target && e.target.id === "campoWhatsapp") {
+      // Solo dígitos colombianos: máximo 12 (10 del celular + 57).
+      var limpio = String(e.target.value || "").replace(/\D/g, "").slice(0, 12);
+      if (limpio !== e.target.value) e.target.value = limpio;
       var a = document.getElementById("campoWhatsappAyuda");
-      if (a) { a.innerHTML = ayudaWhatsapp(e.target.value); a.classList.remove("campo-wa__ayuda--error"); }
+      if (a) { a.innerHTML = ayudaWhatsapp(limpio); a.classList.remove("campo-wa__ayuda--error"); }
     }
   });
 
@@ -2358,7 +2361,7 @@
     // WhatsApp de pedidos: si escribieron algo, tiene que ser un número válido.
     var waEscrito = String(r.whatsapp || "").replace(/\D/g, "");
     if (waEscrito && !window.Store.normalizarWhatsapp(waEscrito)) {
-      avisoWhatsapp("⚠️ Ese número de WhatsApp no es válido. Escríbelo con sus 10 dígitos, por ejemplo 321 428 6626.");
+      avisoWhatsapp("⚠️ Ese WhatsApp no es válido. Escribe un celular colombiano de 10 dígitos que empiece por 3, por ejemplo 321 428 6626.");
       return;
     }
     if (!r.id) r.id = slug(r.nombre);
