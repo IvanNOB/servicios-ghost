@@ -166,6 +166,14 @@
           <button type="button" class="ped-filtro" data-ped-filtro="entregado">✅ Entregados</button>
           <button type="button" class="ped-filtro" data-ped-filtro="cancelado">✖ Cancelados</button>
         </div>
+        <div class="ped-filtros ped-filtros--fecha" aria-label="Filtrar pedidos por fecha">
+          <button type="button" class="ped-filtro is-on" data-ped-fecha="hoy">Hoy</button>
+          <button type="button" class="ped-filtro" data-ped-fecha="ayer">Ayer</button>
+          <button type="button" class="ped-filtro" data-ped-fecha="7">Últimos 7 días</button>
+          <button type="button" class="ped-filtro" data-ped-fecha="mes">Este mes</button>
+          <button type="button" class="ped-filtro" data-ped-fecha="todos">Todos</button>
+          <label class="ped-fecha-pick">📅 <input type="date" id="pedFechaDia" aria-label="Elegir un día" /></label>
+        </div>
         <div class="ped-filtros ped-filtros--rest" id="pedFiltroRest" aria-label="Filtrar por restaurante"></div>
         <div class="ped-sel" id="pedSelBar" hidden>
           <span id="pedSelTxt"></span>

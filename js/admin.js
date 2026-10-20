@@ -2538,13 +2538,57 @@
     return "";
   }
 
+  /* ---- Fechas: filtros y agrupación (día de Colombia) ---- */
+  var pedFecha = "hoy";   // hoy | ayer | 7 | mes | todos | YYYY-MM-DD
+  function claveDia(iso) {
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : fechaColombia(d);
+  }
+  function claveHoy(offset) {
+    var p = fechaColombia(new Date()).split("-");
+    var d = new Date(Date.UTC(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12));
+    d.setUTCDate(d.getUTCDate() + (offset || 0));
+    return d.toISOString().slice(0, 10);
+  }
+  function etiquetaDia(k) {
+    if (!k) return "Sin fecha";
+    var p = k.split("-"), txt = p[2] + "/" + p[1] + "/" + p[0];
+    if (k === claveHoy(0)) return "Hoy · " + txt;
+    if (k === claveHoy(-1)) return "Ayer · " + txt;
+    return txt;
+  }
+  function filtrarPorFecha(lista) {
+    if (pedFecha === "todos") return lista;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(pedFecha)) {
+      return lista.filter(function (p) { return claveDia(p.creado_en) === pedFecha; });
+    }
+    var hoy = claveHoy(0);
+    if (pedFecha === "hoy") return lista.filter(function (p) { return claveDia(p.creado_en) === hoy; });
+    if (pedFecha === "ayer") {
+      var ayer = claveHoy(-1);
+      return lista.filter(function (p) { return claveDia(p.creado_en) === ayer; });
+    }
+    if (pedFecha === "7") {
+      var desde = claveHoy(-6);
+      return lista.filter(function (p) {
+        var k = claveDia(p.creado_en);
+        return k && k >= desde && k <= hoy;
+      });
+    }
+    if (pedFecha === "mes") {
+      var mes = hoy.slice(0, 7);
+      return lista.filter(function (p) { return claveDia(p.creado_en).slice(0, 7) === mes; });
+    }
+    return lista;
+  }
+
   /* ---- Dividir por restaurante y borrar pedidos de prueba ---- */
   var pedRest = "";          // "" = todos los negocios
   var pedSel = {};           // ids seleccionados para borrar
   function restDeItem(it) { return String(it.restaurante_id || it.restaurante || "?"); }
   function restaurantesEnPedidos() {
     var m = {}, orden = [];
-    pedidos.forEach(function (p) {
+    filtrarPorFecha(pedidos).forEach(function (p) {
       var vistos = {};
       (p.items || []).forEach(function (it) {
         var k = restDeItem(it);
@@ -2576,22 +2620,37 @@
     if (t) t.textContent = n + (n === 1 ? " pedido seleccionado" : " pedidos seleccionados");
   }
   function pedidosVisibles() {
-    return pedRest ? pedidos.filter(function (p) { return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; }); }) : pedidos;
+    var filtrados = filtrarPorFecha(pedidos);
+    return pedRest ? filtrados.filter(function (p) { return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; }); }) : filtrados;
+  }
+  // Un aliado solo puede borrar pedidos CANCELADOS que sean exclusivamente suyos.
+  // El administrador puede borrar cualquiera (igual que antes).
+  function pedidoSoloDeMiRestaurante(p) {
+    if (!esAliado()) return true;
+    var propio = perfil && perfil.restaurante_id;
+    var items = p.items || [];
+    return !!propio && items.length > 0 && items.every(function (it) { return restDeItem(it) === propio; });
+  }
+  function puedeBorrarPedido(p) {
+    if (!esAliado()) return true;
+    return p.estado === "cancelado" && pedidoSoloDeMiRestaurante(p);
   }
   async function borrarPedidosUI(ids) {
-    var lista = pedidos.filter(function (p) { return ids.indexOf(p.id) !== -1; });
+    var lista = pedidos.filter(function (p) { return ids.indexOf(p.id) !== -1 && puedeBorrarPedido(p); });
     if (!lista.length) return;
     var codigos = lista.map(function (p) { return p.codigo || p.id.slice(0, 6); });
     if (!confirm("¿Borrar " + (lista.length === 1 ? "el pedido " + codigos[0] : "estos " + lista.length + " pedidos") + " para siempre?\n\n" +
       codigos.slice(0, 12).join(", ") + (codigos.length > 12 ? " y " + (codigos.length - 12) + " más" : "") +
       "\n\nÚsalo solo para pedidos de prueba: también desaparecen de Ventas. No se puede deshacer.")) return;
     try {
-      var n = await window.Store.borrarPedidos(ids);
+      var n = await window.Store.borrarPedidos(lista.map(function (p) { return p.id; }));
       if (!n) {
-        toast("No se borró nada: falta dar permiso en Supabase. Ejecuta de nuevo supabase-mejoras.sql (SQL Editor → Run).", true);
+        toast(esAliado()
+          ? "No se borró: para borrar cancelados, ejecuta supabase-pedidos-aliados.sql en Supabase (SQL Editor → Run)."
+          : "No se borró nada: falta dar permiso en Supabase. Ejecuta de nuevo supabase-mejoras.sql (SQL Editor → Run).", true);
         return;
       }
-      ids.forEach(function (id) { delete pedSel[id]; });
+      lista.forEach(function (p) { delete pedSel[p.id]; });
       toast(n === 1 ? "Pedido borrado ✓" : n + " pedidos borrados ✓");
       await recargarPedidos();
     } catch (ex) {
@@ -2601,17 +2660,45 @@
   document.addEventListener("click", function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
+    var f = t.closest("[data-ped-fecha]");
+    if (f) {
+      pedFecha = f.getAttribute("data-ped-fecha");
+      pedSel = {};
+      var inp = document.getElementById("pedFechaDia");
+      if (inp) inp.value = "";
+      document.querySelectorAll("[data-ped-fecha]").forEach(function (x) { x.classList.toggle("is-on", x === f); });
+      pintarPedidos();
+      return;
+    }
     var r = t.closest("[data-ped-rest]");
     if (r) { pedRest = r.getAttribute("data-ped-rest"); pintarPedidos(); return; }
     var b1 = t.closest("[data-ped-borrar]");
     if (b1) { borrarPedidosUI([b1.getAttribute("data-ped-borrar")]); return; }
     if (t.closest("[data-ped-borrar-sel]")) { borrarPedidosUI(Object.keys(pedSel)); return; }
-    if (t.closest("[data-ped-sel-todos]")) { pedidosVisibles().forEach(function (p) { pedSel[p.id] = true; }); pintarPedidos(); return; }
+    if (t.closest("[data-ped-sel-todos]")) {
+      pedidosVisibles().forEach(function (p) { if (puedeBorrarPedido(p)) pedSel[p.id] = true; });
+      pintarPedidos();
+      return;
+    }
     if (t.closest("[data-ped-sel-nada]")) { pedSel = {}; pintarPedidos(); }
   });
   document.addEventListener("change", function (e) {
     var c = e.target;
-    if (!c || !c.hasAttribute || !c.hasAttribute("data-ped-sel")) return;
+    if (!c || !c.hasAttribute) return;
+    if (c.id === "pedFechaDia") {
+      if (c.value) {
+        pedFecha = c.value;
+        document.querySelectorAll("[data-ped-fecha]").forEach(function (x) { x.classList.remove("is-on"); });
+      } else {
+        pedFecha = "hoy";
+        var hb = document.querySelector('[data-ped-fecha="hoy"]');
+        if (hb) hb.classList.add("is-on");
+      }
+      pedSel = {};
+      pintarPedidos();
+      return;
+    }
+    if (!c.hasAttribute("data-ped-sel")) return;
     var id = c.getAttribute("data-ped-sel");
     if (c.checked) pedSel[id] = true; else delete pedSel[id];
     var art = c.closest(".pedido");
@@ -2635,10 +2722,19 @@
     if (cnt) cnt.textContent = lista.length ? lista.length + (lista.length === 1 ? " pedido" : " pedidos") : "";
     pintarSeleccion();
     if (!lista.length) {
-      cont.innerHTML = '<p class="muted">No hay pedidos para mostrar.</p>';
+      cont.innerHTML = '<p class="muted">No hay pedidos ' + (pedFecha === "todos" ? "para mostrar." : "para esta fecha.") + "</p>";
       return;
     }
-    cont.innerHTML = lista.map(function (p) { return pedidoHTML(p, pedRest); }).join("");
+    var html = "", dia = null;
+    lista.forEach(function (p) {
+      var k = claveDia(p.creado_en);
+      if (k !== dia) {
+        dia = k;
+        html += '<h3 class="ped-fecha">' + esc(etiquetaDia(k)) + "</h3>";
+      }
+      html += pedidoHTML(p, pedRest);
+    });
+    cont.innerHTML = html;
     pintarEnviosMap(lista);
   }
 
@@ -2812,13 +2908,13 @@
       }
       acciones += '<button type="button" class="btn-danger btn-sm ped-cancelar" data-cancelar="' + esc(p.id) + '">Cancelar</button>';
     }
-    if (!esAliado()) acciones += '<button type="button" class="btn-link btn-sm ped-borrar' + (acciones ? "" : " ped-cancelar") + '" data-ped-borrar="' + esc(p.id) + '" title="Borrar para siempre (pedidos de prueba)">🗑 Borrar</button>';
+    if (puedeBorrarPedido(p)) acciones += '<button type="button" class="btn-link btn-sm ped-borrar' + (acciones ? "" : " ped-cancelar") + '" data-ped-borrar="' + esc(p.id) + '" title="' + (esAliado() ? "Borrar este pedido cancelado" : "Borrar para siempre (pedidos de prueba)") + '">🗑 Borrar</button>';
     var hace = haceCuanto(p.creado_en);
 
     return (
       '<article class="pedido estado-' + esc(p.estado) + (pedSel[p.id] ? " pedido--sel" : "") + '">' +
         '<header class="ped-head">' +
-          (esAliado() ? "" : '<label class="ped-check" title="Seleccionar para borrar"><input type="checkbox" data-ped-sel="' + esc(p.id) + '"' + (pedSel[p.id] ? " checked" : "") + " /></label>") +
+          (puedeBorrarPedido(p) ? '<label class="ped-check" title="Seleccionar para borrar"><input type="checkbox" data-ped-sel="' + esc(p.id) + '"' + (pedSel[p.id] ? " checked" : "") + " /></label>" : "") +
           '<span class="pedido__codigo">' + esc(p.codigo || p.id.slice(0, 6)) + "</span>" +
           '<span class="estado-badge estado-badge--' + esc(p.estado) + '">' + esc(ESTADO_LABEL[p.estado] || p.estado) + "</span>" +
           (regalo ? '<span class="ped-tag ped-tag--regalo">🎁 Regalo</span>' : "") +

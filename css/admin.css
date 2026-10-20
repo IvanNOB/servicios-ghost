@@ -759,6 +759,11 @@ code {
 /* Pedidos por restaurante y borrado */
 .ped-filtros--rest { margin-top: -6px; }
 .ped-filtros--rest[hidden] { display: none; }
+.ped-filtros--fecha { margin-top: -6px; align-items: center; }
+.ped-fecha-pick { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-2); }
+.ped-fecha-pick input { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border-fuerte); background: var(--surface-2); color: var(--text); font: inherit; font-size: 0.8rem; }
+.ped-fecha { position: sticky; top: 58px; z-index: 4; margin: 10px 0 0; padding: 7px 0; font-size: 0.84rem; font-weight: 800; letter-spacing: 0.02em; color: var(--text-2); background: var(--bg); border-bottom: 1px solid var(--border); }
+.ped-fecha:first-child { margin-top: 0; }
 .ped-filtro__n { display: inline-block; min-width: 18px; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 0.72rem; background: color-mix(in srgb, var(--text-2) 20%, transparent); }
 .ped-filtro.is-on .ped-filtro__n { background: rgba(0,0,0,.18); }
 .ped-sel { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid #ef4444; background: color-mix(in srgb, #ef4444 12%, var(--surface)); font-weight: 700; }
