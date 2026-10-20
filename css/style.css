@@ -1856,3 +1856,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 .regalo-box[hidden], .modo-sec[hidden] { display: none; }
 .regalo-box .form__heading { margin: 0; }
 .modo-sec { display: grid; gap: 14px; }
+
+/* Instrucciones para instalar la app (celular y computador) */
+.instalar__pasos {
+  margin: 10px 0 12px;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+  line-height: 1.45;
+}

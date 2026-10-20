@@ -2905,14 +2905,77 @@
     if (elInstalar) elInstalar.hidden = true;
     toast("¡Listo! Servicios Ghost quedó instalada 👻");
   });
-  if (elInstalar && esIOS && !yaInstalada) elInstalar.hidden = false;
+  // El botón se muestra siempre que la app no esté ya instalada. Muchas veces
+  // Chrome no ofrece el aviso automático (app ya instalada, navegador interno de
+  // WhatsApp/Instagram, o el usuario lo cerró antes), así que damos los pasos.
+  if (elInstalar && !yaInstalada) elInstalar.hidden = false;
+  function enNavegadorInterno() {
+    return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Twitter|Snapchat/i.test(navigator.userAgent || "");
+  }
+  function pasosInstalar() {
+    if (enNavegadorInterno()) {
+      return [
+        "Estás dentro de WhatsApp, Instagram o Facebook, y esos navegadores no dejan instalar apps.",
+        "Toca el menú ⋯ (arriba a la derecha) y elige “Abrir en el navegador” o “Abrir en Chrome”.",
+        "Ya en Chrome o Safari, toca otra vez “📲 Instalar la app” y sigue los pasos.",
+      ];
+    }
+    if (esIOS) {
+      return [
+        "Abre esta página en Safari.",
+        "Toca el botón Compartir (el cuadro con la flecha hacia arriba).",
+        "Elige “Agregar a pantalla de inicio” y luego “Agregar”.",
+      ];
+    }
+    if (/android/i.test(navigator.userAgent || "")) {
+      return [
+        "Abre esta página en Chrome.",
+        "Toca el menú ⋮ de Chrome (arriba a la derecha).",
+        "Elige “Instalar aplicación” o “Agregar a pantalla principal” y confirma.",
+      ];
+    }
+    return [
+      "En Chrome o Edge: toca el ícono de instalar de la barra de direcciones (una pantalla con una flecha).",
+      "Si no aparece, abre el menú ⋮ y elige “Instalar Servicios Ghost” (o “Aplicaciones → Instalar este sitio”).",
+      "En Safari de Mac: menú Archivo → “Añadir al Dock”.",
+    ];
+  }
+  function mostrarInstalar() {
+    if (document.getElementById("instalarSheet")) { document.getElementById("instalarSheet").hidden = false; document.body.classList.add("no-scroll"); return; }
+    var d = document.createElement("div");
+    d.className = "sheet";
+    d.id = "instalarSheet";
+    d.innerHTML = '<div class="sheet__backdrop" data-inst-close></div>' +
+      '<div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="instalarTitle">' +
+        '<div class="sheet__head">' +
+          '<h2 class="sheet__title" id="instalarTitle">📲 Instalar la app</h2>' +
+          '<button type="button" class="icon-btn" data-inst-close aria-label="Cerrar">' +
+            '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+          "</button>" +
+        "</div>" +
+        '<div class="sheet__body" style="padding:16px">' +
+          '<p style="margin-top:0">Así la app queda en tu pantalla de inicio y pides más rápido.</p>' +
+          '<ol class="instalar__pasos">' + pasosInstalar().map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ol>" +
+          '<p class="muted" style="font-size:.85rem">Si ya la tenías instalada, búscala en tu pantalla de inicio con el nombre <strong>Ghost</strong>.</p>' +
+          '<button type="button" class="btn btn--dark" data-inst-close style="width:100%">Entendido</button>' +
+        "</div>" +
+      "</div>";
+    document.body.appendChild(d);
+    document.body.classList.add("no-scroll");
+  }
+  document.addEventListener("click", function (e) {
+    var c = e.target.closest && e.target.closest("[data-inst-close]");
+    if (!c) return;
+    var m = document.getElementById("instalarSheet");
+    if (m) { m.hidden = true; document.body.classList.remove("no-scroll"); }
+  });
   function instalarApp() {
     if (_promptInstalar) {
       _promptInstalar.prompt();
       _promptInstalar.userChoice.finally(function () { _promptInstalar = null; });
       return;
     }
-    if (esIOS) toast("En iPhone: toca el botón Compartir y luego “Agregar a inicio”.", 6000);
+    mostrarInstalar();
   }
   /* ---------- Fantasma flotante: menú con todo lo que se puede hacer ---------- */
   var elFab = document.getElementById("fab");
@@ -2952,7 +3015,7 @@
       encodeURIComponent("Hola " + NOMBRE_NEGOCIO + (r ? ", tengo una pregunta sobre " + r.nombre + "." : ", quiero hacer un pedido.")) + '">' +
       '<span class="fab__ico" aria-hidden="true">💬</span><span class="fab__txt"><strong>Escribirnos por WhatsApp</strong><small>Te ayudamos con tu pedido</small></span></a>';
     if (r && r.visible !== false) html += fabOpcion("🔗", "Compartir este restaurante", "Envíale la carta a alguien", 'data-compartir="' + esc(r.id) + '"');
-    if ((_promptInstalar || esIOS) && !yaInstalada) html += fabOpcion("📲", "Instalar la app", "Pide más rápido desde tu pantalla", 'data-fab="instalar"');
+    if (!yaInstalada) html += fabOpcion("📲", "Instalar la app", "Pide más rápido desde tu pantalla", 'data-fab="instalar"');
     if (!r) html += fabOpcion("❓", "¿Cómo funciona?", "Pedir en 3 pasos", 'data-fab="como"');
     if (window.scrollY > 600) html += fabOpcion("⬆️", "Volver arriba", "", 'data-fab="arriba"');
     return '<div class="fab__cab">👻 ¿Qué quieres hacer?</div>' + html;
