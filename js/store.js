@@ -171,11 +171,13 @@
     }).filter(function (a) { return a.n; });
   }
 
-  // WhatsApp del negocio: solo números, con el 57 de Colombia ("321 428 6626" → "573214286626").
+  // WhatsApp del negocio: solo celulares colombianos (10 dígitos que empiezan
+  // por 3, con el 57 de Colombia: "321 428 6626" → "573214286626").
   function normalizarWhatsapp(v) {
     var d = String(v || "").replace(/\D/g, "");
-    if (d.length === 10 && d.charAt(0) === "3") d = "57" + d;
-    return d.length >= 11 && d.length <= 15 ? d : "";
+    if (d.length === 12 && d.indexOf("57") === 0) d = d.slice(2);
+    if (d.length === 10 && d.charAt(0) === "3") return "57" + d;
+    return "";
   }
 
   // Promoción propia del negocio: { texto, hasta: "YYYY-MM-DD" | "" } o null.

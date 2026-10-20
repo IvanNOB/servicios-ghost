@@ -46,6 +46,14 @@
       .replace(/'/g, "&#39;");
   }
 
+  // Celular colombiano: 10 dígitos que empiezan por 3. Acepta +57/57 delante
+  // y devuelve los 10 dígitos; "" si el número no es de Colombia.
+  function telCol(v) {
+    var d = String(v || "").replace(/\D/g, "");
+    if (d.length === 12 && d.indexOf("57") === 0) d = d.slice(2);
+    return /^3\d{9}$/.test(d) ? d : "";
+  }
+
   // Iniciales del nombre de un restaurante (máx. 2 letras).
   function iniciales(nombre) {
     return String(nombre)
@@ -1589,10 +1597,12 @@
     var f = [];
     if (!datos.nombre) f.push("tu nombre");
     if (!datos.telefono) f.push("tu teléfono");
+    else if (!telCol(datos.telefono)) f.push("un celular colombiano válido (10 dígitos y empieza por 3)");
     if (datos.modo === "regalo") {
       var d = datos.destinatario || {};
       if (!d.nombre) f.push("el nombre de quien recibe");
       if (!d.telefono) f.push("el teléfono de quien recibe");
+      else if (!telCol(d.telefono)) f.push("un celular colombiano válido de quien recibe (10 dígitos y empieza por 3)");
       if (!d.referencia) f.push("la dirección o referencia del lugar de entrega");
     } else if (!datos.barrio && !datos.direccion && !datos.ubicacion) {
       f.push("tu barrio o la dirección de entrega");
@@ -1611,13 +1621,13 @@
     var tarifa = barrio ? tarifaBarrio(barrio) : null;
     return {
       modo: regalo ? "regalo" : "personal",
-      nombre: v("nombre"), telefono: v("telefono"),
+      nombre: v("nombre"), telefono: telCol(v("telefono")) || v("telefono"),
       direccion: regalo ? "" : v("direccion"), barrio: barrio,
       pago: v("pago") || "Efectivo", notas: v("notas"),
       domicilio: tarifa, // número, o null si se confirma por WhatsApp
       ubicacion: regalo ? null : ubicacionVigente(),
       destinatario: regalo ? {
-        nombre: v("r_nombre"), telefono: v("r_telefono"),
+        nombre: v("r_nombre"), telefono: telCol(v("r_telefono")) || v("r_telefono"),
         referencia: v("r_referencia"),
       } : null,
     };
@@ -1766,6 +1776,7 @@
         '<div class="field">' +
           '<label class="field__label" for="fTelefono" data-modo-lbl-tel>' + (modoEntrega === "regalo" ? "Tu teléfono (WhatsApp) *" : "Teléfono (WhatsApp) *") + "</label>" +
           '<input class="field__input" id="fTelefono" name="telefono" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" autocomplete="tel" maxlength="20" required value="' + esc(vTel) + '" />' +
+          '<small class="muted" data-tel-hint="telefono" hidden></small>' +
         "</div>" +
         // Consumo personal: entrega al mismo cliente
         '<div class="modo-sec" data-modo-sec="personal"' + (modoEntrega === "regalo" ? " hidden" : "") + ">" +
@@ -1786,6 +1797,7 @@
           '<div class="field">' +
             '<label class="field__label" for="fRTelefono">Teléfono de quien recibe *</label>' +
             '<input class="field__input" id="fRTelefono" name="r_telefono" type="tel" inputmode="numeric" maxlength="20" placeholder="Ej: 310 987 6543" autocomplete="off" value="' + esc(destPrevio ? destPrevio.telefono : "") + '" />' +
+            '<small class="muted" data-tel-hint="r_telefono" hidden></small>' +
           "</div>" +
           '<div class="field">' +
             '<label class="field__label" for="fRReferencia">Dirección o referencia del lugar de entrega *</label>' +
@@ -1832,6 +1844,16 @@
       var datos = leerFormulario(form);
       var faltan = faltantesEntrega(datos);
       btnWa.disabled = faltan.length > 0;
+      // Pista junto a cada teléfono (solo celulares colombianos).
+      form.querySelectorAll("[data-tel-hint]").forEach(function (h) {
+        var campo = form.querySelector('[name="' + h.getAttribute("data-tel-hint") + '"]');
+        var valor = campo ? String(campo.value || "").replace(/\D/g, "") : "";
+        if (!valor) { h.hidden = true; h.textContent = ""; return; }
+        var ok = !!telCol(valor);
+        h.hidden = false;
+        h.style.color = ok ? "" : "#f87171";
+        h.textContent = ok ? "✅ Celular colombiano" : "Escribe un celular colombiano de 10 dígitos que empiece por 3.";
+      });
       var av = $("#faltaInfo");
       if (av) {
         // No regañamos al abrir el carrito: el aviso sale al escribir o si ya hay datos.
@@ -1867,7 +1889,16 @@
       var cont = $("#resumenTotales");
       if (cont) cont.innerHTML = resumenTotalesHTML(leerFormulario(form));
     }
-    form.addEventListener("input", function () { validar(true); actualizarTotales(); });
+    form.addEventListener("input", function (e) {
+      var t = e.target;
+      // Los teléfonos solo aceptan dígitos (máx. 12 para permitir el 57).
+      if (t && (t.name === "telefono" || t.name === "r_telefono")) {
+        var limpio = String(t.value || "").replace(/\D/g, "").slice(0, 12);
+        if (limpio !== t.value) t.value = limpio;
+      }
+      validar(true);
+      actualizarTotales();
+    });
     form.addEventListener("change", function (e) {
       if (e.target && e.target.name === "modo") {
         aplicarModo();
