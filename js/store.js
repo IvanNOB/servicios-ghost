@@ -562,6 +562,37 @@
     return rpcAdmin("resumen_visitas", { p_desde: desdeISO || null }).then(function (d) { return d || {}; });
   }
 
+
+  /* ------------------- Preparación (aliado) ----------------------- */
+  // Minutos prometidos por el restaurante para un pedido.
+  async function guardarPreparacion(pedidoId, minutos) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var res = await sb.from("pedidos_prep").upsert({
+      pedido_id: pedidoId,
+      minutos: Math.min(240, Math.max(1, Math.round(Number(minutos) || 15))),
+      aceptado_en: new Date().toISOString(),
+      listo_en: null,
+    }, { onConflict: "pedido_id" });
+    if (res.error) throw res.error;
+  }
+  async function marcarPreparacionLista(pedidoId) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var res = await sb.from("pedidos_prep")
+      .update({ listo_en: new Date().toISOString() })
+      .eq("pedido_id", pedidoId);
+    if (res.error) throw res.error;
+  }
+  // Tiempos de varios pedidos a la vez (para el tablero).
+  async function listarPreparacion(ids) {
+    var sb = client();
+    if (!sb || !ids || !ids.length) return [];
+    var res = await sb.from("pedidos_prep").select("*").in("pedido_id", ids);
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
   // Ventas del negocio aliado con sesión (solo totales, sin datos de clientes).
   function misVentas(desdeISO) { return rpcAdmin("mis_ventas", { p_desde: desdeISO || null }).then(function (d) { return d || {}; }); }
   function quitarAliado(email) { return rpcAdmin("quitar_aliado", { p_email: email }); }
@@ -606,5 +637,8 @@
     misVentas: misVentas,
     registrarVisita: registrarVisita,
     resumenVisitas: resumenVisitas,
+    guardarPreparacion: guardarPreparacion,
+    marcarPreparacionLista: marcarPreparacionLista,
+    listarPreparacion: listarPreparacion,
   };
 })();

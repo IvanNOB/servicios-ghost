@@ -1777,6 +1777,8 @@
       reemplazarEnMemoria(copia);
       toast(copia.abierto ? "▶️ " + r.nombre + " ya recibe pedidos" : "⏸️ " + r.nombre + " quedó cerrado");
       pintarLista();
+      actualizarBotonRecibiendo();
+      if (esAliado() && tabActual() === "pedidos") pintarPedidos();
     } catch (ex) {
       toast(mensajeErrorGuardar(ex), true);
       boton.disabled = false;
@@ -2076,6 +2078,25 @@
 
     // Pedidos: refrescar
     if (t.closest("#btnRefrescarPedidos")) { recargarPedidos(); return; }
+
+    // Pedidos del aliado: tablero
+    if (t.closest("#btnRecibiendo")) {
+      var restRec = restaurantes[0];
+      if (restRec) alternarAbierto(restRec.id, t.closest("#btnRecibiendo"));
+      return;
+    }
+    var kmin = t.closest("[data-k-min]");
+    if (kmin) {
+      prepElegido[kmin.getAttribute("data-k-id")] = Number(kmin.getAttribute("data-k-min")) || 15;
+      pintarPedidos();
+      return;
+    }
+    var kac = t.closest("[data-k-aceptar]");
+    if (kac) { aceptarPedido(kac.getAttribute("data-k-aceptar"), Number(kac.getAttribute("data-k-minutos")) || 15); return; }
+    var kre = t.closest("[data-k-rechazar]");
+    if (kre) { cancelarPedido(kre.getAttribute("data-k-rechazar")); return; }
+    var kli = t.closest("[data-k-listo]");
+    if (kli) { marcarPedidoListo(kli.getAttribute("data-k-listo")); return; }
 
     // Visitas: refrescar
     if (t.closest("#btnRefrescarVisitas")) { cargarVisitas(); return; }
@@ -2462,6 +2483,7 @@
     var estado = filtro ? filtro.value : "todos";
     try {
       pedidos = await window.Store.listarPedidos(estado);
+      if (esAliado()) await cargarPreparacion(pedidos);
       pintarPedidos();
     } catch (ex) {
       if (cont) cont.innerHTML = '<p class="muted">No se pudieron cargar los pedidos: ' +
@@ -2581,6 +2603,17 @@
     if (esAliado()) {
       pedRest = perfil.restaurante_id;
       var fr = document.getElementById("pedFiltroRest"); if (fr) fr.hidden = true;
+      actualizarBotonRecibiendo();
+      var listaA = pedidosVisibles();
+      var cntA = document.getElementById("pedContador");
+      if (cntA) {
+        var hoyA = listaA.filter(function (p) { return fechaColombia(new Date(p.creado_en)) === hoyISO(); }).length;
+        var promA = promedioPreparacionHoy(listaA);
+        cntA.textContent = hoyA + " hoy" + (promA ? " · " + promA + " min de preparación en promedio" : "");
+      }
+      var selBar = document.getElementById("pedSelBar"); if (selBar) selBar.hidden = true;
+      cont.innerHTML = tableroAliadoPedidosHTML(listaA);
+      return;
     }
     var lista = pedidosVisibles();
     var cnt = document.getElementById("pedContador");
@@ -2592,6 +2625,162 @@
     }
     cont.innerHTML = lista.map(function (p) { return pedidoHTML(p, pedRest); }).join("");
     pintarEnviosMap(lista);
+  }
+
+  /* ---------------- Tablero del restaurante aliado ----------------- */
+  // Tiempos de preparación por pedido: { pedido_id: {minutos, aceptado_en, listo_en} }
+  var prepPorPedido = {};
+  var prepElegido = {};   // minutos elegidos en cada tarjeta antes de aceptar
+
+  async function cargarPreparacion(lista) {
+    prepPorPedido = {};
+    if (!lista.length || !window.Store.listarPreparacion) return;
+    try {
+      var filas = await window.Store.listarPreparacion(lista.map(function (p) { return p.id; }));
+      (filas || []).forEach(function (f) { prepPorPedido[f.pedido_id] = f; });
+    } catch (e) { /* sin la tabla de tiempos: el tablero funciona igual */ }
+  }
+
+  function itemsDelAliado(p) {
+    var rid = perfil && perfil.restaurante_id;
+    return (p.items || []).filter(function (it) { return restDeItem(it) === rid; });
+  }
+  function totalDelAliado(p) {
+    return itemsDelAliado(p).reduce(function (n, it) { return n + (Number(it.subtotal) || 0); }, 0);
+  }
+  function codigoCorto(p) {
+    var c = String(p.codigo || "").replace(/^GH-/, "");
+    return c || String(p.id || "").slice(0, 4).toUpperCase();
+  }
+  function minutosRestantes(q) {
+    if (!q || !q.aceptado_en || !q.minutos) return null;
+    var fin = new Date(q.aceptado_en).getTime() + Number(q.minutos) * 60000;
+    return Math.ceil((fin - Date.now()) / 60000);
+  }
+  function progresoPrep(q) {
+    if (!q || !q.aceptado_en || !q.minutos) return 0;
+    var ini = new Date(q.aceptado_en).getTime();
+    var pct = ((Date.now() - ini) / (Number(q.minutos) * 60000)) * 100;
+    return Math.max(4, Math.min(100, Math.round(pct)));
+  }
+  function promedioPreparacionHoy(lista) {
+    var hoy = hoyISO(), mins = [];
+    lista.forEach(function (p) {
+      var q = prepPorPedido[p.id];
+      if (!q || !q.listo_en || !q.aceptado_en) return;
+      if (fechaColombia(new Date(q.listo_en)) !== hoy) return;
+      var d = (new Date(q.listo_en).getTime() - new Date(q.aceptado_en).getTime()) / 60000;
+      if (d >= 0 && d < 240) mins.push(d);
+    });
+    if (!mins.length) return 0;
+    return Math.round(mins.reduce(function (a, b) { return a + b; }, 0) / mins.length);
+  }
+
+  function kcardHTML(p, tipo) {
+    var its = itemsDelAliado(p);
+    var c = p.cliente || {};
+    var regalo = c.modo === "regalo";
+    var q = prepPorPedido[p.id];
+    var itemsHTML = its.map(function (it) {
+      return '<li><b>' + esc(it.cantidad) + "×</b> " + esc(it.plato) + "</li>";
+    }).join("");
+    var head = '<header class="kcard__head">' +
+        '<span class="kcard__code">' + esc(p.codigo || ("#" + String(p.id || "").slice(0, 4))) + "</span>" +
+        (regalo ? '<span class="kcard__tag">🎁 Regalo</span>' : "") +
+        '<span class="kcard__time">' + esc(haceCuanto(p.creado_en) || fechaCorta(p.creado_en)) + "</span>" +
+      "</header>";
+    var cuerpo = '<ul class="kcard__items">' + itemsHTML + "</ul>" +
+      '<div class="kcard__tot"><span>Total de tus productos</span><strong>' + esc(money(totalDelAliado(p))) + "</strong></div>";
+    var gift = regalo ? '<p class="kcard__gift">Es un regalo: empácalo para entregar</p>' : "";
+
+    if (tipo === "nuevo") {
+      var min = prepElegido[p.id] || 15;
+      var minBtns = [10, 15, 20, 30].map(function (m) {
+        return '<button type="button" class="kmin' + (m === min ? " is-on" : "") + '" data-k-min="' + m + '" data-k-id="' + esc(p.id) + '">' + m + "</button>";
+      }).join("");
+      return '<article class="kcard">' + head + cuerpo + gift +
+          '<p class="kcard__q">¿En cuánto lo tienes?</p>' +
+          '<div class="kcard__mins">' + minBtns + "</div>" +
+          '<div class="kcard__acc">' +
+            '<button type="button" class="kbtn kbtn--gold" data-k-aceptar="' + esc(p.id) + '" data-k-minutos="' + min + '">Aceptar · ' + min + ' min</button>' +
+            '<button type="button" class="kbtn kbtn--ghost" data-k-rechazar="' + esc(p.id) + '">Rechazar</button>' +
+          "</div></article>";
+    }
+
+    if (tipo === "preparando") {
+      var rest = minutosRestantes(q);
+      var tiempo = rest == null ? "" :
+        '<div class="kcard__timeleft"><span class="kcard__bar"><i style="width:' + progresoPrep(q) + '%"></i></span>' +
+        (rest > 0 ? "<b>Faltan " + rest + " min</b>" : '<b class="tarde">Atrasado ' + Math.abs(rest) + " min</b>") + "</div>";
+      return '<article class="kcard">' + head + tiempo + cuerpo + gift +
+          '<button type="button" class="kbtn kbtn--green" data-k-listo="' + esc(p.id) + '">Listo para recoger</button>' +
+        "</article>";
+    }
+
+    return '<article class="kcard kcard--listo">' + head + cuerpo +
+        '<div class="kcard__pickup"><small>El domiciliario lo recoge con este código</small><strong>' + esc(codigoCorto(p)) + "</strong></div>" +
+        '<p class="kcard__hint">Pasa a “En camino” cuando Ghost lo recoja.</p>' +
+      "</article>";
+  }
+
+  function tableroAliadoPedidosHTML(lista) {
+    var nuevos = lista.filter(function (p) { return p.estado === "recibido"; });
+    var preparando = lista.filter(function (p) { return p.estado === "preparando"; });
+    var listos = lista.filter(function (p) { return p.estado === "listo"; });
+    var hoy = hoyISO();
+    var enCamino = lista.filter(function (p) { return p.estado === "en-camino"; }).length;
+    var entregados = lista.filter(function (p) {
+      return p.estado === "entregado" && fechaColombia(new Date(p.creado_en)) === hoy;
+    }).length;
+    function col(titulo, clase, arr, tipo) {
+      return '<section class="kcol kcol--' + clase + '">' +
+          '<header class="kcol__head"><span>' + titulo + '</span><span class="kcol__n">' + arr.length + "</span></header>" +
+          '<div class="kcol__body">' +
+            (arr.length ? arr.map(function (p) { return kcardHTML(p, tipo); }).join("") : '<p class="kcol__vacia">Sin pedidos</p>') +
+          "</div></section>";
+    }
+    return '<div class="kboard">' +
+        '<div class="kboard__cols">' +
+          col("🔵 Nuevos", "nuevos", nuevos, "nuevo") +
+          col("🟠 Preparando", "preparando", preparando, "preparando") +
+          col("🟣 Listos para recoger", "listos", listos, "listo") +
+        "</div>" +
+        '<div class="kboard__pie">' +
+          '<div class="kstat"><strong>' + enCamino + '</strong><small>en camino</small></div>' +
+          '<div class="kstat"><strong>' + entregados + '</strong><small>entregados hoy</small></div>' +
+        "</div></div>";
+  }
+
+  async function aceptarPedido(id, minutos) {
+    try {
+      try { await window.Store.guardarPreparacion(id, minutos); } catch (e) { /* sin tabla: sigue */ }
+      await window.Store.actualizarEstadoPedido(id, "preparando");
+      toast("✅ Pedido aceptado · listo en " + minutos + " min");
+      await recargarPedidos();
+    } catch (ex) {
+      toast("No se pudo aceptar: " + (ex && ex.message ? ex.message : "error"), true);
+    }
+  }
+  async function marcarPedidoListo(id) {
+    try {
+      await window.Store.actualizarEstadoPedido(id, "listo");
+      try { await window.Store.marcarPreparacionLista(id); } catch (e) { /* sin tabla */ }
+      toast("🟣 Listo para recoger");
+      await recargarPedidos();
+    } catch (ex) {
+      toast("No se pudo marcar: " + (ex && ex.message ? ex.message : "error"), true);
+    }
+  }
+
+  function actualizarBotonRecibiendo() {
+    var b = document.getElementById("btnRecibiendo");
+    if (!b) return;
+    var r = esAliado() ? restaurantes[0] : null;
+    if (!r) { b.hidden = true; return; }
+    var abierto = r.abierto !== false;
+    b.hidden = false;
+    b.textContent = abierto ? "🟢 Recibiendo pedidos" : "🔴 Cerrado";
+    b.classList.toggle("k-toggle--on", abierto);
   }
 
   /* ---- ¿Llegó a map? (si está conectada la integración) ---- */
@@ -3627,6 +3816,13 @@
     }
     avisos.vistos = ids;
   }
+
+  // El tablero del aliado actualiza el tiempo restante sin recargar la página.
+  setInterval(function () {
+    if (!esAliado() || document.hidden || tabActual() !== "pedidos") return;
+    var cont = document.getElementById("listaPedidos");
+    if (cont && cont.querySelector(".kboard")) pintarPedidos();
+  }, 30000);
 
   /* --------------------------- Arranque --------------------------- */
   (async function init() {

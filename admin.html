@@ -155,7 +155,10 @@
             <h2 class="panel__title">Pedidos</h2>
             <span class="muted" id="pedContador"></span>
           </div>
-          <button type="button" class="btn-copy btn-sm" id="btnRefrescarPedidos" aria-label="Actualizar">🔄 Actualizar</button>
+          <div class="inline-actions">
+            <button type="button" class="btn-copy btn-sm k-toggle" id="btnRecibiendo" hidden>🟢 Recibiendo pedidos</button>
+            <button type="button" class="btn-copy btn-sm" id="btnRefrescarPedidos" aria-label="Actualizar">🔄 Actualizar</button>
+          </div>
         </div>
         <div class="ped-filtros" role="tablist" aria-label="Filtrar pedidos por estado">
           <button type="button" class="ped-filtro is-on" data-ped-filtro="todos">Todos</button>
