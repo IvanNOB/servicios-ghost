@@ -2895,22 +2895,32 @@
   var _promptInstalar = null;
   var elInstalar = document.getElementById("btnInstalar");
   var esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-  var yaInstalada = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone;
+  // Dentro de WhatsApp, Instagram o Facebook el navegador se comporta como
+  // una app y antes hacíamos creer que ya estaba instalada: por eso el botón
+  // no salía en algunos celulares. Ahora esos casos cuentan como "no instalada".
+  var yaInstalada = !enNavegadorInterno() &&
+    ((window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true);
   window.addEventListener("beforeinstallprompt", function (e) {
     e.preventDefault();
     _promptInstalar = e;
     if (elInstalar) elInstalar.hidden = false;
   });
   window.addEventListener("appinstalled", function () {
-    if (elInstalar) elInstalar.hidden = true;
+    yaInstalada = true;
+    if (elInstalar) elInstalar.textContent = "✅ App instalada";
     toast("¡Listo! Servicios Ghost quedó instalada 👻");
   });
   // El botón se muestra siempre que la app no esté ya instalada. Muchas veces
   // Chrome no ofrece el aviso automático (app ya instalada, navegador interno de
   // WhatsApp/Instagram, o el usuario lo cerró antes), así que damos los pasos.
-  if (elInstalar && !yaInstalada) elInstalar.hidden = false;
+  // El botón queda siempre a la vista: si el navegador no ofrece el aviso,
+  // al tocarlo explicamos los pasos del teléfono o del computador.
+  if (elInstalar) {
+    elInstalar.hidden = false;
+    if (yaInstalada) elInstalar.textContent = "✅ App instalada";
+  }
   function enNavegadorInterno() {
-    return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Twitter|Snapchat/i.test(navigator.userAgent || "");
+    return /FBAN|FBAV|FB_IAB|Instagram|Line\/|WhatsApp|Twitter|Snapchat|; wv\)/i.test(navigator.userAgent || "");
   }
   function pasosInstalar() {
     if (enNavegadorInterno()) {
@@ -2954,7 +2964,9 @@
           "</button>" +
         "</div>" +
         '<div class="sheet__body" style="padding:16px">' +
-          '<p style="margin-top:0">Así la app queda en tu pantalla de inicio y pides más rápido.</p>' +
+          '<p style="margin-top:0">' + (yaInstalada
+            ? "✅ Ya estás usando la app instalada. Si quieres instalarla en otro teléfono, sigue estos pasos."
+            : "Así la app queda en tu pantalla de inicio y pides más rápido.") + "</p>" +
           '<ol class="instalar__pasos">' + pasosInstalar().map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ol>" +
           '<p class="muted" style="font-size:.85rem">Si ya la tenías instalada, búscala en tu pantalla de inicio con el nombre <strong>Ghost</strong>.</p>' +
           '<button type="button" class="btn btn--dark" data-inst-close style="width:100%">Entendido</button>' +
@@ -3015,7 +3027,9 @@
       encodeURIComponent("Hola " + NOMBRE_NEGOCIO + (r ? ", tengo una pregunta sobre " + r.nombre + "." : ", quiero hacer un pedido.")) + '">' +
       '<span class="fab__ico" aria-hidden="true">💬</span><span class="fab__txt"><strong>Escribirnos por WhatsApp</strong><small>Te ayudamos con tu pedido</small></span></a>';
     if (r && r.visible !== false) html += fabOpcion("🔗", "Compartir este restaurante", "Envíale la carta a alguien", 'data-compartir="' + esc(r.id) + '"');
-    if (!yaInstalada) html += fabOpcion("📲", "Instalar la app", "Pide más rápido desde tu pantalla", 'data-fab="instalar"');
+    html += fabOpcion("📲", "Instalar la app",
+      yaInstalada ? "Ya la tienes en tu pantalla" : "Pide más rápido desde tu pantalla",
+      'data-fab="instalar"');
     if (!r) html += fabOpcion("❓", "¿Cómo funciona?", "Pedir en 3 pasos", 'data-fab="como"');
     if (window.scrollY > 600) html += fabOpcion("⬆️", "Volver arriba", "", 'data-fab="arriba"');
     return '<div class="fab__cab">👻 ¿Qué quieres hacer?</div>' + html;
