@@ -2651,6 +2651,55 @@
       "</div>";
   }
 
+  // Ícono y etiqueta de la dedicatoria según el tipo de producto.
+  function iconoProducto(nombre) {
+    var n = String(nombre || "").toLowerCase();
+    if (/tarjeta|moño|mono|colecci|regalo|termo/.test(n)) return "🎁";
+    if (/panini|hamburg|perro|sandwich|sanduche|pizza|arepa|empanada/.test(n)) return "🥪";
+    if (/postre|brownie|pionono|torta|helado|arequipe|migao/.test(n)) return "🍰";
+    if (/agua|coca|jugo|hit|soda|ginger/.test(n)) return "🥤";
+    if (/caf|frapp|latte|milo|chocolate|smoothie|granizado|bebida|té/.test(n)) return "☕";
+    return "🛍️";
+  }
+  function etiquetaDedicatoria(nombre) {
+    var n = String(nombre || "").toLowerCase();
+    if (/bebida|caf|frapp|latte|milo|chocolate|smoothie|granizado|jugo|soda|ginger|agua|vaso/.test(n)) return "Mensaje para este vaso";
+    return "Dedicatoria para este producto";
+  }
+
+  // Un producto del pedido, con su dedicatoria debajo (como en la carta del cliente).
+  function productoHTML(it, idx, mostrarRest) {
+    var qty = Number(it.cantidad) || 1;
+    var unit = Number(it.precio_unit) || 0;
+    var sub = it.subtotal != null ? Number(it.subtotal) : unit * qty;
+    var lista = Array.isArray(it.tarjeta) ? it.tarjeta : it.tarjeta ? [it.tarjeta] : [];
+    var conMsg = lista.filter(function (t) { return t && t.msg; });
+    var deds = conMsg.map(function (t, i) {
+      var lbl = etiquetaDedicatoria(it.plato);
+      if (conMsg.length > 1) lbl += " · unidad " + (i + 1) + " de " + conMsg.length;
+      else if (qty > 1) lbl += " · unidad " + (t.u || i + 1);
+      return '<div class="ped-ded">' +
+          '<span class="ped-ded__lbl">' + esc(lbl) + "</span>" +
+          (t.para ? '<div class="ped-ded__fila"><span>Para:</span><strong>' + esc(t.para) + "</strong></div>" : "") +
+          (t.de ? '<div class="ped-ded__fila"><span>De:</span><strong>' + esc(t.de) + "</strong></div>" : "") +
+          '<blockquote class="ped-ded__txt">«' + esc(t.msg) + "»</blockquote>" +
+        "</div>";
+    }).join("");
+    return '<li class="ped-prod">' +
+        '<div class="ped-prod__top">' +
+          '<span class="ped-prod__ico" aria-hidden="true">' + iconoProducto(it.plato) + "</span>" +
+          '<span class="ped-prod__n"><b>' + (idx + 1) + '.</b> ' + esc(it.plato) +
+            (mostrarRest ? '<small class="muted">' + esc(it.restaurante || "") + "</small>" : "") +
+          "</span>" +
+        "</div>" +
+        '<div class="ped-prod__val">Valor: <strong>' + (unit > 0 ? esc(money(sub)) : "por confirmar") + "</strong>" +
+          (qty > 1 ? ' <span class="muted">(' + qty + " × " + esc(money(unit)) + ")</span>" : "") +
+        "</div>" +
+        (it.nota ? '<div class="pedido-nota">✏️ ' + esc(it.nota) + "</div>" : "") +
+        deds +
+      "</li>";
+  }
+
   function pedidoHTML(p, soloRest) {
     var c = p.cliente || {};
     var todos = p.items || [];
@@ -2661,20 +2710,7 @@
     var regalo = c.modo === "regalo" && c.destinatario;
 
     // Productos
-    var lineas = items.map(function (it) {
-      var tarjetas = (Array.isArray(it.tarjeta) ? it.tarjeta : it.tarjeta ? [it.tarjeta] : []).map(function (t) {
-        return t && t.msg ? '<div class="pedido-nota pedido-nota--tarjeta">💌 <strong>Mensaje en vaso o tarjeta' + (t.u ? " #" + esc(t.u) : "") + "</strong>" +
-          (t.para ? "<br>Para: " + esc(t.para) : "") + (t.de ? "<br>De: " + esc(t.de) : "") +
-          "<br>“" + esc(t.msg) + "”</div>" : "";
-      }).join("");
-      return '<li class="ped-item">' +
-          '<span class="ped-item__qty">' + esc(it.cantidad) + "×</span>" +
-          '<span class="ped-item__n">' + esc(it.plato) + '<small class="muted">' + esc(it.restaurante || "") + "</small></span>" +
-          '<span class="ped-item__p">' + esc(money(it.subtotal)) + "</span>" +
-          (it.nota || tarjetas ? '<div class="ped-item__extra">' +
-            (it.nota ? '<div class="pedido-nota">✏️ ' + esc(it.nota) + "</div>" : "") + tarjetas + "</div>" : "") +
-        "</li>";
-    }).join("");
+    var lineas = items.map(function (it, idx) { return productoHTML(it, idx, !soloRest); }).join("");
 
     var total = p.total || 0, dom = typeof c.domicilio === "number" ? c.domicilio : null;
     var subRest = soloRest ? items.reduce(function (s, it) { return s + (Number(it.subtotal) || 0); }, 0) : 0;
@@ -2682,7 +2718,7 @@
       ? '<div class="ped-tot"><div class="ped-tot__final"><span>Subtotal de ' + esc(items[0] ? items[0].restaurante || soloRest : soloRest) + "</span><span>" + esc(money(subRest)) + "</span></div>" +
         '<div class="muted">También pidió en: ' + esc(otros.join(", ")) + " · pedido completo " + esc(money(total)) + "</div></div>"
       : "") + (soloRest && otros.length ? "" : '<div class="ped-tot">' +
-        '<div><span>Productos</span><span>' + esc(money(total)) + "</span></div>" +
+        '<div><span>Total de productos</span><span>' + esc(money(total)) + "</span></div>" +
         '<div><span>Domicilio</span><span>' + (dom == null ? '<em class="muted">por confirmar</em>' : esc(dom > 0 ? money(dom) : "gratis")) + "</span></div>" +
         '<div class="ped-tot__final"><span>Total a cobrar</span><span>' + esc(money(total + (dom || 0))) + (dom == null ? " + dom." : "") + "</span></div>" +
       "</div>");
