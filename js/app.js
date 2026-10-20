@@ -2010,13 +2010,11 @@
     lines.push("*TIPO DE PEDIDO:* " + (regalo ? "🎁 REGALO" : "🙋 CONSUMO PERSONAL"));
     lines.push(linea);
 
-    var n = 0;
     groups.forEach(function (g) {
       if (groups.length > 1) lines.push("*" + g.rest.nombre.toUpperCase() + "*");
       g.items.forEach(function (x) {
         var item = x.item, qty = x.qty;
-        n++;
-        lines.push("*" + n + ". " + String(item.n || "").toUpperCase() + "* ×" + qty);
+        lines.push("*" + String(item.n || "").toUpperCase() + "* ×" + qty);
         var notaLinea = notaDe(cartKey(g.rest.id, item.id));
         if (notaLinea) lines.push("_Nota: " + notaLinea + "_");
         tarjetasDe(cartKey(g.rest.id, item.id)).forEach(function (t) {

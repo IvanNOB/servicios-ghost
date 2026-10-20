@@ -2688,7 +2688,7 @@
     return '<li class="ped-prod">' +
         '<div class="ped-prod__top">' +
           '<span class="ped-prod__ico" aria-hidden="true">' + iconoProducto(it.plato) + "</span>" +
-          '<span class="ped-prod__n"><b>' + (idx + 1) + '.</b> ' + esc(it.plato) +
+          '<span class="ped-prod__n">' + esc(it.plato) +
             (mostrarRest ? '<small class="muted">' + esc(it.restaurante || "") + "</small>" : "") +
           "</span>" +
         "</div>" +
