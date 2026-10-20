@@ -92,7 +92,7 @@
     if (/email not confirmed/i.test(m)) return "Tu cuenta aún no está activada. Pídele a Servicios Ghost que la confirme.";
     if (/rate limit|too many/i.test(m)) return "Muchos intentos seguidos. Espera unos minutos y vuelve a intentar.";
     if (/timeout|timed out/i.test(m)) return "El servidor tardó demasiado en responder. Revisa tu internet y vuelve a intentar.";
-    if (/failed to fetch|network/i.test(m)) return "No hay conexión a internet. Revisa tu señal y vuelve a intentar.";
+    if (/failed to fetch|network|load failed/i.test(m)) return "No hay conexión con el servidor. Revisa tu internet y, si usas bloqueador de anuncios o antivirus, permite esta página y supabase.co, y vuelve a intentar.";
     return "No se pudo entrar: " + (m || "revisa el correo y la contraseña.");
   }
 
