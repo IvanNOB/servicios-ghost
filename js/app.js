@@ -1644,8 +1644,9 @@
   }
 
   // Casillas de "Mensaje en vaso o tarjeta": una por unidad, con el máximo de
-  // letras que puso el negocio para ese producto.
-  function tarjetasHTML(key, qty, max, lista) {
+  // letras que puso el negocio para ese producto. "Para" y "De" solo se piden
+  // cuando el pedido es un regalo; en consumo personal queda solo la nota.
+  function tarjetasHTML(key, qty, max, lista, regalo) {
     var html = '<div class="cart-tarj"' + (lista ? "" : " hidden") + ">" +
       '<span class="cart-tarj__tit">💌 Mensaje en vaso o tarjeta <button type="button" class="btn-link cart-tarj__quitar" data-tarj-quitar="' + esc(key) + '">Quitar</button></span>' +
       (qty > 1 ? '<small class="muted">Puedes poner un mensaje distinto en cada uno. Deja vacío el que no lleve.</small>' : "");
@@ -1654,7 +1655,7 @@
       var attrs = ' data-tarj="' + esc(key) + '" data-tarj-i="' + i + '"';
       html += '<div class="cart-tarj__u">' +
         (qty > 1 ? '<span class="cart-tarj__num">#' + (i + 1) + " de " + qty + "</span>" : "") +
-        '<div class="cart-tarj__fila">' +
+        '<div class="cart-tarj__fila" data-solo-regalo' + (regalo ? "" : " hidden") + ">" +
           '<input class="field__input"' + attrs + ' data-campo-t="para" maxlength="40" value="' + esc(t.para || "") + '" placeholder="Para (ej. Mamá)" />' +
           '<input class="field__input"' + attrs + ' data-campo-t="de" maxlength="40" value="' + esc(t.de || "") + '" placeholder="De (ej. Juan)" />' +
         "</div>" +
@@ -1714,7 +1715,7 @@
                 '<input class="field__input" data-nota="' + esc(kNota) + '" maxlength="120" value="' + esc(nota) + '" placeholder="Ej: sin cebolla, la carne bien asada, salsa aparte" enterkeyhint="done" />' +
               "</label>" +
               // Mensaje en vaso o tarjeta (solo si el negocio lo activó en este producto)
-              (maxDed ? tarjetasHTML(kNota, qty, maxDed, tarj) : "") +
+              (maxDed ? tarjetasHTML(kNota, qty, maxDed, tarj, modoEntrega === "regalo") : "") +
             "</div>" +
           "</div>";
       }
@@ -1852,6 +1853,10 @@
       if (ln) ln.textContent = regalo ? "Tu nombre *" : "Nombre *";
       var lt = form.querySelector("[data-modo-lbl-tel]");
       if (lt) lt.textContent = regalo ? "Tu teléfono (WhatsApp) *" : "Teléfono (WhatsApp) *";
+      // "Para" y "De" del mensaje en vaso/tarjeta: solo cuando es regalo.
+      document.querySelectorAll("[data-solo-regalo]").forEach(function (el) {
+        el.hidden = !regalo;
+      });
     }
     function actualizarTotales() {
       if (fOtro && fBarrio) {
@@ -2015,10 +2020,12 @@
         var notaLinea = notaDe(cartKey(g.rest.id, item.id));
         if (notaLinea) lines.push("_Nota: " + notaLinea + "_");
         tarjetasDe(cartKey(g.rest.id, item.id)).forEach(function (t) {
-          var quien = [];
-          if (t.para) quien.push("Para: " + t.para);
-          if (t.de) quien.push("De: " + t.de);
-          if (quien.length) lines.push("_" + quien.join(" · ") + "_");
+          if (regalo) {
+            var quien = [];
+            if (t.para) quien.push("Para: " + t.para);
+            if (t.de) quien.push("De: " + t.de);
+            if (quien.length) lines.push("_" + quien.join(" · ") + "_");
+          }
           if (t.msg) lines.push("“" + t.msg + "”");
         });
       });
