@@ -2738,6 +2738,7 @@
           fila("👤", esc(c.destinatario.nombre || "")) +
           fila("📞", tel(c.destinatario.telefono)) +
           fila("📍", esc(c.destinatario.referencia || "") || '<em class="muted">Confirmar dirección con quien recibe</em>') +
+          (c.notas ? fila("📝", esc(c.notas)) : "") +
           (c.destinatario.mensaje ? fila("💌", "“" + esc(c.destinatario.mensaje) + "”") : "") +
         "</div>"
       : "";
@@ -2747,7 +2748,7 @@
         (regalo ? "" : fila("📍", lugar || '<em class="muted">Sin dirección: confirmar por WhatsApp</em>')) +
         (mapa && !regalo ? '<div class="ped-fila ped-fila--btn">' + mapa + "</div>" : "") +
         fila("💳", esc(c.pago || "—")) +
-        (c.notas ? fila("📝", esc(c.notas)) : "") +
+        (!regalo && c.notas ? fila("📝", esc(c.notas)) : "") +
       "</div>";
 
     // Progreso y acciones
