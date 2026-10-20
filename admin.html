@@ -50,10 +50,10 @@
     <section class="panel panel--narrow" id="vistaLogin" hidden>
       <h2 class="panel__title">Entrar al panel</h2>
       <p class="muted" style="margin:-6px 0 14px;font-size:.9rem">Para el equipo de Servicios Ghost y los <strong>negocios aliados</strong>. Entra con el correo y la contraseña que te enviamos.</p>
-      <form id="loginForm" class="form">
+      <form id="loginForm" class="form" novalidate>
         <div class="field">
           <label class="field__label" for="loginEmail">Correo</label>
-          <input class="field__input" id="loginEmail" type="email" autocomplete="username" required />
+          <input class="field__input" id="loginEmail" type="email" autocomplete="username" autocapitalize="none" spellcheck="false" required />
         </div>
         <div class="field">
           <label class="field__label" for="loginPass">Contraseña</label>
