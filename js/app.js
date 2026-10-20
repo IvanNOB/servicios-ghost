@@ -1975,7 +1975,17 @@
     });
   }
 
-  // Mensaje que se envía por WhatsApp. Cada dedicatoria va debajo de SU producto.
+  // Emoji del negocio para el encabezado del mensaje.
+  function emojiComercio(txt) {
+    var t = String(txt || "").toLowerCase();
+    if (/caf|coffee|bebida|frapp|smoothie|jugo|granizado/.test(t)) return "☕";
+    if (/hamburg|burger|pizza|panini|comida|restaurante|asadero/.test(t)) return "🍔";
+    if (/postre|torta|helado|reposter|dulce/.test(t)) return "🍰";
+    return "👻";
+  }
+
+  // Mensaje corto para WhatsApp: negritas, cursivas y separadores.
+  // Cada dedicatoria va debajo de SU producto.
   function construirMensaje(datos, codigo, soloGrupos) {
     var todos = groupedCart();
     var groups = soloGrupos || todos;
@@ -1988,75 +1998,65 @@
     var productos = parcial ? groups.reduce(function (n, g) { return n + g.subtotal; }, 0) : totalPesos();
     var nombres = [];
     groups.forEach(function (g) { if (nombres.indexOf(g.rest.nombre) === -1) nombres.push(g.rest.nombre); });
+    var linea = "━━━━━━━━━━━━━━";
 
     var lines = [];
-    lines.push("PEDIDO - " + nombres.join(" · ").toUpperCase());
-    lines.push("Código: " + codigo);
-    lines.push("Tipo de pedido: " + (regalo ? "REGALO 🎁" : "CONSUMO PERSONAL"));
+    lines.push(emojiComercio(nombres.join(" ")) + " *" + nombres.join(" · ").toUpperCase() + "*");
+    lines.push("*PEDIDO #" + String(codigo || "").replace(/^GH-/, "") + "*");
     lines.push("");
-    lines.push("PRODUCTOS");
+    lines.push(linea);
     lines.push("");
 
     var n = 0;
     groups.forEach(function (g) {
-      if (groups.length > 1) lines.push("• " + g.rest.nombre.toUpperCase());
+      if (groups.length > 1) {
+        lines.push("*" + g.rest.nombre.toUpperCase() + "*");
+        lines.push("");
+      }
       g.items.forEach(function (x) {
         var item = x.item, qty = x.qty;
         n++;
-        lines.push(n + ". " + item.n);
-        lines.push("   Cantidad: " + qty);
-        lines.push("   Precio: " + (item.p > 0
-          ? money(item.p) + (qty > 1 ? " c/u · Subtotal: " + money(item.p * qty) : "")
-          : "por confirmar"));
+        lines.push("*" + n + ". " + String(item.n || "").toUpperCase() + "* ×" + qty);
         var notaLinea = notaDe(cartKey(g.rest.id, item.id));
-        if (notaLinea) lines.push("   Nota: " + notaLinea);
+        if (notaLinea) lines.push("_Nota: " + notaLinea + "_");
         tarjetasDe(cartKey(g.rest.id, item.id)).forEach(function (t) {
-          lines.push("   Dedicatoria" + (t.u ? " (unidad " + t.u + ")" : "") + ":");
-          if (t.para) lines.push("   Para: " + t.para);
-          if (t.de) lines.push("   De: " + t.de);
-          lines.push("   Mensaje: " + t.msg);
+          var quien = [];
+          if (t.para) quien.push("Para: " + t.para);
+          if (t.de) quien.push("De: " + t.de);
+          if (quien.length) lines.push("_" + quien.join(" · ") + "_");
+          if (t.msg) lines.push("“" + t.msg + "”");
         });
         lines.push("");
       });
-      if (groups.length > 1) lines.push("Subtotal " + g.rest.nombre + ": " + money(g.subtotal));
+      if (groups.length > 1) lines.push("*Subtotal " + g.rest.nombre + ": " + money(g.subtotal) + "*");
     });
-    if (groups.length > 1) lines.push("");
 
-    lines.push("RESUMEN DEL PEDIDO");
-    lines.push("Subtotal de productos: " + money(productos) + (porConfirmar ? " + precios por confirmar" : ""));
-    lines.push("Total de productos: " + money(productos) + (porConfirmar ? " + precios por confirmar" : ""));
+    lines.push(linea);
+    lines.push("");
+    lines.push("*TOTAL PRODUCTOS: " + money(productos) + "*" + (porConfirmar ? " _(+ precios por confirmar)_" : ""));
     if (parcial) {
-      lines.push("Domicilio: se coordina (el pedido también incluye otros restaurantes).");
+      lines.push("*DOMICILIO:* Se coordina (el pedido incluye otros restaurantes)");
     } else if (datos.domicilio != null) {
-      lines.push("Domicilio (" + datos.barrio + "): " + (datos.domicilio > 0 ? money(datos.domicilio) : "gratis"));
-      lines.push("Total con domicilio: " + money(productos + datos.domicilio) + (porConfirmar ? " + precios por confirmar" : ""));
+      lines.push("*DOMICILIO:* " + (datos.domicilio > 0 ? money(datos.domicilio) : "Gratis"));
     } else {
-      lines.push("Domicilio: por confirmar según el barrio.");
+      lines.push("*DOMICILIO:* Por confirmar");
     }
+    lines.push("*PAGO:* " + (datos.pago || "Efectivo"));
     lines.push("");
 
-    lines.push("DATOS DE ENTREGA");
     if (regalo) {
-      lines.push("Recibe: " + d.nombre);
-      lines.push("Teléfono: " + d.telefono);
-      lines.push("Referencia: " + (d.referencia || "por confirmar con quien recibe"));
-      lines.push("Compra: " + datos.nombre + " · " + datos.telefono);
-    } else {
-      lines.push("Nombre: " + datos.nombre);
-      lines.push("Teléfono: " + datos.telefono);
-      if (datos.barrio) lines.push("Barrio: " + datos.barrio);
-      if (datos.direccion) lines.push("Dirección: " + datos.direccion);
-      if (datos.ubicacion) lines.push("Ubicación: " + enlaceMapa(datos.ubicacion) + " (±" + datos.ubicacion.acc + " m)");
-    }
-    lines.push("Pago: " + datos.pago);
-    if (datos.notas) lines.push("Observaciones: " + datos.notas);
-    lines.push("");
-
-    if (hayTarjetas(groups)) {
-      lines.push("IMPORTANTE: cada dedicatoria corresponde únicamente al producto indicado encima.");
+      lines.push("📍 *ENTREGAR A:* " + d.nombre + (d.telefono ? " · " + d.telefono : ""));
+      lines.push("*UBICACIÓN:* " + (d.referencia || "Por confirmar con quien recibe"));
+      if (datos.notas) lines.push("*OBSERVACIONES:* " + datos.notas);
       lines.push("");
+      lines.push("⚠️ Confirmar quién recibe.");
+    } else {
+      lines.push("📍 *ENTREGAR A:* " + datos.nombre + (datos.telefono ? " · " + datos.telefono : ""));
+      var lugar = [datos.direccion, datos.barrio].filter(Boolean).join(" · ");
+      if (lugar) lines.push("*DIRECCIÓN:* " + lugar);
+      if (datos.ubicacion) lines.push("*UBICACIÓN:* " + enlaceMapa(datos.ubicacion));
+      if (datos.notas) lines.push("*OBSERVACIONES:* " + datos.notas);
     }
-    lines.push("Sigue tu pedido: " + urlSeguimiento(codigo));
     return lines.join("\n");
   }
 
