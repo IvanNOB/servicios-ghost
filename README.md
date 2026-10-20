@@ -47,7 +47,7 @@ funciones nuevas que necesitan la base de datos.
 |---|---|
 | 🍽️ Restaurantes | Cartas, fotos de platos, **horario** (se abre/cierra solo, hora de Colombia), opciones por plato (salsa, tamaño), "Pegar carta". |
 | 🍳🍲 Menú del día | Publicar cada día el **desayuno** y/o el **almuerzo** de cada lugar, con opciones y foto. El cliente arma el suyo. Se oculta solo al día siguiente. |
-| 📋 Pedidos | Cambiar estado (el cliente lo ve en "Seguir mi pedido"). Contador de pedidos nuevos. |
+| 📋 Pedidos | Filtra por **Hoy / Ayer / 7 días / mes / día exacto**, agrupados por fecha. Cambia el estado (el cliente lo ve en "Seguir mi pedido") y borra pedidos de prueba. El aliado solo puede borrar pedidos **cancelados** que sean exclusivamente de su negocio. |
 | 📊 Ventas | Ventas **entregadas**, comisión, por restaurante, platos más vendidos, horas pico, descarga **CSV** (Excel). Al abrirla se actualiza "Lo más pedido" en la tienda. |
 | ⚙️ Ajustes | **Domicilio por barrio**, promociones del inicio, % de comisión y **cuentas de aliados**. |
 
@@ -56,6 +56,9 @@ funciones nuevas que necesitan la base de datos.
   (marca *Auto Confirm User*), luego en *Ajustes → Cuentas de aliados* asígnale su restaurante.
   El aliado entra al mismo `admin.html` y solo ve **su** carta y su almuerzo del día.
   Lo que ves en Ventas tampoco lo ve el aliado.
+  Para que un aliado pueda borrar sus pedidos **cancelados**, vuelve a ejecutar
+  `supabase-pedidos-aliados.sql` (no puede borrar pedidos activos ni compartidos
+  con otros negocios).
 
 ## Qué ve el cliente
 
