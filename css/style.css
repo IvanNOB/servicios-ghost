@@ -1865,3 +1865,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   gap: 8px;
   line-height: 1.45;
 }
+
+/* Aviso de datos que faltan antes de enviar el pedido */
+.copy-msg--falta { color: var(--advertencia, #f59e0b); }
