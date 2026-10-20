@@ -2002,18 +2002,12 @@
 
     var lines = [];
     lines.push(emojiComercio(nombres.join(" ")) + " *" + nombres.join(" · ").toUpperCase() + "*");
-    lines.push("*PEDIDO #" + String(codigo || "").replace(/^GH-/, "") + "*");
     lines.push("*TIPO DE PEDIDO:* " + (regalo ? "🎁 REGALO" : "🙋 CONSUMO PERSONAL"));
-    lines.push("");
     lines.push(linea);
-    lines.push("");
 
     var n = 0;
     groups.forEach(function (g) {
-      if (groups.length > 1) {
-        lines.push("*" + g.rest.nombre.toUpperCase() + "*");
-        lines.push("");
-      }
+      if (groups.length > 1) lines.push("*" + g.rest.nombre.toUpperCase() + "*");
       g.items.forEach(function (x) {
         var item = x.item, qty = x.qty;
         n++;
@@ -2027,13 +2021,11 @@
           if (quien.length) lines.push("_" + quien.join(" · ") + "_");
           if (t.msg) lines.push("“" + t.msg + "”");
         });
-        lines.push("");
       });
       if (groups.length > 1) lines.push("*Subtotal " + g.rest.nombre + ": " + money(g.subtotal) + "*");
     });
 
     lines.push(linea);
-    lines.push("");
     lines.push("*TOTAL PRODUCTOS: " + money(productos) + "*" + (porConfirmar ? " _(+ precios por confirmar)_" : ""));
     if (parcial) {
       lines.push("*DOMICILIO:* Se coordina (el pedido incluye otros restaurantes)");
@@ -2043,7 +2035,6 @@
       lines.push("*DOMICILIO:* Por confirmar");
     }
     lines.push("*PAGO:* " + (datos.pago || "Efectivo"));
-    lines.push("");
 
     if (regalo) {
       lines.push("📍 *ENTREGAR A:* " + d.nombre + (d.telefono ? " · " + d.telefono : ""));
