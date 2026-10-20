@@ -388,9 +388,17 @@
   function getQty(restId, itemId) { return cart[cartKey(restId, itemId)] || 0; }
   function setQty(restId, itemId, qty) {
     var key = cartKey(restId, itemId);
-    if (qty <= 0) delete cart[key];
-    else cart[key] = qty;
+    if (qty <= 0) {
+      delete cart[key];
+      delete tarjetasCart[key];   // al quitar el producto se va su dedicatoria
+      delete notasCart[key];
+    } else {
+      cart[key] = qty;
+      // Si bajan las unidades, no dejamos mensajes de unidades que ya no existen.
+      if (Array.isArray(tarjetasCart[key]) && tarjetasCart[key].length > qty) tarjetasCart[key].length = qty;
+    }
     saveCart();
+    guardarNotas();
   }
 
   // Vacía el carrito por completo (tras enviar un pedido).
@@ -1576,6 +1584,22 @@
     if (t.closest("[data-ubi-quitar]")) { e.preventDefault(); ubicacion = null; _ubiEstado = ""; pintarUbicacion(); }
   });
 
+  // Qué datos imprescindibles faltan para poder enviar (se avisa antes de WhatsApp).
+  function faltantesEntrega(datos) {
+    var f = [];
+    if (!datos.nombre) f.push("tu nombre");
+    if (!datos.telefono) f.push("tu teléfono");
+    if (datos.modo === "regalo") {
+      var d = datos.destinatario || {};
+      if (!d.nombre) f.push("el nombre de quien recibe");
+      if (!d.telefono) f.push("el teléfono de quien recibe");
+      if (!d.referencia) f.push("la dirección o referencia del lugar de entrega");
+    } else if (!datos.barrio && !datos.direccion && !datos.ubicacion) {
+      f.push("tu barrio o la dirección de entrega");
+    }
+    return f;
+  }
+
   // Lee el formulario en un objeto (lo usan el envío, el copiado y la nube).
   function leerFormulario(form) {
     var data = new FormData(form);
@@ -1641,6 +1665,16 @@
     return html + "</div>";
   }
 
+  // Lo que el cliente ya escribió (aunque no haya enviado) para no borrarlo
+  // cuando el carrito se repinta al cambiar cantidades o de tipo de pedido.
+  function leerDestinatario(form) {
+    function q(n) {
+      var el = form && form.querySelector('[name="' + n + '"]');
+      return el ? String(el.value || "").trim() : "";
+    }
+    return { nombre: q("r_nombre"), telefono: q("r_telefono"), referencia: q("r_referencia") };
+  }
+
   function renderSheet() {
     var groups = groupedCart();
 
@@ -1692,7 +1726,19 @@
     }
 
     var c = leerLS(LS_CLIENTE, {});
-    var datosPrevios = { barrio: c.barrio || "", domicilio: c.barrio ? tarifaBarrio(c.barrio) : null };
+    // Si la hoja ya estaba abierta, conservamos lo escrito antes de repintar.
+    var formPrevio = document.getElementById("pedidoForm");
+    var previo = null;
+    try { if (formPrevio) previo = leerFormulario(formPrevio); } catch (e) { previo = null; }
+    var destPrevio = formPrevio ? leerDestinatario(formPrevio) : null;
+    if (previo) modoEntrega = previo.modo;
+    var vNombre = previo ? previo.nombre : (c.nombre || "");
+    var vTel = previo ? previo.telefono : (c.telefono || "");
+    var vDir = previo && previo.direccion ? previo.direccion : (c.direccion || "");
+    var vBarrio = previo && previo.barrio ? previo.barrio : (c.barrio || "");
+    var vNotas = previo ? previo.notas : "";
+    var vPago = previo ? previo.pago : (c.pago || "Efectivo");
+    var datosPrevios = { barrio: vBarrio, domicilio: vBarrio ? tarifaBarrio(vBarrio) : null };
 
     elSheetBody.innerHTML =
       gruposHTML +
@@ -1714,18 +1760,18 @@
         (c.nombre ? '<p class="form__hint form__hint--ok">✓ Usamos tus datos del último pedido. Revísalos.</p>' : "") +
         '<div class="field">' +
           '<label class="field__label" for="fNombre" data-modo-lbl-nombre>' + (modoEntrega === "regalo" ? "Tu nombre *" : "Nombre *") + "</label>" +
-          '<input class="field__input" id="fNombre" name="nombre" type="text" placeholder="¿A nombre de quién?" autocomplete="name" maxlength="80" required value="' + esc(c.nombre || "") + '" />' +
+          '<input class="field__input" id="fNombre" name="nombre" type="text" placeholder="¿A nombre de quién?" autocomplete="name" maxlength="80" required value="' + esc(vNombre) + '" />' +
         "</div>" +
         '<div class="field">' +
           '<label class="field__label" for="fTelefono" data-modo-lbl-tel>' + (modoEntrega === "regalo" ? "Tu teléfono (WhatsApp) *" : "Teléfono (WhatsApp) *") + "</label>" +
-          '<input class="field__input" id="fTelefono" name="telefono" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" autocomplete="tel" maxlength="20" required value="' + esc(c.telefono || "") + '" />' +
+          '<input class="field__input" id="fTelefono" name="telefono" type="tel" inputmode="numeric" placeholder="Ej: 300 123 4567" autocomplete="tel" maxlength="20" required value="' + esc(vTel) + '" />' +
         "</div>" +
         // Consumo personal: entrega al mismo cliente
         '<div class="modo-sec" data-modo-sec="personal"' + (modoEntrega === "regalo" ? " hidden" : "") + ">" +
-          campoBarrioHTML(c.barrio) +
+          campoBarrioHTML(vBarrio) +
           '<div class="field">' +
             '<label class="field__label" for="fDireccion">Dirección de entrega (opcional)</label>' +
-            '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" maxlength="160" value="' + esc(c.direccion || "") + '" />' +
+            '<input class="field__input" id="fDireccion" name="direccion" type="text" placeholder="Calle, número y referencias" autocomplete="street-address" maxlength="160" value="' + esc(vDir) + '" />' +
             ubicacionHTML() +
           "</div>" +
         "</div>" +
@@ -1734,29 +1780,35 @@
           '<h3 class="form__heading">🎁 ¿Quién recibe el regalo?</h3>' +
           '<div class="field">' +
             '<label class="field__label" for="fRNombre">Nombre de quien recibe *</label>' +
-            '<input class="field__input" id="fRNombre" name="r_nombre" type="text" maxlength="80" placeholder="Ej: María Gómez" autocomplete="off" />' +
+            '<input class="field__input" id="fRNombre" name="r_nombre" type="text" maxlength="80" placeholder="Ej: María Gómez" autocomplete="off" value="' + esc(destPrevio ? destPrevio.nombre : "") + '" />' +
           "</div>" +
           '<div class="field">' +
             '<label class="field__label" for="fRTelefono">Teléfono de quien recibe *</label>' +
-            '<input class="field__input" id="fRTelefono" name="r_telefono" type="tel" inputmode="numeric" maxlength="20" placeholder="Ej: 310 987 6543" autocomplete="off" />' +
+            '<input class="field__input" id="fRTelefono" name="r_telefono" type="tel" inputmode="numeric" maxlength="20" placeholder="Ej: 310 987 6543" autocomplete="off" value="' + esc(destPrevio ? destPrevio.telefono : "") + '" />' +
           "</div>" +
           '<div class="field">' +
-            '<label class="field__label" for="fRReferencia">Referencia del lugar de entrega (opcional)</label>' +
-            '<input class="field__input" id="fRReferencia" name="r_referencia" type="text" maxlength="160" placeholder="Ej: Hospital, entrada principal · Yamaha · Supergiros de la calle principal" autocomplete="off" />' +
+            '<label class="field__label" for="fRReferencia">Dirección o referencia del lugar de entrega *</label>' +
+            '<input class="field__input" id="fRReferencia" name="r_referencia" type="text" maxlength="160" placeholder="Ej: Hospital, entrada principal · Yamaha · Supergiros de la calle principal" autocomplete="off" value="' + esc(destPrevio ? destPrevio.referencia : "") + '" />' +
+            '<small class="muted">Lo mínimo para que el domiciliario encuentre el lugar. Si no la sabes, escribe un punto de referencia.</small>' +
           "</div>" +
           '<small class="muted">💌 Si quieres un mensaje en el vaso o en una tarjeta, escríbelo arriba, en cada producto.</small>' +
-          '<p class="form__hint">📲 Le escribiremos por WhatsApp a quien recibe para confirmar la dirección de entrega. No tienes que saberla tú. El pago y las dudas del pedido se hablan contigo.</p>' +
+          '<p class="form__hint">📲 Si no sabes la dirección exacta, escribe un punto de referencia (un negocio, una esquina). Le escribiremos por WhatsApp a quien recibe para confirmar. El pago y las dudas del pedido se hablan contigo.</p>' +
+        "</div>" +
+        '<div class="field">' +
+          '<label class="field__label" for="fNotas">Observaciones de entrega (opcional)</label>' +
+          '<input class="field__input" id="fNotas" name="notas" type="text" maxlength="200" placeholder="Ej: escribir a quien recibe para confirmar la dirección" value="' + esc(vNotas) + '" />' +
         "</div>" +
         '<div class="field">' +
           '<span class="field__label">Forma de pago</span>' +
           '<div class="pay">' +
-            '<label class="pay__option"><input type="radio" name="pago" value="Efectivo"' + (c.pago !== "Transferencia" ? " checked" : "") + ' /> 💵 Efectivo</label>' +
-            '<label class="pay__option"><input type="radio" name="pago" value="Transferencia"' + (c.pago === "Transferencia" ? " checked" : "") + ' /> 📲 Transferencia</label>' +
+            '<label class="pay__option"><input type="radio" name="pago" value="Efectivo"' + (vPago !== "Transferencia" ? " checked" : "") + ' /> 💵 Efectivo</label>' +
+            '<label class="pay__option"><input type="radio" name="pago" value="Transferencia"' + (vPago === "Transferencia" ? " checked" : "") + ' /> 📲 Transferencia</label>' +
           "</div>" +
         "</div>" +
         '<div class="actions">' +
           '<button type="submit" class="btn-whatsapp" id="btnWhatsapp" disabled><span aria-hidden="true">🟢</span> Enviar pedido por WhatsApp</button>' +
           '<button type="button" class="btn-copy" data-copy>Copiar el pedido</button>' +
+          '<p class="copy-msg copy-msg--falta" id="faltaInfo" role="status" aria-live="polite" hidden></p>' +
           '<p class="copy-msg" id="copyMsg" role="status" aria-live="polite"></p>' +
         "</div>" +
       "</form>";
@@ -1775,14 +1827,17 @@
     var fOtro = $("#fBarrioOtro");
     if (!form || !btnWa || !fNombre || !fTelefono) return;
 
-    function validar() {
-      // Personal: solo nombre y teléfono. Regalo: además nombre y teléfono de quien recibe.
-      var ok = fNombre.value.trim() && fTelefono.value.trim();
-      if (modoEntrega === "regalo") {
-        var rn = $("#fRNombre"), rt = $("#fRTelefono");
-        ok = ok && rn && rn.value.trim() && rt && rt.value.trim();
+    function validar(mostrar) {
+      var datos = leerFormulario(form);
+      var faltan = faltantesEntrega(datos);
+      btnWa.disabled = faltan.length > 0;
+      var av = $("#faltaInfo");
+      if (av) {
+        // No regañamos al abrir el carrito: el aviso sale al escribir o si ya hay datos.
+        var ver = mostrar || !!(datos.nombre && datos.telefono);
+        av.hidden = !faltan.length || !ver;
+        av.textContent = faltan.length ? "Falta " + faltan.join(", ") + " para enviar el pedido." : "";
       }
-      btnWa.disabled = !ok;
     }
     function aplicarModo() {
       var m = form.querySelector('input[name="modo"]:checked');
@@ -1807,11 +1862,11 @@
       var cont = $("#resumenTotales");
       if (cont) cont.innerHTML = resumenTotalesHTML(leerFormulario(form));
     }
-    form.addEventListener("input", function () { validar(); actualizarTotales(); });
+    form.addEventListener("input", function () { validar(true); actualizarTotales(); });
     form.addEventListener("change", function (e) {
       if (e.target && e.target.name === "modo") {
         aplicarModo();
-        validar();
+        validar(true);
         if (modoEntrega === "regalo") { var rn = $("#fRNombre"); if (rn && !rn.value) rn.focus(); }
       }
       actualizarTotales();
@@ -1920,83 +1975,88 @@
     });
   }
 
+  // Mensaje que se envía por WhatsApp. Cada dedicatoria va debajo de SU producto.
   function construirMensaje(datos, codigo, soloGrupos) {
     var todos = groupedCart();
     var groups = soloGrupos || todos;
     var parcial = soloGrupos && soloGrupos.length < todos.length;
+    var regalo = datos.modo === "regalo" && datos.destinatario ? true : false;
+    var d = regalo ? datos.destinatario : null;
+    var porConfirmar = groups.some(function (g) {
+      return g.items.some(function (x) { return !(x.item.p > 0); });
+    });
+    var productos = parcial ? groups.reduce(function (n, g) { return n + g.subtotal; }, 0) : totalPesos();
+    var nombres = [];
+    groups.forEach(function (g) { if (nombres.indexOf(g.rest.nombre) === -1) nombres.push(g.rest.nombre); });
+
     var lines = [];
-    lines.push("NUEVO PEDIDO - " + NOMBRE_NEGOCIO);
-    lines.push("Codigo: " + codigo);
-    lines.push("--------------------------------");
+    lines.push("PEDIDO - " + nombres.join(" · ").toUpperCase());
+    lines.push("Código: " + codigo);
+    lines.push("Tipo de pedido: " + (regalo ? "REGALO 🎁" : "CONSUMO PERSONAL"));
+    lines.push("");
+    lines.push("PRODUCTOS");
     lines.push("");
 
-    for (var gi = 0; gi < groups.length; gi++) {
-      var g = groups[gi];
-      lines.push(g.rest.nombre);
-      for (var i = 0; i < g.items.length; i++) {
-        var item = g.items[i].item;
-        var qty = g.items[i].qty;
-        lines.push("- " + qty + " x " + item.n + " = " +
-          (item.p > 0 ? money(item.p * qty) : "precio a confirmar"));
+    var n = 0;
+    groups.forEach(function (g) {
+      if (groups.length > 1) lines.push("• " + g.rest.nombre.toUpperCase());
+      g.items.forEach(function (x) {
+        var item = x.item, qty = x.qty;
+        n++;
+        lines.push(n + ". " + item.n);
+        lines.push("   Cantidad: " + qty);
+        lines.push("   Precio: " + (item.p > 0
+          ? money(item.p) + (qty > 1 ? " c/u · Subtotal: " + money(item.p * qty) : "")
+          : "por confirmar"));
         var notaLinea = notaDe(cartKey(g.rest.id, item.id));
-        if (notaLinea) lines.push("   > Nota: " + notaLinea);
+        if (notaLinea) lines.push("   Nota: " + notaLinea);
         tarjetasDe(cartKey(g.rest.id, item.id)).forEach(function (t) {
-          lines.push("   > MENSAJE EN VASO O TARJETA" + (t.u ? " (#" + t.u + ")" : "") + ":");
-          if (t.para) lines.push("     Para: " + t.para);
-          if (t.de) lines.push("     De: " + t.de);
-          lines.push("     \"" + t.msg + "\"");
+          lines.push("   Dedicatoria" + (t.u ? " (unidad " + t.u + ")" : "") + ":");
+          if (t.para) lines.push("   Para: " + t.para);
+          if (t.de) lines.push("   De: " + t.de);
+          lines.push("   Mensaje: " + t.msg);
         });
-      }
-      lines.push("Subtotal: " + money(g.subtotal));
-      lines.push("");
-    }
+        lines.push("");
+      });
+      if (groups.length > 1) lines.push("Subtotal " + g.rest.nombre + ": " + money(g.subtotal));
+    });
+    if (groups.length > 1) lines.push("");
 
-    var productos = parcial ? groups.reduce(function (n, g) { return n + g.subtotal; }, 0) : totalPesos();
-    var porConfirmar = groups.some(function (g) { return g.items.some(function (x) { return !(x.item.p > 0); }); });
-    lines.push("--------------------------------");
-    lines.push("Total productos: " + money(productos) +
-      (porConfirmar ? " + productos con precio a confirmar" : ""));
+    lines.push("RESUMEN DEL PEDIDO");
+    lines.push("Subtotal de productos: " + money(productos) + (porConfirmar ? " + precios por confirmar" : ""));
+    lines.push("Total de productos: " + money(productos) + (porConfirmar ? " + precios por confirmar" : ""));
     if (parcial) {
-      // El pedido se repartió entre varios restaurantes: el domicilio se coordina.
-      lines.push("(el cliente pidio tambien en otros restaurantes; el domicilio se coordina)");
+      lines.push("Domicilio: se coordina (el pedido también incluye otros restaurantes).");
     } else if (datos.domicilio != null) {
       lines.push("Domicilio (" + datos.barrio + "): " + (datos.domicilio > 0 ? money(datos.domicilio) : "gratis"));
-      lines.push("TOTAL A PAGAR: " + money(productos + datos.domicilio) + (porConfirmar ? " + productos con precio a confirmar" : ""));
+      lines.push("Total con domicilio: " + money(productos + datos.domicilio) + (porConfirmar ? " + precios por confirmar" : ""));
     } else {
-      lines.push("(el domicilio se confirma segun el barrio)");
+      lines.push("Domicilio: por confirmar según el barrio.");
     }
     lines.push("");
-    if (datos.modo === "regalo" && datos.destinatario) {
-      var d = datos.destinatario;
-      lines.push("*** ES UN REGALO ***");
-      lines.push("");
-      lines.push("ENTREGAR A (quien recibe)");
-      lines.push("Nombre: " + d.nombre);
-      lines.push("Telefono: " + d.telefono);
-      if (d.referencia) lines.push("Referencia del lugar: " + d.referencia);
-      lines.push("(escribirle a quien recibe para confirmar la direccion)");
-      if (hayTarjetas(groups)) lines.push("(los mensajes en vaso o tarjeta van arriba, en cada producto)");
-      lines.push("");
-      lines.push("QUIEN COMPRA (contacto y pago)");
-      lines.push("Nombre: " + datos.nombre);
-      lines.push("Telefono: " + datos.telefono);
-      lines.push("Pago: " + datos.pago);
-      if (datos.notas) lines.push("Nota: " + datos.notas);
-    } else {
-      lines.push("CONSUMO PERSONAL");
-      lines.push("");
-      lines.push("DATOS DE ENTREGA");
-      lines.push("Nombre: " + datos.nombre);
-      lines.push("Telefono: " + datos.telefono);
-      if (datos.barrio) lines.push("Barrio: " + datos.barrio);
-      if (datos.direccion) lines.push("Direccion: " + datos.direccion);
-      if (datos.ubicacion) lines.push("Ubicacion: " + enlaceMapa(datos.ubicacion) + " (+/- " + datos.ubicacion.acc + " m)");
-      lines.push("Pago: " + datos.pago);
-      if (datos.notas) lines.push("Nota: " + datos.notas);
-    }
-    lines.push("");
-    lines.push("Sigue tu pedido: " + urlSeguimiento(codigo));
 
+    lines.push("DATOS DE ENTREGA");
+    if (regalo) {
+      lines.push("Recibe: " + d.nombre);
+      lines.push("Teléfono: " + d.telefono);
+      lines.push("Referencia: " + (d.referencia || "por confirmar con quien recibe"));
+      lines.push("Compra: " + datos.nombre + " · " + datos.telefono);
+    } else {
+      lines.push("Nombre: " + datos.nombre);
+      lines.push("Teléfono: " + datos.telefono);
+      if (datos.barrio) lines.push("Barrio: " + datos.barrio);
+      if (datos.direccion) lines.push("Dirección: " + datos.direccion);
+      if (datos.ubicacion) lines.push("Ubicación: " + enlaceMapa(datos.ubicacion) + " (±" + datos.ubicacion.acc + " m)");
+    }
+    lines.push("Pago: " + datos.pago);
+    if (datos.notas) lines.push("Observaciones: " + datos.notas);
+    lines.push("");
+
+    if (hayTarjetas(groups)) {
+      lines.push("IMPORTANTE: cada dedicatoria corresponde únicamente al producto indicado encima.");
+      lines.push("");
+    }
+    lines.push("Sigue tu pedido: " + urlSeguimiento(codigo));
     return lines.join("\n");
   }
 
@@ -2021,12 +2081,16 @@
     var form = $("#pedidoForm");
     var copyMsg = $("#copyMsg");
     if (!form) return;
-    var texto = construirMensaje(leerFormulario(form), codigoPedido());
+    var datos = leerFormulario(form);
+    var texto = construirMensaje(datos, codigoPedido());
+    var faltan = faltantesEntrega(datos);
     try {
       await navigator.clipboard.writeText(texto);
       if (copyMsg) {
-        copyMsg.textContent = "¡Pedido copiado! 📋";
-        copyMsg.classList.remove("copy-msg--error");
+        copyMsg.textContent = faltan.length
+          ? "Copiado 📋 Ojo: todavía falta " + faltan.join(", ") + "."
+          : "¡Pedido copiado! 📋";
+        copyMsg.classList.toggle("copy-msg--error", faltan.length > 0);
       }
     } catch (err) {
       if (copyMsg) {
