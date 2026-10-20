@@ -91,8 +91,20 @@
     if (/invalid login credentials/i.test(m)) return "Correo o contraseña incorrectos. Revisa que estén bien escritos (sin espacios al final). Si no la recuerdas, pídele a Servicios Ghost una nueva.";
     if (/email not confirmed/i.test(m)) return "Tu cuenta aún no está activada. Pídele a Servicios Ghost que la confirme.";
     if (/rate limit|too many/i.test(m)) return "Muchos intentos seguidos. Espera unos minutos y vuelve a intentar.";
+    if (/timeout|timed out/i.test(m)) return "El servidor tardó demasiado en responder. Revisa tu internet y vuelve a intentar.";
     if (/failed to fetch|network/i.test(m)) return "No hay conexión a internet. Revisa tu señal y vuelve a intentar.";
     return "No se pudo entrar: " + (m || "revisa el correo y la contraseña.");
+  }
+
+  // Espera máxima para que Supabase responda: evita que el botón quede
+  // girando para siempre si la red se queda colgada.
+  function conTiempo(promesa, ms) {
+    return Promise.race([
+      promesa,
+      new Promise(function (_, rechazar) {
+        setTimeout(function () { rechazar(new Error("network timeout")); }, ms);
+      }),
+    ]);
   }
 
   /* ----------------------------- Login ---------------------------- */
@@ -100,17 +112,50 @@
     var form = $("#loginForm");
     var err = $("#loginError");
     var btn = $("#btnEntrar");
+    if (!form || !btn) return;
+    var procesando = false;
+
+    function aviso(msg) {
+      if (err) err.textContent = msg;
+    }
+
     form.addEventListener("submit", async function (e) {
       e.preventDefault();
-      err.textContent = "";
+      if (procesando) return;   // evita envíos duplicados
+
+      var email = String(($("#loginEmail") || {}).value || "").trim();
+      var pass = String(($("#loginPass") || {}).value || "");
+
+      // Validación propia y visible (el formulario tiene novalidate):
+      // así el navegador nunca bloquea el envío en silencio.
+      if (!email || !pass) {
+        aviso("Escribe tu correo y tu contraseña para entrar.");
+        var foco = !email ? $("#loginEmail") : $("#loginPass");
+        if (foco) foco.focus();
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        aviso("Ese correo no parece válido. Revísalo, por ejemplo: nombre@correo.com");
+        var campo = $("#loginEmail");
+        if (campo) campo.focus();
+        return;
+      }
+      if (!window.Store || typeof window.Store.entrar !== "function") {
+        aviso("No pudimos cargar la conexión con el servidor. Recarga la página e intenta de nuevo.");
+        return;
+      }
+
+      procesando = true;
+      aviso("");
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Entrando…';
       try {
-        await window.Store.entrar($("#loginEmail").value.trim(), $("#loginPass").value);
-        await iniciarPanel();
+        await conTiempo(window.Store.entrar(email, pass), 25000);
+        await conTiempo(iniciarPanel(), 25000);
       } catch (ex) {
-        err.textContent = errorEntrada(ex);
+        aviso(errorEntrada(ex));
       } finally {
+        procesando = false;
         btn.disabled = false;
         btn.textContent = "Entrar";
       }
@@ -3656,6 +3701,8 @@
       await iniciarPanel();
     } catch (ex) {
       mostrar("login");
+      var le = $("#loginError");
+      if (le) le.textContent = errorEntrada(ex);
     }
   })();
 })();
