@@ -533,6 +533,19 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 18px;
 }
 
+/* Datos de transferencia (Nequi, banco…) que ve el cliente al elegir Transferencia. */
+.cart-note--transferencia {
+  text-align: left;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 45%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  color: var(--text);
+  line-height: 1.5;
+}
+.cart-note--transferencia strong { color: var(--primary); }
+
 /* Formulario */
 .form__heading {
   font-family: var(--font-title);

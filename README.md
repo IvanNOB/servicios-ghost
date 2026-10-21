@@ -52,6 +52,7 @@ funciones nuevas que necesitan la base de datos.
 | ⚙️ Ajustes | **Domicilio por barrio**, promociones del inicio, % de comisión y **cuentas de aliados**. |
 
 - **🔔 Activar avisos** (arriba): suena y muestra una notificación cuando llega un pedido. Deja la pestaña abierta.
+- **Datos para transferencia**: en la ficha de cada negocio escribes su Nequi, Daviplata o cuenta bancaria. El cliente lo ve al elegir **Transferencia** como forma de pago.
 - **Cuentas de aliados**: crea la cuenta en Supabase → *Authentication → Users → Add user*
   (marca *Auto Confirm User*), luego en *Ajustes → Cuentas de aliados* asígnale su restaurante.
   El aliado entra al mismo `admin.html` y solo ve **su** carta y su almuerzo del día.

@@ -1632,6 +1632,34 @@
     };
   }
 
+  // Datos para transferir de los negocios del pedido (Nequi, banco, cuenta…).
+  function datosTransferencia(grupos) {
+    var vistos = {}, out = [];
+    (grupos || groupedCart()).forEach(function (g) {
+      var r = g.rest || {};
+      var t = String(r.transferencia || "").trim();
+      if (!t || vistos[r.id]) return;
+      vistos[r.id] = true;
+      out.push({ nombre: r.nombre, texto: t });
+    });
+    return out;
+  }
+
+  // Muestra los datos de transferencia cuando el cliente elige esa forma de pago.
+  function pintarTransferencia() {
+    var el = document.getElementById("datosTransferencia");
+    if (!el) return;
+    var sel = el.form ? el.form.querySelector('input[name="pago"]:checked') : null;
+    if (!sel || sel.value !== "Transferencia") { el.hidden = true; el.textContent = ""; return; }
+    var lista = datosTransferencia();
+    el.hidden = false;
+    el.innerHTML = lista.length
+      ? "🏦 <strong>Transfiere a:</strong><br>" + lista.map(function (x) {
+          return "• " + esc(x.nombre) + ": " + esc(x.texto).replace(/\n/g, "<br>");
+        }).join("<br>")
+      : "El negocio te confirma por WhatsApp los datos para transferir.";
+  }
+
   function resumenTotalesHTML(datos) {
     var productos = totalPesos();
     var html = '<div class="cart-total"><span>Productos</span><span>' + esc(money(productos)) + "</span></div>";
@@ -1816,6 +1844,7 @@
             '<label class="pay__option"><input type="radio" name="pago" value="Efectivo"' + (vPago !== "Transferencia" ? " checked" : "") + ' /> 💵 Efectivo</label>' +
             '<label class="pay__option"><input type="radio" name="pago" value="Transferencia"' + (vPago === "Transferencia" ? " checked" : "") + ' /> 📲 Transferencia</label>' +
           "</div>" +
+          '<div class="cart-note cart-note--transferencia" id="datosTransferencia" hidden></div>' +
         "</div>" +
         '<div class="actions">' +
           '<button type="submit" class="btn-whatsapp" id="btnWhatsapp" disabled><span aria-hidden="true">🟢</span> Enviar pedido por WhatsApp</button>' +
@@ -1904,10 +1933,12 @@
         validar(true);
         if (modoEntrega === "regalo") { var rn = $("#fRNombre"); if (rn && !rn.value) rn.focus(); }
       }
+      if (e.target && e.target.name === "pago") pintarTransferencia();
       actualizarTotales();
     });
     aplicarModo();
     validar();
+    pintarTransferencia();
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -2019,8 +2050,8 @@
     return "👻";
   }
 
-  // Mensaje corto para WhatsApp: negritas, cursivas y separadores.
-  // Cada dedicatoria va debajo de SU producto.
+  // Mensaje para WhatsApp con el formato acordado:
+  // entrega, tipo, productos, resumen de pago y ubicación.
   function construirMensaje(datos, codigo, soloGrupos) {
     var todos = groupedCart();
     var groups = soloGrupos || todos;
@@ -2033,12 +2064,21 @@
     var productos = parcial ? groups.reduce(function (n, g) { return n + g.subtotal; }, 0) : totalPesos();
     var nombres = [];
     groups.forEach(function (g) { if (nombres.indexOf(g.rest.nombre) === -1) nombres.push(g.rest.nombre); });
-    var linea = "━━━━━━━━━━━━━━";
+    var linea = "━━━━━━━━━━━━━━━━━━━";
+    var nombre = regalo ? d.nombre : datos.nombre;
+    var telefono = regalo ? d.telefono : datos.telefono;
+    var lugar = regalo
+      ? (d.referencia || "")
+      : [datos.direccion, datos.barrio].filter(Boolean).join(" · ");
+    if (!lugar && !regalo && datos.ubicacion) lugar = enlaceMapa(datos.ubicacion);
 
     var lines = [];
     lines.push(emojiComercio(nombres.join(" ")) + " *" + nombres.join(" · ").toUpperCase() + "*");
-    lines.push("*TIPO DE PEDIDO:* " + (regalo ? "🎁 REGALO" : "🙋 CONSUMO PERSONAL"));
+    lines.push("📍 *ENTREGAR A:*");
+    lines.push("Nombre: " + (nombre || "—"));
+    lines.push("Teléfono: " + (telefono || ""));
     lines.push(linea);
+    lines.push((regalo ? "🎁 " : "🙋 ") + "*TIPO DE PEDIDO:* " + (regalo ? "REGALO" : "CONSUMO PERSONAL"));
 
     groups.forEach(function (g) {
       if (groups.length > 1) lines.push("*" + g.rest.nombre.toUpperCase() + "*");
@@ -2061,29 +2101,28 @@
     });
 
     lines.push(linea);
-    lines.push("*TOTAL PRODUCTOS: " + money(productos) + "*" + (porConfirmar ? " _(+ precios por confirmar)_" : ""));
+    lines.push("💰 *RESUMEN DE PAGO:*");
+    lines.push("Total Productos: " + money(productos) + (porConfirmar ? " (+ precios por confirmar)" : ""));
     if (parcial) {
-      lines.push("*DOMICILIO:* Se coordina (el pedido incluye otros restaurantes)");
+      lines.push("Domicilio: Se coordina (el pedido incluye otros restaurantes)");
     } else if (datos.domicilio != null) {
-      lines.push("*DOMICILIO:* " + (datos.domicilio > 0 ? money(datos.domicilio) : "Gratis"));
+      lines.push("Domicilio: " + (datos.domicilio > 0 ? money(datos.domicilio) : "Gratis"));
     } else {
-      lines.push("*DOMICILIO:* Por confirmar");
+      lines.push("Domicilio: Por confirmar");
     }
-    lines.push("*PAGO:* " + (datos.pago || "Efectivo"));
-
-    if (regalo) {
-      lines.push("📍 *ENTREGAR A:* " + d.nombre + (d.telefono ? " · " + d.telefono : ""));
-      lines.push("*UBICACIÓN:* " + (d.referencia || "Por confirmar con quien recibe"));
-      if (datos.notas) lines.push("*OBSERVACIONES:* " + datos.notas);
-      lines.push("");
-      lines.push("⚠️ Confirmar quién recibe.");
-    } else {
-      lines.push("📍 *ENTREGAR A:* " + datos.nombre + (datos.telefono ? " · " + datos.telefono : ""));
-      var lugar = [datos.direccion, datos.barrio].filter(Boolean).join(" · ");
-      if (lugar) lines.push("*DIRECCIÓN:* " + lugar);
-      if (datos.ubicacion) lines.push("*UBICACIÓN:* " + enlaceMapa(datos.ubicacion));
-      if (datos.notas) lines.push("*OBSERVACIONES:* " + datos.notas);
+    var totalPagar = productos + (!parcial && datos.domicilio != null ? datos.domicilio : 0);
+    lines.push("TOTAL A PAGAR: " + money(totalPagar) +
+      (parcial ? " (domicilio por coordinar)" : datos.domicilio == null ? " (más domicilio)" : ""));
+    lines.push("Método de Pago: " + (datos.pago || "Efectivo"));
+    if ((datos.pago || "") === "Transferencia") {
+      var transf = datosTransferencia(groups);
+      if (transf.length) {
+        lines.push("🏦 *DATOS PARA TRANSFERENCIA:*");
+        transf.forEach(function (t) { lines.push(t.nombre + ": " + t.texto); });
+      }
     }
+    lines.push("📌 *UBICACIÓN:* " + (lugar || (regalo ? "Por confirmar con quien recibe" : "Por confirmar")));
+    if (datos.notas) lines.push("📝 *OBSERVACIONES:* " + datos.notas);
     return lines.join("\n");
   }
 
