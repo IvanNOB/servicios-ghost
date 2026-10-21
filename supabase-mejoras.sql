@@ -34,6 +34,9 @@ alter table public.restaurantes add column if not exists logo_ajuste text defaul
 alter table public.restaurantes add column if not exists promo jsonb default null;
 -- WhatsApp del negocio para recibir sus pedidos directo. Vacío = le llegan a Servicios Ghost.
 alter table public.restaurantes add column if not exists whatsapp text default null;
+-- Datos para transferir (Nequi, banco, cuenta…). Se le muestran al cliente
+-- cuando elige "Transferencia" como forma de pago.
+alter table public.restaurantes add column if not exists transferencia text default null;
 
 -- 2) Perfiles y permisos ----------------------------------------------
 create table if not exists public.perfiles (

@@ -235,6 +235,7 @@
     if (colsFalt.indexOf("desayuno") !== -1) faltan.push("desayunos del día");
     if (colsFalt.indexOf("visible") !== -1 || colsFalt.indexOf("logo_ajuste") !== -1) faltan.push("ocultar negocios mientras organizan su carta y mostrar logos completos");
     if (colsFalt.indexOf("whatsapp") !== -1) faltan.push("que cada negocio reciba sus pedidos en su propio WhatsApp");
+    if (colsFalt.indexOf("transferencia") !== -1) faltan.push("los datos de transferencia de cada negocio");
     if (perfil && perfil.legado) faltan.push("seguimiento del pedido para clientes");
     if (!faltan.length) { el.hidden = true; return; }
     el.hidden = false;
@@ -633,6 +634,14 @@
         '<input class="field__input" id="campoWhatsapp" data-campo="whatsapp" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" value="' +
           esc(r.whatsapp ? String(r.whatsapp).replace(/^57(?=3\d{9}$)/, "") : "") + '" placeholder="Ej: 321 428 6626" />' +
         '<p class="muted campo-wa__ayuda" id="campoWhatsappAyuda">' + ayudaWhatsapp(r.whatsapp) + "</p>" +
+      "</div>" +
+      // Datos de transferencia: se los ve el cliente cuando elige "Transferencia".
+      '<div class="field campo-transferencia">' +
+        '<label class="field__label" for="campoTransferencia">💳 Datos para transferencia <span class="muted">(opcional)</span></label>' +
+        '<textarea class="field__textarea" id="campoTransferencia" data-campo="transferencia" rows="3" maxlength="400" ' +
+          'placeholder="Nequi: 300 123 4567&#10;Bancolombia: cuenta 123-4567890">' + esc(r.transferencia || "") + "</textarea>" +
+        '<p class="muted">El cliente ve estos datos al elegir <strong>Transferencia</strong> como forma de pago. ' +
+          "Ej: Nequi, Daviplata, número de cuenta y a nombre de quién es.</p>" +
       "</div>" +
       '<label class="pay__option" style="margin:4px 0 6px; max-width:320px">' +
         '<input type="checkbox" id="campoAbierto" ' + (r.abierto ? "checked" : "") + " /> Recibe pedidos</label>" +
@@ -2377,6 +2386,15 @@
       delete r._importMsg;
       await window.Store.guardar(r, { soloActualizar: esAliado() });
       var falta = window.Store.columnasFaltantes();
+      // Los datos de transferencia no se pudieron guardar porque a la base le falta la columna.
+      if (String(r.transferencia || "").trim() && window.Store.columnasRechazadas().indexOf("transferencia") !== -1) {
+        btn.disabled = false;
+        btn.textContent = "Guardar cambios";
+        toast("⚠️ Lo demás quedó guardado, pero los datos de transferencia no: en Supabase → SQL Editor ejecuta " +
+          "alter table public.restaurantes add column if not exists transferencia text default null; y vuelve a guardar.", true);
+        await recargarLista();
+        return;
+      }
       // El número no se pudo guardar porque a la base de datos le falta ese espacio.
       if (waEscrito && window.Store.columnasRechazadas().indexOf("whatsapp") !== -1) {
         btn.disabled = false;

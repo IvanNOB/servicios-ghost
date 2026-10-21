@@ -1632,6 +1632,34 @@
     };
   }
 
+  // Datos para transferir de los negocios del pedido (Nequi, banco, cuenta…).
+  function datosTransferencia(grupos) {
+    var vistos = {}, out = [];
+    (grupos || groupedCart()).forEach(function (g) {
+      var r = g.rest || {};
+      var t = String(r.transferencia || "").trim();
+      if (!t || vistos[r.id]) return;
+      vistos[r.id] = true;
+      out.push({ nombre: r.nombre, texto: t });
+    });
+    return out;
+  }
+
+  // Muestra los datos de transferencia cuando el cliente elige esa forma de pago.
+  function pintarTransferencia() {
+    var el = document.getElementById("datosTransferencia");
+    if (!el) return;
+    var sel = el.form ? el.form.querySelector('input[name="pago"]:checked') : null;
+    if (!sel || sel.value !== "Transferencia") { el.hidden = true; el.textContent = ""; return; }
+    var lista = datosTransferencia();
+    el.hidden = false;
+    el.innerHTML = lista.length
+      ? "🏦 <strong>Transfiere a:</strong><br>" + lista.map(function (x) {
+          return "• " + esc(x.nombre) + ": " + esc(x.texto).replace(/\n/g, "<br>");
+        }).join("<br>")
+      : "El negocio te confirma por WhatsApp los datos para transferir.";
+  }
+
   function resumenTotalesHTML(datos) {
     var productos = totalPesos();
     var html = '<div class="cart-total"><span>Productos</span><span>' + esc(money(productos)) + "</span></div>";
@@ -1816,6 +1844,7 @@
             '<label class="pay__option"><input type="radio" name="pago" value="Efectivo"' + (vPago !== "Transferencia" ? " checked" : "") + ' /> 💵 Efectivo</label>' +
             '<label class="pay__option"><input type="radio" name="pago" value="Transferencia"' + (vPago === "Transferencia" ? " checked" : "") + ' /> 📲 Transferencia</label>' +
           "</div>" +
+          '<div class="cart-note cart-note--transferencia" id="datosTransferencia" hidden></div>' +
         "</div>" +
         '<div class="actions">' +
           '<button type="submit" class="btn-whatsapp" id="btnWhatsapp" disabled><span aria-hidden="true">🟢</span> Enviar pedido por WhatsApp</button>' +
@@ -1904,10 +1933,12 @@
         validar(true);
         if (modoEntrega === "regalo") { var rn = $("#fRNombre"); if (rn && !rn.value) rn.focus(); }
       }
+      if (e.target && e.target.name === "pago") pintarTransferencia();
       actualizarTotales();
     });
     aplicarModo();
     validar();
+    pintarTransferencia();
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -2083,6 +2114,13 @@
     lines.push("TOTAL A PAGAR: " + money(totalPagar) +
       (parcial ? " (domicilio por coordinar)" : datos.domicilio == null ? " (más domicilio)" : ""));
     lines.push("Método de Pago: " + (datos.pago || "Efectivo"));
+    if ((datos.pago || "") === "Transferencia") {
+      var transf = datosTransferencia(groups);
+      if (transf.length) {
+        lines.push("🏦 *DATOS PARA TRANSFERENCIA:*");
+        transf.forEach(function (t) { lines.push(t.nombre + ": " + t.texto); });
+      }
+    }
     lines.push("📌 *UBICACIÓN:* " + (lugar || (regalo ? "Por confirmar con quien recibe" : "Por confirmar")));
     if (datos.notas) lines.push("📝 *OBSERVACIONES:* " + datos.notas);
     return lines.join("\n");

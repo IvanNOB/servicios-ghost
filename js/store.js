@@ -64,6 +64,7 @@
       visible: row.visible !== false,
       promo: normalizarPromo(row.promo),
       whatsapp: normalizarWhatsapp(row.whatsapp),
+      transferencia: String(row.transferencia || "").trim(),
       carta: Array.isArray(row.carta) ? row.carta : [],
       almuerzo: row.almuerzo || null,
       desayuno: row.desayuno || null,
@@ -273,6 +274,7 @@
       visible: rest.visible !== false,
       promo: normalizarPromo(rest.promo),
       whatsapp: normalizarWhatsapp(rest.whatsapp) || null,
+      transferencia: String(rest.transferencia || "").trim() || null,
       carta: normalizarCarta(rest.carta),
       almuerzo: normalizarAlmuerzo(rest.almuerzo),
       desayuno: normalizarAlmuerzo(rest.desayuno),
@@ -581,7 +583,7 @@
     columnasRechazadas: function () { return Object.keys(columnasFaltantes); },
     columnasFaltantes: function () {
       var faltan = Object.keys(columnasFaltantes);
-      if (columnasTabla) ["horario", "desayuno", "visible", "logo_ajuste", "promo", "whatsapp"].forEach(function (c) {
+      if (columnasTabla) ["horario", "desayuno", "visible", "logo_ajuste", "promo", "whatsapp", "transferencia"].forEach(function (c) {
         if (columnasTabla.indexOf(c) === -1 && faltan.indexOf(c) === -1) faltan.push(c);
       });
       return faltan;
