@@ -157,44 +157,34 @@
           </div>
           <button type="button" class="btn-copy btn-sm" id="btnRefrescarPedidos" aria-label="Actualizar">🔄 Actualizar</button>
         </div>
-        <div class="ped-filtros" role="tablist" aria-label="Filtrar pedidos por estado">
-          <button type="button" class="ped-filtro is-on" data-ped-filtro="todos">Todos <span class="ped-filtro__n" data-ped-estado-n="todos"></span></button>
-          <button type="button" class="ped-filtro" data-ped-filtro="recibido">🔵 Recibidos <span class="ped-filtro__n" data-ped-estado-n="recibido"></span></button>
-          <button type="button" class="ped-filtro" data-ped-filtro="preparando">🟠 Preparando <span class="ped-filtro__n" data-ped-estado-n="preparando"></span></button>
-          <button type="button" class="ped-filtro" data-ped-filtro="listo">🟣 Listos <span class="ped-filtro__n" data-ped-estado-n="listo"></span></button>
-          <button type="button" class="ped-filtro" data-ped-filtro="en-camino">🛵 En camino <span class="ped-filtro__n" data-ped-estado-n="en-camino"></span></button>
-          <button type="button" class="ped-filtro" data-ped-filtro="entregado">✅ Entregados <span class="ped-filtro__n" data-ped-estado-n="entregado"></span></button>
-          <button type="button" class="ped-filtro" data-ped-filtro="cancelado">✖ Cancelados <span class="ped-filtro__n" data-ped-estado-n="cancelado"></span></button>
+        <div class="ped-barra" role="group" aria-label="Filtros de pedidos">
+          <label class="ped-barra__c">
+            <span>Estado</span>
+            <select id="filtroEstado" class="field__select"></select>
+          </label>
+          <label class="ped-barra__c">
+            <span>Fecha</span>
+            <select id="filtroFecha" class="field__select"></select>
+          </label>
+          <label class="ped-barra__c" id="pedCampoDia" hidden>
+            <span>Día</span>
+            <input type="date" id="pedFechaDia" class="field__input" />
+          </label>
+          <label class="ped-barra__c" id="pedCampoHora" hidden>
+            <span>Hora</span>
+            <select id="filtroHora" class="field__select"></select>
+          </label>
+          <label class="ped-barra__c" id="pedCampoRest" hidden>
+            <span>Negocio</span>
+            <select id="filtroRest" class="field__select"></select>
+          </label>
+          <button type="button" class="btn-link ped-barra__limpiar" data-ped-limpiar>Limpiar filtros</button>
         </div>
-        <div class="ped-filtros ped-filtros--fecha" aria-label="Filtrar pedidos por fecha">
-          <button type="button" class="ped-filtro" data-ped-fecha="hoy">Hoy <span class="ped-filtro__n" data-ped-fecha-n="hoy"></span></button>
-          <button type="button" class="ped-filtro" data-ped-fecha="24h">Últimas 24 h <span class="ped-filtro__n" data-ped-fecha-n="24h"></span></button>
-          <button type="button" class="ped-filtro" data-ped-fecha="ayer">Ayer <span class="ped-filtro__n" data-ped-fecha-n="ayer"></span></button>
-          <button type="button" class="ped-filtro is-on" data-ped-fecha="7">Últimos 7 días <span class="ped-filtro__n" data-ped-fecha-n="7"></span></button>
-          <button type="button" class="ped-filtro" data-ped-fecha="mes">Este mes <span class="ped-filtro__n" data-ped-fecha-n="mes"></span></button>
-          <button type="button" class="ped-filtro" data-ped-fecha="todos">Todos <span class="ped-filtro__n" data-ped-fecha-n="todos"></span></button>
-          <label class="ped-fecha-pick">📅 <input type="date" id="pedFechaDia" aria-label="Elegir un día" /></label>
-        </div>
-        <div class="ped-filtros ped-filtros--hora" id="pedFiltroHora" aria-label="Filtrar pedidos por hora"></div>
-        <div class="ped-filtros ped-filtros--rest" id="pedFiltroRest" aria-label="Filtrar por restaurante"></div>
         <div class="ped-sel" id="pedSelBar" hidden>
           <span id="pedSelTxt"></span>
           <button type="button" class="btn-link btn-sm" data-ped-sel-todos>Seleccionar todos</button>
           <button type="button" class="btn-link btn-sm" data-ped-sel-nada>Quitar selección</button>
           <button type="button" class="btn-danger btn-sm" data-ped-borrar-sel>🗑 Borrar seleccionados</button>
-        </div>
-        <div hidden>
-          <div class="inline-actions">
-            <select id="filtroPedidos" class="field__select" aria-label="Filtrar por estado">
-              <option value="todos">Todos</option>
-              <option value="recibido">Recibidos</option>
-              <option value="preparando">Preparando</option>
-              <option value="listo">Listos</option>
-              <option value="en-camino">En camino</option>
-              <option value="entregado">Entregados</option>
-              <option value="cancelado">Cancelados</option>
-            </select>
-          </div>
         </div>
         <div id="listaPedidos" class="pedidos-list" aria-live="polite"></div>
       </div>

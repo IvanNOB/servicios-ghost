@@ -2306,7 +2306,6 @@
   document.addEventListener("change", function (e) {
     var t = e.target;
     if (!t) return;
-    if (t.id === "filtroPedidos") { pedEstado = t.value || "todos"; pintarPedidos(); return; }
     if (t.id === "rangoVentas") { cargarVentas(); return; }
     if (t.id === "rangoVisitas") { cargarVisitas(); return; }
     if (t.id === "noContarVisitas") {
@@ -2536,14 +2535,44 @@
     }
   }
 
-  // Filtros en botones: cambian el estado visible (y el <select> oculto).
+  // Filtros de pedidos: estado, fecha, hora y negocio (selectores).
+  document.addEventListener("change", function (e) {
+    var t = e.target;
+    if (!t || !t.id) return;
+    if (t.id === "filtroEstado") { pedEstado = t.value || "todos"; pedSel = {}; pintarPedidos(); return; }
+    if (t.id === "filtroFecha") {
+      pedFecha = t.value || "7";
+      var campoDia = document.getElementById("pedCampoDia");
+      if (campoDia) campoDia.hidden = pedFecha !== "dia";
+      if (pedFecha === "dia") {
+        var inp = document.getElementById("pedFechaDia");
+        pedFecha = inp && inp.value ? inp.value : "todos";
+      }
+      pedSel = {};
+      pintarPedidos();
+      return;
+    }
+    if (t.id === "pedFechaDia") {
+      if (t.value) pedFecha = t.value;
+      else pedFecha = "todos";
+      pedSel = {};
+      pintarPedidos();
+      return;
+    }
+    if (t.id === "filtroHora") { pedHora = t.value || "todas"; pedSel = {}; pintarPedidos(); return; }
+    if (t.id === "filtroRest") { pedRest = t.value || ""; pedSel = {}; pintarPedidos(); return; }
+  });
+  // "Limpiar filtros": vuelve a la vista normal.
   document.addEventListener("click", function (e) {
-    var b = e.target.closest && e.target.closest("[data-ped-filtro]");
+    var b = e.target.closest && e.target.closest("[data-ped-limpiar]");
     if (!b) return;
-    var sel = document.getElementById("filtroPedidos");
-    pedEstado = b.getAttribute("data-ped-filtro") || "todos";
-    if (sel) sel.value = pedEstado;
-    document.querySelectorAll("[data-ped-filtro]").forEach(function (x) { x.classList.toggle("is-on", x === b); });
+    pedEstado = "todos";
+    pedFecha = "7";
+    pedHora = "todas";
+    pedRest = esAliado() ? perfil.restaurante_id : "";
+    pedSel = {};
+    var inp = document.getElementById("pedFechaDia");
+    if (inp) inp.value = "";
     pintarPedidos();
   });
 
@@ -2660,16 +2689,18 @@
     return orden.sort(function (a, b) { return b.n - a.n; });
   }
   function pintarFiltroRest() {
-    var cont = document.getElementById("pedFiltroRest");
-    if (!cont) return;
+    var campo = document.getElementById("pedCampoRest");
+    var sel = document.getElementById("filtroRest");
+    if (!campo || !sel) return;
     var lista = restaurantesEnPedidos();
     // El aliado siempre ve su restaurante: no se le desmarca el filtro.
     if (!esAliado() && pedRest && !lista.some(function (r) { return r.id === pedRest; })) pedRest = "";
-    cont.hidden = lista.length < 2;
-    cont.innerHTML = '<button type="button" class="ped-filtro' + (pedRest ? "" : " is-on") + '" data-ped-rest="">🏪 Todos los negocios</button>' +
+    campo.hidden = esAliado() || lista.length < 2;
+    if (campo.hidden) pedRest = esAliado() ? perfil.restaurante_id : "";
+    sel.innerHTML = '<option value="">Todos los negocios</option>' +
       lista.map(function (r) {
-        return '<button type="button" class="ped-filtro' + (pedRest === r.id ? " is-on" : "") + '" data-ped-rest="' + esc(r.id) + '">' +
-          esc(r.nombre) + ' <span class="ped-filtro__n">' + r.n + "</span></button>";
+        return '<option value="' + esc(r.id) + '"' + (pedRest === r.id ? " selected" : "") + ">" +
+          esc(r.nombre) + " (" + r.n + ")</option>";
       }).join("");
   }
   // Hora del día en Colombia (0-23) y su etiqueta ("8 p. m.").
@@ -2701,41 +2732,66 @@
     return orden.sort(function (a, b) { return a.h - b.h; });
   }
   function pintarFiltroHora() {
-    var cont = document.getElementById("pedFiltroHora");
-    if (!cont) return;
+    var campo = document.getElementById("pedCampoHora");
+    var sel = document.getElementById("filtroHora");
+    if (!campo || !sel) return;
     var lista = horasEnPedidos();
     if (pedHora !== "todas" && !lista.some(function (x) { return String(x.h) === String(pedHora); })) pedHora = "todas";
     // Solo tiene sentido si hay más de una hora con pedidos.
-    cont.hidden = lista.length < 2;
-    if (cont.hidden) pedHora = "todas";
-    cont.innerHTML = '<button type="button" class="ped-filtro' + (pedHora === "todas" ? " is-on" : "") + '" data-ped-hora="todas">🕒 Todas las horas</button>' +
+    campo.hidden = lista.length < 2;
+    if (campo.hidden) pedHora = "todas";
+    sel.innerHTML = '<option value="todas">Todas las horas</option>' +
       lista.map(function (x) {
-        return '<button type="button" class="ped-filtro' + (String(pedHora) === String(x.h) ? " is-on" : "") + '" data-ped-hora="' + x.h + '">' +
-          horaEtiqueta(x.h) + ' <span class="ped-filtro__n">' + x.n + "</span></button>";
+        return '<option value="' + x.h + '"' + (String(pedHora) === String(x.h) ? " selected" : "") + ">" +
+          esc(horaEtiqueta(x.h)) + " (" + x.n + ")</option>";
       }).join("");
   }
+  // Estado: opciones con su conteo (sobre el rango de fecha elegido).
+  function pintarFiltroEstado() {
+    var sel = document.getElementById("filtroEstado");
+    if (!sel) return;
+    var c = contarPorEstado(filtrarPorFecha(pedidosPorRestaurante()));
+    var ops = [
+      ["todos", "Todos"], ["recibido", "Recibidos"], ["preparando", "Preparando"],
+      ["listo", "Listos"], ["en-camino", "En camino"], ["entregado", "Entregados"],
+      ["cancelado", "Cancelados"],
+    ];
+    sel.innerHTML = ops.map(function (o) {
+      return '<option value="' + o[0] + '"' + (pedEstado === o[0] ? " selected" : "") + ">" +
+        esc(o[1]) + " (" + (c[o[0]] || 0) + ")</option>";
+    }).join("");
+  }
+  // Fecha: opciones con su conteo (sobre el estado y negocio elegidos).
+  function pintarFiltroFecha() {
+    var sel = document.getElementById("filtroFecha");
+    if (!sel) return;
+    var c = contarPorFecha(pedidosBase());
+    var ops = [
+      ["hoy", "Hoy"], ["24h", "Últimas 24 h"], ["ayer", "Ayer"],
+      ["7", "Últimos 7 días"], ["mes", "Este mes"], ["todos", "Todas las fechas"],
+      ["dia", "Elegir un día…"],
+    ];
+    var actual = /^\d{4}-\d{2}-\d{2}$/.test(pedFecha) ? "dia" : pedFecha;
+    sel.innerHTML = ops.map(function (o) {
+      var n = c[o[0]];
+      var txt = o[1] + (n !== undefined ? " (" + n + ")" : "");
+      return '<option value="' + o[0] + '"' + (actual === o[0] ? " selected" : "") + ">" + esc(txt) + "</option>";
+    }).join("");
+    var campoDia = document.getElementById("pedCampoDia");
+    if (campoDia) campoDia.hidden = actual !== "dia";
+  }
+  function pedidosPorRestaurante() {
+    if (!pedRest) return pedidos;
+    return pedidos.filter(function (p) {
+      return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; });
+    });
+  }
   function pedidosBase() {
-    var base = pedidos.filter(function (p) { return !pedEstado || pedEstado === "todos" || p.estado === pedEstado; });
-    if (pedRest) {
-      base = base.filter(function (p) {
-        return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; });
-      });
+    var base = pedidosPorRestaurante();
+    if (pedEstado && pedEstado !== "todos") {
+      base = base.filter(function (p) { return p.estado === pedEstado; });
     }
     return base;
-  }
-  // Pinta los contadores de cada filtro (estado y fecha) para que se vea
-  // de inmediato cuántos pedidos hay en cada uno.
-  function pintarContadores() {
-    var porFecha = contarPorFecha(pedidosBase());
-    document.querySelectorAll("[data-ped-fecha-n]").forEach(function (el) {
-      var n = porFecha[el.getAttribute("data-ped-fecha-n")];
-      el.textContent = n ? String(n) : "0";
-    });
-    var porEstado = contarPorEstado(filtrarPorFecha(pedidosBase()));
-    document.querySelectorAll("[data-ped-estado-n]").forEach(function (el) {
-      var n = porEstado[el.getAttribute("data-ped-estado-n")];
-      el.textContent = n ? String(n) : "0";
-    });
   }
   function pintarSeleccion() {
     var n = Object.keys(pedSel).length;
@@ -2788,25 +2844,6 @@
   document.addEventListener("click", function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
-    var h = t.closest("[data-ped-hora]");
-    if (h) {
-      pedHora = h.getAttribute("data-ped-hora") || "todas";
-      pedSel = {};
-      pintarPedidos();
-      return;
-    }
-    var f = t.closest("[data-ped-fecha]");
-    if (f) {
-      pedFecha = f.getAttribute("data-ped-fecha");
-      pedSel = {};
-      var inp = document.getElementById("pedFechaDia");
-      if (inp) inp.value = "";
-      document.querySelectorAll("[data-ped-fecha]").forEach(function (x) { x.classList.toggle("is-on", x === f); });
-      pintarPedidos();
-      return;
-    }
-    var r = t.closest("[data-ped-rest]");
-    if (r) { pedRest = r.getAttribute("data-ped-rest"); pintarPedidos(); return; }
     var b1 = t.closest("[data-ped-borrar]");
     if (b1) { borrarPedidosUI([b1.getAttribute("data-ped-borrar")]); return; }
     if (t.closest("[data-ped-borrar-sel]")) { borrarPedidosUI(Object.keys(pedSel)); return; }
@@ -2820,19 +2857,6 @@
   document.addEventListener("change", function (e) {
     var c = e.target;
     if (!c || !c.hasAttribute) return;
-    if (c.id === "pedFechaDia") {
-      if (c.value) {
-        pedFecha = c.value;
-        document.querySelectorAll("[data-ped-fecha]").forEach(function (x) { x.classList.remove("is-on"); });
-      } else {
-        pedFecha = "hoy";
-        var hb = document.querySelector('[data-ped-fecha="hoy"]');
-        if (hb) hb.classList.add("is-on");
-      }
-      pedSel = {};
-      pintarPedidos();
-      return;
-    }
     if (!c.hasAttribute("data-ped-sel")) return;
     var id = c.getAttribute("data-ped-sel");
     if (c.checked) pedSel[id] = true; else delete pedSel[id];
@@ -2848,13 +2872,11 @@
     pedidos.forEach(function (p) { ids[p.id] = true; });
     Object.keys(pedSel).forEach(function (id) { if (!ids[id]) delete pedSel[id]; });
     // Para el aliado, su restaurante es siempre el filtro (antes de contar).
-    if (esAliado()) {
-      pedRest = perfil.restaurante_id;
-      var fr = document.getElementById("pedFiltroRest"); if (fr) fr.hidden = true;
-    }
+    if (esAliado()) pedRest = perfil.restaurante_id;
     pintarFiltroRest();
+    pintarFiltroEstado();
+    pintarFiltroFecha();
     pintarFiltroHora();
-    pintarContadores();
     var lista = pedidosVisibles();
     var cnt = document.getElementById("pedContador");
     if (cnt) cnt.textContent = lista.length ? lista.length + (lista.length === 1 ? " pedido" : " pedidos") : "";
