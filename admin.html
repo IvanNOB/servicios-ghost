@@ -158,20 +158,21 @@
           <button type="button" class="btn-copy btn-sm" id="btnRefrescarPedidos" aria-label="Actualizar">🔄 Actualizar</button>
         </div>
         <div class="ped-filtros" role="tablist" aria-label="Filtrar pedidos por estado">
-          <button type="button" class="ped-filtro is-on" data-ped-filtro="todos">Todos</button>
-          <button type="button" class="ped-filtro" data-ped-filtro="recibido">🔵 Recibidos</button>
-          <button type="button" class="ped-filtro" data-ped-filtro="preparando">🟠 Preparando</button>
-          <button type="button" class="ped-filtro" data-ped-filtro="listo">🟣 Listos</button>
-          <button type="button" class="ped-filtro" data-ped-filtro="en-camino">🛵 En camino</button>
-          <button type="button" class="ped-filtro" data-ped-filtro="entregado">✅ Entregados</button>
-          <button type="button" class="ped-filtro" data-ped-filtro="cancelado">✖ Cancelados</button>
+          <button type="button" class="ped-filtro is-on" data-ped-filtro="todos">Todos <span class="ped-filtro__n" data-ped-estado-n="todos"></span></button>
+          <button type="button" class="ped-filtro" data-ped-filtro="recibido">🔵 Recibidos <span class="ped-filtro__n" data-ped-estado-n="recibido"></span></button>
+          <button type="button" class="ped-filtro" data-ped-filtro="preparando">🟠 Preparando <span class="ped-filtro__n" data-ped-estado-n="preparando"></span></button>
+          <button type="button" class="ped-filtro" data-ped-filtro="listo">🟣 Listos <span class="ped-filtro__n" data-ped-estado-n="listo"></span></button>
+          <button type="button" class="ped-filtro" data-ped-filtro="en-camino">🛵 En camino <span class="ped-filtro__n" data-ped-estado-n="en-camino"></span></button>
+          <button type="button" class="ped-filtro" data-ped-filtro="entregado">✅ Entregados <span class="ped-filtro__n" data-ped-estado-n="entregado"></span></button>
+          <button type="button" class="ped-filtro" data-ped-filtro="cancelado">✖ Cancelados <span class="ped-filtro__n" data-ped-estado-n="cancelado"></span></button>
         </div>
         <div class="ped-filtros ped-filtros--fecha" aria-label="Filtrar pedidos por fecha">
-          <button type="button" class="ped-filtro is-on" data-ped-fecha="hoy">Hoy</button>
-          <button type="button" class="ped-filtro" data-ped-fecha="ayer">Ayer</button>
-          <button type="button" class="ped-filtro" data-ped-fecha="7">Últimos 7 días</button>
-          <button type="button" class="ped-filtro" data-ped-fecha="mes">Este mes</button>
-          <button type="button" class="ped-filtro" data-ped-fecha="todos">Todos</button>
+          <button type="button" class="ped-filtro" data-ped-fecha="hoy">Hoy <span class="ped-filtro__n" data-ped-fecha-n="hoy"></span></button>
+          <button type="button" class="ped-filtro" data-ped-fecha="24h">Últimas 24 h <span class="ped-filtro__n" data-ped-fecha-n="24h"></span></button>
+          <button type="button" class="ped-filtro" data-ped-fecha="ayer">Ayer <span class="ped-filtro__n" data-ped-fecha-n="ayer"></span></button>
+          <button type="button" class="ped-filtro is-on" data-ped-fecha="7">Últimos 7 días <span class="ped-filtro__n" data-ped-fecha-n="7"></span></button>
+          <button type="button" class="ped-filtro" data-ped-fecha="mes">Este mes <span class="ped-filtro__n" data-ped-fecha-n="mes"></span></button>
+          <button type="button" class="ped-filtro" data-ped-fecha="todos">Todos <span class="ped-filtro__n" data-ped-fecha-n="todos"></span></button>
           <label class="ped-fecha-pick">📅 <input type="date" id="pedFechaDia" aria-label="Elegir un día" /></label>
         </div>
         <div class="ped-filtros ped-filtros--rest" id="pedFiltroRest" aria-label="Filtrar por restaurante"></div>
