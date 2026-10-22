@@ -2672,8 +2672,48 @@
           esc(r.nombre) + ' <span class="ped-filtro__n">' + r.n + "</span></button>";
       }).join("");
   }
-  // Base de cálculo: pedidos del estado elegido y del negocio elegido
-  // (sin filtro de fecha), para que los contadores cuadren con la lista.
+  // Hora del día en Colombia (0-23) y su etiqueta ("8 p. m.").
+  function horaDia(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return -1;
+    try {
+      var txt = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Bogota", hour: "2-digit", hourCycle: "h23" }).format(d);
+      var n = parseInt(txt, 10);
+      return isNaN(n) ? -1 : (n === 24 ? 0 : n);
+    } catch (e) {
+      var u = new Date(d.getTime() - 5 * 3600000);
+      return u.getUTCHours();
+    }
+  }
+  function horaEtiqueta(h) {
+    var hh = h % 12; if (hh === 0) hh = 12;
+    return hh + (h < 12 ? " a. m." : " p. m.");
+  }
+  var pedHora = "todas";   // "todas" o "0"…"23"
+  function horasEnPedidos() {
+    var m = {}, orden = [];
+    filtrarPorFecha(pedidosBase()).forEach(function (p) {
+      var h = horaDia(p.creado_en);
+      if (h < 0) return;
+      if (!m[h]) { m[h] = { h: h, n: 0 }; orden.push(m[h]); }
+      m[h].n++;
+    });
+    return orden.sort(function (a, b) { return a.h - b.h; });
+  }
+  function pintarFiltroHora() {
+    var cont = document.getElementById("pedFiltroHora");
+    if (!cont) return;
+    var lista = horasEnPedidos();
+    if (pedHora !== "todas" && !lista.some(function (x) { return String(x.h) === String(pedHora); })) pedHora = "todas";
+    // Solo tiene sentido si hay más de una hora con pedidos.
+    cont.hidden = lista.length < 2;
+    if (cont.hidden) pedHora = "todas";
+    cont.innerHTML = '<button type="button" class="ped-filtro' + (pedHora === "todas" ? " is-on" : "") + '" data-ped-hora="todas">🕒 Todas las horas</button>' +
+      lista.map(function (x) {
+        return '<button type="button" class="ped-filtro' + (String(pedHora) === String(x.h) ? " is-on" : "") + '" data-ped-hora="' + x.h + '">' +
+          horaEtiqueta(x.h) + ' <span class="ped-filtro__n">' + x.n + "</span></button>";
+      }).join("");
+  }
   function pedidosBase() {
     var base = pedidos.filter(function (p) { return !pedEstado || pedEstado === "todos" || p.estado === pedEstado; });
     if (pedRest) {
@@ -2705,7 +2745,11 @@
     if (t) t.textContent = n + (n === 1 ? " pedido seleccionado" : " pedidos seleccionados");
   }
   function pedidosVisibles() {
-    return filtrarPorFecha(pedidosBase());
+    var lista = filtrarPorFecha(pedidosBase());
+    if (pedHora !== "todas") {
+      lista = lista.filter(function (p) { return String(horaDia(p.creado_en)) === String(pedHora); });
+    }
+    return lista;
   }
   // Un aliado solo puede borrar pedidos CANCELADOS que sean exclusivamente suyos.
   // El administrador puede borrar cualquiera (igual que antes).
@@ -2744,6 +2788,13 @@
   document.addEventListener("click", function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
+    var h = t.closest("[data-ped-hora]");
+    if (h) {
+      pedHora = h.getAttribute("data-ped-hora") || "todas";
+      pedSel = {};
+      pintarPedidos();
+      return;
+    }
     var f = t.closest("[data-ped-fecha]");
     if (f) {
       pedFecha = f.getAttribute("data-ped-fecha");
@@ -2802,6 +2853,7 @@
       var fr = document.getElementById("pedFiltroRest"); if (fr) fr.hidden = true;
     }
     pintarFiltroRest();
+    pintarFiltroHora();
     pintarContadores();
     var lista = pedidosVisibles();
     var cnt = document.getElementById("pedContador");
@@ -2828,7 +2880,8 @@
       var k = claveDia(p.creado_en);
       if (k !== dia) {
         dia = k;
-        html += '<h3 class="ped-fecha">' + esc(etiquetaDia(k)) + "</h3>";
+        html += '<h3 class="ped-fecha">' + esc(etiquetaDia(k)) +
+          (pedHora !== "todas" ? " · " + esc(horaEtiqueta(Number(pedHora))) : "") + "</h3>";
       }
       html += pedidoHTML(p, pedRest);
     });
