@@ -2306,7 +2306,7 @@
   document.addEventListener("change", function (e) {
     var t = e.target;
     if (!t) return;
-    if (t.id === "filtroPedidos") { recargarPedidos(); return; }
+    if (t.id === "filtroPedidos") { pedEstado = t.value || "todos"; pintarPedidos(); return; }
     if (t.id === "rangoVentas") { cargarVentas(); return; }
     if (t.id === "rangoVisitas") { cargarVisitas(); return; }
     if (t.id === "noContarVisitas") {
@@ -2524,10 +2524,11 @@
   async function recargarPedidos() {
     var cont = document.getElementById("listaPedidos");
     if (cont) cont.innerHTML = '<p class="muted">Cargando pedidos…</p>';
-    var filtro = document.getElementById("filtroPedidos");
-    var estado = filtro ? filtro.value : "todos";
     try {
-      pedidos = await window.Store.listarPedidos(estado);
+      // Se cargan TODOS los estados y el filtro de estado se aplica aquí,
+      // para poder mostrar cuántos pedidos hay en cada filtro y cambiarlo
+      // al instante (sin volver a pegarle a la base de datos).
+      pedidos = await window.Store.listarPedidos("todos");
       pintarPedidos();
     } catch (ex) {
       if (cont) cont.innerHTML = '<p class="muted">No se pudieron cargar los pedidos: ' +
@@ -2535,15 +2536,15 @@
     }
   }
 
-  // Filtros en botones: cambian el <select> oculto (que ya recarga la lista).
+  // Filtros en botones: cambian el estado visible (y el <select> oculto).
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-ped-filtro]");
     if (!b) return;
     var sel = document.getElementById("filtroPedidos");
-    if (!sel) return;
-    sel.value = b.getAttribute("data-ped-filtro");
+    pedEstado = b.getAttribute("data-ped-filtro") || "todos";
+    if (sel) sel.value = pedEstado;
     document.querySelectorAll("[data-ped-filtro]").forEach(function (x) { x.classList.toggle("is-on", x === b); });
-    sel.dispatchEvent(new Event("change", { bubbles: true }));
+    pintarPedidos();
   });
 
   function haceCuanto(iso) {
@@ -2556,8 +2557,13 @@
     return "";
   }
 
-  /* ---- Fechas: filtros y agrupación (día de Colombia) ---- */
-  var pedFecha = "hoy";   // hoy | ayer | 7 | mes | todos | YYYY-MM-DD
+  /* ---- Fechas: filtros, contadores y agrupación (día de Colombia) ---- */
+  // Filtro de fecha: por defecto "7" (últimos 7 días). El filtro "hoy" es el
+  // día calendario y en un negocio que trabaja de noche deja fuera los pedidos
+  // tomados a las 8-11 p.m. (pasan a "ayer" al pasar la medianoche), así que
+  // el panel abre mostrando toda la semana, agrupada por fecha.
+  var pedFecha = "7";    // hoy | 24h | ayer | 7 | mes | todos | YYYY-MM-DD
+  var pedEstado = "todos";
   function claveDia(iso) {
     var d = new Date(iso);
     return isNaN(d.getTime()) ? "" : fechaColombia(d);
@@ -2582,6 +2588,14 @@
     }
     var hoy = claveHoy(0);
     if (pedFecha === "hoy") return lista.filter(function (p) { return claveDia(p.creado_en) === hoy; });
+    if (pedFecha === "24h") {
+      // Últimas 24 horas exactas (cubre el turno de noche del negocio).
+      var limite = Date.now() - 24 * 60 * 60 * 1000;
+      return lista.filter(function (p) {
+        var t = new Date(p.creado_en).getTime();
+        return isFinite(t) && t >= limite;
+      });
+    }
     if (pedFecha === "ayer") {
       var ayer = claveHoy(-1);
       return lista.filter(function (p) { return claveDia(p.creado_en) === ayer; });
@@ -2600,13 +2614,40 @@
     return lista;
   }
 
+  // Cuántos pedidos hay en cada filtro (para que se vea dónde están).
+  function contarPorFecha(lista) {
+    var hoy = claveHoy(0), ayer = claveHoy(-1), mes = hoy.slice(0, 7), desde = claveHoy(-6);
+    var limite24 = Date.now() - 24 * 60 * 60 * 1000;
+    var c = { hoy: 0, "24h": 0, ayer: 0, "7": 0, mes: 0, todos: lista.length };
+    lista.forEach(function (p) {
+      var t = new Date(p.creado_en).getTime();
+      if (!isFinite(t)) return;
+      var k = claveDia(p.creado_en);
+      if (k === hoy) c.hoy++;
+      if (k === ayer) c.ayer++;
+      if (k >= desde && k <= hoy) c["7"]++;
+      if (k.slice(0, 7) === mes) c.mes++;
+      if (t >= limite24) c["24h"]++;
+    });
+    return c;
+  }
+  function contarPorEstado(lista) {
+    var c = { todos: lista.length, recibido: 0, preparando: 0, listo: 0, "en-camino": 0, entregado: 0, cancelado: 0 };
+    lista.forEach(function (p) { if (c[p.estado] !== undefined) c[p.estado]++; });
+    return c;
+  }
+
   /* ---- Dividir por restaurante y borrar pedidos de prueba ---- */
   var pedRest = "";          // "" = todos los negocios
   var pedSel = {};           // ids seleccionados para borrar
   function restDeItem(it) { return String(it.restaurante_id || it.restaurante || "?"); }
   function restaurantesEnPedidos() {
     var m = {}, orden = [];
-    filtrarPorFecha(pedidos).forEach(function (p) {
+    var base = filtrarPorFecha(pedidos);
+    if (pedEstado && pedEstado !== "todos") {
+      base = base.filter(function (p) { return p.estado === pedEstado; });
+    }
+    base.forEach(function (p) {
       var vistos = {};
       (p.items || []).forEach(function (it) {
         var k = restDeItem(it);
@@ -2622,13 +2663,39 @@
     var cont = document.getElementById("pedFiltroRest");
     if (!cont) return;
     var lista = restaurantesEnPedidos();
-    if (pedRest && !lista.some(function (r) { return r.id === pedRest; })) pedRest = "";
+    // El aliado siempre ve su restaurante: no se le desmarca el filtro.
+    if (!esAliado() && pedRest && !lista.some(function (r) { return r.id === pedRest; })) pedRest = "";
     cont.hidden = lista.length < 2;
     cont.innerHTML = '<button type="button" class="ped-filtro' + (pedRest ? "" : " is-on") + '" data-ped-rest="">🏪 Todos los negocios</button>' +
       lista.map(function (r) {
         return '<button type="button" class="ped-filtro' + (pedRest === r.id ? " is-on" : "") + '" data-ped-rest="' + esc(r.id) + '">' +
           esc(r.nombre) + ' <span class="ped-filtro__n">' + r.n + "</span></button>";
       }).join("");
+  }
+  // Base de cálculo: pedidos del estado elegido y del negocio elegido
+  // (sin filtro de fecha), para que los contadores cuadren con la lista.
+  function pedidosBase() {
+    var base = pedidos.filter(function (p) { return !pedEstado || pedEstado === "todos" || p.estado === pedEstado; });
+    if (pedRest) {
+      base = base.filter(function (p) {
+        return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; });
+      });
+    }
+    return base;
+  }
+  // Pinta los contadores de cada filtro (estado y fecha) para que se vea
+  // de inmediato cuántos pedidos hay en cada uno.
+  function pintarContadores() {
+    var porFecha = contarPorFecha(pedidosBase());
+    document.querySelectorAll("[data-ped-fecha-n]").forEach(function (el) {
+      var n = porFecha[el.getAttribute("data-ped-fecha-n")];
+      el.textContent = n ? String(n) : "0";
+    });
+    var porEstado = contarPorEstado(filtrarPorFecha(pedidosBase()));
+    document.querySelectorAll("[data-ped-estado-n]").forEach(function (el) {
+      var n = porEstado[el.getAttribute("data-ped-estado-n")];
+      el.textContent = n ? String(n) : "0";
+    });
   }
   function pintarSeleccion() {
     var n = Object.keys(pedSel).length;
@@ -2638,8 +2705,7 @@
     if (t) t.textContent = n + (n === 1 ? " pedido seleccionado" : " pedidos seleccionados");
   }
   function pedidosVisibles() {
-    var filtrados = filtrarPorFecha(pedidos);
-    return pedRest ? filtrados.filter(function (p) { return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; }); }) : filtrados;
+    return filtrarPorFecha(pedidosBase());
   }
   // Un aliado solo puede borrar pedidos CANCELADOS que sean exclusivamente suyos.
   // El administrador puede borrar cualquiera (igual que antes).
@@ -2730,21 +2796,35 @@
     var ids = {};
     pedidos.forEach(function (p) { ids[p.id] = true; });
     Object.keys(pedSel).forEach(function (id) { if (!ids[id]) delete pedSel[id]; });
-    pintarFiltroRest();
+    // Para el aliado, su restaurante es siempre el filtro (antes de contar).
     if (esAliado()) {
       pedRest = perfil.restaurante_id;
       var fr = document.getElementById("pedFiltroRest"); if (fr) fr.hidden = true;
     }
+    pintarFiltroRest();
+    pintarContadores();
     var lista = pedidosVisibles();
     var cnt = document.getElementById("pedContador");
     if (cnt) cnt.textContent = lista.length ? lista.length + (lista.length === 1 ? " pedido" : " pedidos") : "";
+    // La pestaña cuenta los pendientes del mismo rango visible.
+    var badge = document.getElementById("badgePedidos");
+    if (badge) {
+      var pend = lista.filter(function (p) { return p.estado === "recibido"; }).length;
+      badge.hidden = !pend;
+      badge.textContent = String(pend);
+    }
     pintarSeleccion();
     if (!lista.length) {
-      cont.innerHTML = '<p class="muted">No hay pedidos ' + (pedFecha === "todos" ? "para mostrar." : "para esta fecha.") + "</p>";
+      cont.innerHTML = '<p class="muted">No hay pedidos ' + (pedFecha === "todos" ? "para mostrar." : "con este filtro.") + "</p>";
       return;
     }
     var html = "", dia = null;
-    lista.forEach(function (p) {
+    // Se ordenan por fecha (más reciente primero) para que los grupos por día
+    // queden juntos aunque la consulta venga en otro orden.
+    var ordenados = lista.slice().sort(function (a, b) {
+      return new Date(b.creado_en).getTime() - new Date(a.creado_en).getTime();
+    });
+    ordenados.forEach(function (p) {
       var k = claveDia(p.creado_en);
       if (k !== dia) {
         dia = k;
@@ -3765,7 +3845,14 @@
     var lista;
     try { lista = await window.Store.listarPedidos("recibido", null, "id, codigo, cliente, total, creado_en"); } catch (e) { return; }
     var badge = $("#badgePedidos");
-    if (badge) { badge.hidden = !lista.length; badge.textContent = String(lista.length); }
+    // Mientras la pestaña de Pedidos no está abierta, la insignia cuenta los
+    // pendientes del rango de fechas elegido (si no, la pone pintarPedidos).
+    var panelPed = document.getElementById("tabPedidos");
+    if (badge && panelPed && panelPed.hidden) {
+      var pendientes = filtrarPorFecha(lista).length;
+      badge.hidden = !pendientes;
+      badge.textContent = String(pendientes);
+    }
     var ids = {};
     lista.forEach(function (p) { ids[p.id] = true; });
     if (avisos.vistos) {
