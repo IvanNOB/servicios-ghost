@@ -659,6 +659,23 @@ a { color: inherit; text-decoration: none; }
 
 .btn-copy:hover { border-color: var(--primary); }
 
+/* Botón para pagar directamente en Nequi */
+.btn-nequi {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-nequi:hover { opacity: 0.9; filter: brightness(1.1); }
+
 .copy-msg {
   text-align: center;
   font-size: 0.86rem;
