@@ -1655,7 +1655,9 @@
     el.hidden = false;
     el.innerHTML = lista.length
       ? "🏦 <strong>Transfiere a:</strong><br>" + lista.map(function (x) {
-          return "• " + esc(x.nombre) + ": " + esc(x.texto).replace(/\n/g, "<br>");
+          var tel = telCol(x.texto);
+          var nequi = tel ? '<br><a href="https://pay.nequi.com/co/pagar/' + tel + '" class="btn-nequi" target="_blank" rel="noopener">💳 Pagar en Nequi</a>' : "";
+          return "• " + esc(x.nombre) + ": " + esc(x.texto).replace(/\n/g, "<br>") + nequi;
         }).join("<br>")
       : "El negocio te confirma por WhatsApp los datos para transferir.";
   }
@@ -2118,7 +2120,11 @@
       var transf = datosTransferencia(groups);
       if (transf.length) {
         lines.push("🏦 *DATOS PARA TRANSFERENCIA:*");
-        transf.forEach(function (t) { lines.push(t.nombre + ": " + t.texto); });
+        transf.forEach(function (t) {
+          var tel = telCol(t.texto);
+          var nequi = tel ? "\n*Pagar con Nequi:* https://pay.nequi.com/co/pagar/" + tel : "";
+          lines.push(t.nombre + ": " + t.texto + nequi);
+        });
       }
     }
     lines.push("📌 *UBICACIÓN:* " + (lugar || (regalo ? "Por confirmar con quien recibe" : "Por confirmar")));
