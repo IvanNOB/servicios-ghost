@@ -49,7 +49,7 @@ funciones nuevas que necesitan la base de datos.
 | 🍳🍲 Menú del día | Publicar cada día el **desayuno** y/o el **almuerzo** de cada lugar, con opciones y foto. El cliente arma el suyo. Se oculta solo al día siguiente. |
 | 📋 Pedidos | Filtra por **Hoy / Últimas 24 h / Ayer / 7 días / mes / día exacto** y por **hora** (8 p. m., 9 p. m.…), con contadores en cada filtro y agrupados por fecha. Cambia el estado (el cliente lo ve en "Seguir mi pedido") y borra pedidos de prueba. El aliado solo puede borrar pedidos **cancelados** que sean exclusivamente de su negocio. |
 | 📊 Ventas | Ventas **entregadas**, comisión, por restaurante, platos más vendidos, horas pico, descarga **CSV** (Excel). Al abrirla se actualiza "Lo más pedido" en la tienda. |
-| ⚙️ Ajustes | **Domicilio por barrio**, promociones del inicio, % de comisión y **cuentas de aliados**. |
+| ⚙️ Ajustes | **Domicilio por barrio y por horario**, promociones del inicio, % de comisión y **cuentas de aliados**. |
 
 - **🔔 Activar avisos** (arriba): suena y muestra una notificación cuando llega un pedido. Deja la pestaña abierta.
 - **Datos para transferencia**: en la ficha de cada negocio escribes su Nequi, Daviplata o cuenta bancaria. El cliente lo ve al elegir **Transferencia** como forma de pago.

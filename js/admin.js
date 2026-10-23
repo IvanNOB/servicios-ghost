@@ -3416,6 +3416,7 @@
     var a = (await window.Store.leerAjustes(true)) || {};
     ajLocal = {
       barrios: ((a.domicilios && a.domicilios.barrios) || []).map(function (b) { return { n: b.n, p: b.p }; }),
+      horarios: ((a.domicilios && a.domicilios.horarios) || []).map(function (h) { return { desde: h.desde, hasta: h.hasta, p: h.p }; }),
       promos: Array.isArray(a.promos) ? a.promos.slice()
         : (typeof PROMOCIONES !== "undefined" ? PROMOCIONES.map(function (p) { return Object.assign({ activo: true }, p); }) : []),
       comision: Number(a.comision) || 0,
@@ -3460,6 +3461,22 @@
           '<textarea class="field__textarea" id="ajPegarBarrios" rows="4" placeholder="Centro - 3000&#10;El Progreso - 4000&#10;Villa del Río 5.000"></textarea>' +
           '<button type="button" class="btn-copy btn-sm" data-aj="pegar-barrios">Agregar estos barrios</button>' +
         "</details>" +
+        // Domicilio por horario
+        '<h3 class="aj-sub">⏰ Domicilio por horario <span class="muted">(opcional)</span></h3>' +
+        '<p class="aj-horario-nota">Cuando el pedido entra dentro de un rango, ese valor manda sobre el del barrio. ' +
+          "Sirve para cobrar más de noche. Si el pedido entra fuera de todos los rangos, se usa el valor del barrio.</p>" +
+        '<div class="aj-filas" id="ajHorarios">' + ((a.horarios || []).length ? a.horarios.map(function (h, i) {
+          return '<div class="aj-fila" data-horario="' + i + '">' +
+              '<input class="field__input aj-hora" data-h-desde type="time" value="' + esc(h.desde || "") + '" aria-label="Desde" />' +
+              '<span class="muted">a</span>' +
+              '<input class="field__input aj-hora" data-h-hasta type="time" value="' + esc(h.hasta || "") + '" aria-label="Hasta" />' +
+              '<input class="field__input aj-precio" data-h-p type="number" min="0" step="500" value="' + esc(h.p != null ? h.p : "") + '" placeholder="Valor" aria-label="Valor" />' +
+              '<button type="button" class="btn-danger btn-sm" data-aj="del-horario" data-i="' + i + '" aria-label="Quitar horario">✕</button>' +
+            "</div>";
+        }).join("") : '<p class="muted">Sin horarios: se usa el valor del barrio a cualquier hora.</p>') + "</div>" +
+        '<div class="inline-actions">' +
+          '<button type="button" class="btn-copy btn-sm" data-aj="add-horario">+ Agregar horario</button>' +
+        "</div>" +
       "</section>" +
 
       // Promociones
@@ -3522,6 +3539,15 @@
       bs.push({ n: f.querySelector("[data-b-n]").value.trim(), p: Number(f.querySelector("[data-b-p]").value) || 0 });
     });
     if (document.querySelector("#ajBarrios")) ajLocal.barrios = bs;
+    var hs = [];
+    document.querySelectorAll("#ajHorarios [data-horario]").forEach(function (f) {
+      hs.push({
+        desde: f.querySelector("[data-h-desde]").value,
+        hasta: f.querySelector("[data-h-hasta]").value,
+        p: Number(f.querySelector("[data-h-p]").value) || 0,
+      });
+    });
+    if (document.querySelector("#ajHorarios")) ajLocal.horarios = hs;
     var ps = [];
     document.querySelectorAll("#ajPromos [data-promo]").forEach(function (f) {
       ps.push({
@@ -3763,6 +3789,18 @@
       case "add-barrio": ajLocal.barrios.push({ n: "", p: "" }); renderAjustes(); cargarAliados();
         var ult = document.querySelectorAll("#ajBarrios [data-b-n]"); if (ult.length) ult[ult.length - 1].focus(); return;
       case "del-barrio": ajLocal.barrios.splice(i, 1); renderAjustes(); cargarAliados(); return;
+      case "add-horario":
+        ajLocal.horarios = ajLocal.horarios || [];
+        ajLocal.horarios.push({ desde: "", hasta: "", p: "" });
+        renderAjustes();
+        var hs = document.querySelectorAll("#ajHorarios [data-h-desde]");
+        if (hs.length) hs[hs.length - 1].focus();
+        return;
+      case "del-horario":
+        ajLocal.horarios = ajLocal.horarios || [];
+        ajLocal.horarios.splice(i, 1);
+        renderAjustes();
+        return;
       case "pegar-barrios": {
         var txt = ($("#ajPegarBarrios") || {}).value || "";
         var n = 0;
@@ -3780,8 +3818,23 @@
           .sort(function (a, b) { return a.n.localeCompare(b.n, "es"); });
         var vistos = {}, dup = limpios.filter(function (b) { var k = b.n.toLowerCase(); if (vistos[k]) return true; vistos[k] = 1; return false; });
         if (dup.length) { toast("Hay barrios repetidos: " + dup.map(function (b) { return b.n; }).join(", "), true); return; }
+        // Horarios: se exige desde y hasta; el valor puede ser 0 (domicilio gratis).
+        var horas = [], incompleto = false;
+        (ajLocal.horarios || []).forEach(function (h) {
+          var desde = String(h.desde || "").trim(), hasta = String(h.hasta || "").trim();
+          if (!desde && !hasta && String(h.p) === "") return; // fila vacía: se ignora
+          if (!desde || !hasta) { incompleto = true; return; }
+          horas.push({ desde: desde, hasta: hasta, p: Math.max(0, Number(h.p) || 0) });
+        });
+        if (incompleto) { toast("Cada horario necesita la hora de inicio y la de fin", true); return; }
+        horas.sort(function (a, b) { return a.desde.localeCompare(b.desde); });
         ajLocal.barrios = limpios;
-        await guardarAj("domicilios", { barrios: limpios }, el, limpios.length ? "Domicilios guardados ✓ (" + limpios.length + " barrios)" : "Listo: el domicilio se confirmará por WhatsApp");
+        ajLocal.horarios = horas;
+        await guardarAj("domicilios", { barrios: limpios, horarios: horas }, el,
+          limpios.length || horas.length
+            ? "Domicilios guardados ✓" + (limpios.length ? " (" + limpios.length + " barrios)" : "") +
+              (horas.length ? " · " + horas.length + (horas.length === 1 ? " horario" : " horarios") : "")
+            : "Listo: el domicilio se confirmará por WhatsApp");
         renderAjustes(); cargarAliados();
         return;
       }
