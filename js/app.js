@@ -1439,11 +1439,52 @@
     var d = AJUSTES.domicilios;
     return d && Array.isArray(d.barrios) ? d.barrios.filter(function (b) { return b && b.n; }) : [];
   }
+  // Rangos de hora con tarifa propia: [{ desde:"18:00", hasta:"23:30", p:5000 }].
+  function horariosDomicilio() {
+    var d = AJUSTES.domicilios;
+    return d && Array.isArray(d.horarios)
+      ? d.horarios.filter(function (h) { return h && h.desde && h.hasta; })
+      : [];
+  }
+  function minutosDeHora(txt) {
+    var m = String(txt || "").match(/^(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    var h = Number(m[1]), mi = Number(m[2]);
+    return h > 23 || mi > 59 ? null : h * 60 + mi;
+  }
+  function minutosAhoraColombia() {
+    try {
+      var s = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date());
+      return minutosDeHora(s);
+    } catch (e) {
+      var d = new Date(Date.now() - 5 * 3600000);
+      return d.getUTCHours() * 60 + d.getUTCMinutes();
+    }
+  }
+  // Tarifa del horario que aplica ahora (o null si ninguno).
+  function tarifaHorario() {
+    var ahora = minutosAhoraColombia(), lista = horariosDomicilio();
+    if (ahora == null || !lista.length) return null;
+    for (var i = 0; i < lista.length; i++) {
+      var d = minutosDeHora(lista[i].desde), h = minutosDeHora(lista[i].hasta);
+      if (d == null || h == null) continue;
+      // Los rangos pueden cruzar la medianoche (ej. 18:00 → 02:00).
+      var dentro = h >= d ? (ahora >= d && ahora <= h) : (ahora >= d || ahora <= h);
+      if (dentro) return Number(lista[i].p) || 0;
+    }
+    return null;
+  }
   var BARRIO_OTRO = "__otro__";
   function tarifaBarrio(nombre) {
     var lista = barriosDomicilio();
     for (var i = 0; i < lista.length; i++) if (lista[i].n === nombre) return Number(lista[i].p) || 0;
     return null; // no está en la lista: se confirma
+  }
+  // Lo que se cobra de domicilio: manda el horario; si no, el barrio.
+  function tarifaDomicilio(nombre) {
+    var horario = tarifaHorario();
+    if (horario != null) return horario;
+    return nombre ? tarifaBarrio(nombre) : null;
   }
 
   // Código del pedido que se está armando (el mismo para copiar y enviar).
@@ -1617,7 +1658,7 @@
     if (barrio === BARRIO_OTRO) barrio = v("barrio_otro");
     var regalo = v("modo") === "regalo";
     if (regalo) barrio = "";  // a quien recibe no se le pide barrio: el domicilio se confirma
-    var tarifa = barrio ? tarifaBarrio(barrio) : null;
+    var tarifa = tarifaDomicilio(barrio);
     return {
       modo: regalo ? "regalo" : "personal",
       nombre: v("nombre"), telefono: telCol(v("telefono")) || v("telefono"),
@@ -1665,11 +1706,12 @@
   function resumenTotalesHTML(datos) {
     var productos = totalPesos();
     var html = '<div class="cart-total"><span>Productos</span><span>' + esc(money(productos)) + "</span></div>";
-    if (!barriosDomicilio().length) {
+    if (!barriosDomicilio().length && !horariosDomicilio().length) {
       return html + '<p class="cart-note">Domicilio: se confirma por WhatsApp.</p>';
     }
     if (datos && datos.domicilio != null) {
-      html += '<div class="cart-total cart-total--sub"><span>Domicilio (' + esc(datos.barrio) + ")</span><span>" +
+      var etiqueta = datos.barrio ? "Domicilio (" + esc(datos.barrio) + ")" : "Domicilio (horario actual)";
+      html += '<div class="cart-total cart-total--sub"><span>' + etiqueta + "</span><span>" +
         esc(datos.domicilio > 0 ? money(datos.domicilio) : "Gratis") + "</span></div>" +
         '<div class="cart-total cart-total--grande"><span>Total a pagar</span><span>' +
         esc(money(productos + datos.domicilio) + (hayPorConfirmar() ? " + por confirmar" : "")) + "</span></div>";
@@ -1677,7 +1719,7 @@
     } else {
       html += '<p class="cart-note">' + (datos && datos.barrio
         ? "Domicilio a " + esc(datos.barrio) + ": se confirma por WhatsApp."
-        : "Elige tu barrio para ver el valor del domicilio.") + "</p>";
+        : "Domicilio: se confirma por WhatsApp.") + "</p>";
     }
     return html;
   }
@@ -1778,7 +1820,7 @@
     var vBarrio = previo && previo.barrio ? previo.barrio : (c.barrio || "");
     var vNotas = previo ? previo.notas : "";
     var vPago = previo ? previo.pago : (c.pago || "Efectivo");
-    var datosPrevios = { barrio: vBarrio, domicilio: vBarrio ? tarifaBarrio(vBarrio) : null };
+    var datosPrevios = { barrio: vBarrio, domicilio: tarifaDomicilio(vBarrio) };
 
     elSheetBody.innerHTML =
       gruposHTML +
@@ -2076,11 +2118,8 @@
 
     var lines = [];
     lines.push(emojiComercio(nombres.join(" ")) + " *" + nombres.join(" · ").toUpperCase() + "*");
-    lines.push("📍 *ENTREGAR A:*");
-    lines.push("Nombre: " + (nombre || "—"));
-    lines.push("Teléfono: " + (telefono || ""));
     lines.push(linea);
-    lines.push((regalo ? "🎁 " : "🙋 ") + "*TIPO DE PEDIDO:* " + (regalo ? "REGALO" : "CONSUMO PERSONAL"));
+    lines.push("");
 
     groups.forEach(function (g) {
       if (groups.length > 1) lines.push("*" + g.rest.nombre.toUpperCase() + "*");
@@ -2104,17 +2143,15 @@
 
     lines.push(linea);
     lines.push("💰 *RESUMEN DE PAGO:*");
-    lines.push("Total Productos: " + money(productos) + (porConfirmar ? " (+ precios por confirmar)" : ""));
-    if (parcial) {
-      lines.push("Domicilio: Se coordina (el pedido incluye otros restaurantes)");
-    } else if (datos.domicilio != null) {
-      lines.push("Domicilio: " + (datos.domicilio > 0 ? money(datos.domicilio) : "Gratis"));
-    } else {
-      lines.push("Domicilio: Por confirmar");
+    var dom = parcial ? null : datos.domicilio;
+    // Si el domicilio está confirmado se detalla; si falta, solo el total.
+    if (dom != null) {
+      lines.push("Total Productos: " + money(productos) + (porConfirmar ? " (+ precios por confirmar)" : ""));
+      lines.push("Domicilio: " + (dom > 0 ? money(dom) : "Gratis"));
     }
-    var totalPagar = productos + (!parcial && datos.domicilio != null ? datos.domicilio : 0);
+    var totalPagar = productos + (dom != null ? dom : 0);
     lines.push("TOTAL A PAGAR: " + money(totalPagar) +
-      (parcial ? " (domicilio por coordinar)" : datos.domicilio == null ? " (más domicilio)" : ""));
+      (parcial ? " (domicilio por coordinar)" : dom == null ? " (más domicilio)" : ""));
     lines.push("Método de Pago: " + (datos.pago || "Efectivo"));
     if ((datos.pago || "") === "Transferencia") {
       var transf = datosTransferencia(groups);
@@ -2127,6 +2164,11 @@
         });
       }
     }
+    lines.push("");
+    lines.push((regalo ? "🎁 " : "🙋 ") + "*TIPO DE PEDIDO:* " + (regalo ? "REGALO" : "CONSUMO PERSONAL"));
+    lines.push("📍 *ENTREGAR A:*");
+    lines.push("Nombre: " + (nombre || "—"));
+    lines.push("Teléfono: " + (telefono || ""));
     lines.push("📌 *UBICACIÓN:* " + (lugar || (regalo ? "Por confirmar con quien recibe" : "Por confirmar")));
     if (datos.notas) lines.push("📝 *OBSERVACIONES:* " + datos.notas);
     return lines.join("\n");

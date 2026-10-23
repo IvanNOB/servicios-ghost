@@ -441,6 +441,10 @@ code {
 .aj-fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .aj-fila .field__input { flex: 1 1 180px; }
 .aj-precio { max-width: 130px; flex: 0 0 130px !important; }
+/* Domicilio por horario */
+.aj-sub { margin: 18px 0 4px; font-size: 0.95rem; }
+.aj-hora { max-width: 120px; flex: 0 0 120px !important; }
+.aj-horario-nota { font-size: 0.8rem; color: var(--text-2); margin: 0 0 10px; }
 .aj-promo { display: grid; grid-template-columns: 56px 1fr 1fr 180px auto auto; gap: 8px; align-items: center; }
 .aj-emoji { text-align: center; padding-left: 4px; padding-right: 4px; }
 @media (max-width: 760px) { .aj-promo { grid-template-columns: 56px 1fr auto; } .aj-promo [data-p-texto], .aj-promo [data-p-rest] { grid-column: 1 / -1; } }
