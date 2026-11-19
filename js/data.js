@@ -2504,4 +2504,64 @@ const RESTAURANTES = [
       },
     ],
   },
+  {
+    id: "croasan-bloom",
+    nombre: "Croasan Bloom",
+    cat: "Cafetería y postres",
+    tiempo: "Por confirmar",
+    abierto: true,
+    color: "#A34658",
+    desc: "Croasanes salados y dulces, granizados y bebidas calientes.",
+    logo: "",
+    horario: {
+      lun: { abre: "15:30", cierra: "22:30" },
+      mar: { abre: "15:30", cierra: "22:30" },
+      mie: { abre: "15:30", cierra: "22:30" },
+      jue: { abre: "15:30", cierra: "22:30" },
+      vie: { abre: "15:30", cierra: "22:30" },
+      sab: { abre: "15:30", cierra: "22:30" },
+      dom: { abre: "15:30", cierra: "22:30" },
+    },
+    carta: [
+      {
+        sec: "Salados",
+        items: [
+          { id: "cb-sandwich-pollo", n: "Sándwich de pollo gratinado", d: "", p: 16000 },
+          { id: "cb-jamon-queso", n: "Croasan de jamón y queso", d: "Con vegetales frescos.", p: 16000 },
+          { id: "cb-pollo-jamon", n: "Croasan de pollo, jamón y queso", d: "", p: 19000 },
+          { id: "cb-carne", n: "Croasan de carne desmechada", d: "Con vegetales frescos, pepinillos, jamón y queso.", p: 19000 },
+          { id: "cb-mixto", n: "Croasan mixto", d: "Lechuga, tomate, carne desmechada, pollo desmechado, tocineta, queso y pepinillos.", p: 22000 },
+        ],
+      },
+      {
+        sec: "Dulces",
+        items: [
+          { id: "cb-dulce", n: "Croasan dulce", d: "Con fresa, banano y crema de la casa.", p: 15000 },
+          { id: "cb-nutella", n: "Croasan de Nutella con maní", d: "", p: 14000 },
+          { id: "cb-cuchareable", n: "Cuchareable", d: "Con banano, fresas, arándanos, crema de la casa y granola.", p: 15000 },
+        ],
+      },
+      {
+        sec: "Bebidas frías",
+        items: [
+          { id: "cb-gran-cafe", n: "Granizado de café", d: "", p: 13000 },
+          { id: "cb-gran-milo", n: "Granizado de Milo", d: "", p: 13000 },
+          { id: "cb-gran-maracuya", n: "Granizado de maracuyá", d: "", p: 12000 },
+          { id: "cb-gran-fresa", n: "Granizado de fresa", d: "", p: 13000 },
+          { id: "cb-gran-oreo", n: "Granizado de Oreo", d: "", p: 13000 },
+          { id: "cb-gran-mora", n: "Granizado de mora", d: "", p: 13000 },
+          { id: "cb-milo-frio", n: "Milo frío", d: "", p: 11000 },
+          { id: "cb-dalgona-frio", n: "Café Dalgona frío", d: "", p: 9000 },
+        ],
+      },
+      {
+        sec: "Bebidas calientes",
+        items: [
+          { id: "cb-milo-caliente", n: "Milo caliente", d: "", p: 7000 },
+          { id: "cb-chocolisto", n: "Chocolisto caliente", d: "", p: 6000 },
+          { id: "cb-dalgona-caliente", n: "Café Dalgona caliente", d: "", p: 8000 },
+        ],
+      },
+    ],
+  },
 ];
