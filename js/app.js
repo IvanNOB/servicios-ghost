@@ -644,15 +644,15 @@
     var filtrando = enModoFiltro();
     var esMenu = filtroCategoria === "desayuno" || filtroCategoria === "almuerzo";
     // Las secciones de portada se ocultan al buscar/filtrar; al volver, cada
-    // una decide si se muestra (renderPromos, renderRecomendado, renderPopulares).
+    // una decide si se muestra según los datos disponibles.
     if (filtrando) document.querySelectorAll("[data-portada]").forEach(function (el) { el.hidden = true; });
     var menu = document.getElementById("almuerzos");
     // En la portada, si hoy nadie publicó desayuno ni almuerzo, no ocupa espacio.
     var sinMenus = !menusDeHoy("desayuno").length && !menusDeHoy("almuerzo").length;
     if (menu) menu.hidden = esMenu ? false : (filtrando || sinMenus);
     if (esMenu && tipoMenuDia !== filtroCategoria) { tipoMenuDia = filtroCategoria; renderMenuDia(); }
-    if (!filtrando) { renderPromos(); renderRecomendado(); renderPopulares(); }
-    renderAntojos();
+    if (!filtrando) { renderPromos(); renderPopulares(); }
+    renderRecomendados();
     renderChips();
     renderResultadosPlatos();
     renderGrid();
@@ -2345,8 +2345,7 @@
       return;
     }
 
-    // --- Recomendado y fotos ampliadas ---
-    if (t.closest("[data-reco-otro]")) { renderRecomendado(true); return; }
+    // --- Fotos ampliadas ---
     var fotoVer = t.closest("[data-foto-ver]");
     if (fotoVer) { verFoto(fotoVer.getAttribute("src"), fotoVer.getAttribute("data-foto-titulo") || fotoVer.getAttribute("alt") || ""); return; }
     if (t.closest("[data-visor-close]")) { cerrarFoto(); return; }
@@ -2571,101 +2570,6 @@
           "</div>" +
         "</article>";
     }).join("");
-  }
-
-  /* ----------------------- Recomendado (al azar) ----------------------- */
-  // Un solo plato con foto, a pantalla completa en su sección. Se elige al
-  // azar (sin repetir el anterior) y cambia solo cada 9 segundos.
-  var _recoActual = null, _recoTimer = null;
-
-  function candidatosReco() {
-    var out = [];
-    DATA.forEach(function (r) {
-      (r.carta || []).forEach(function (s) {
-        (s.items || []).forEach(function (it) {
-          if (it.foto && !it.agotado) out.push({ r: r, it: it, clave: r.id + "::" + it.id });
-        });
-      });
-      TIPOS_MENU.forEach(function (t) {
-        var a = r[MENUS[t].campo];
-        if (a && a.foto && menuVigente(r, t)) out.push({ r: r, menu: t, a: a, clave: r.id + "::menu-" + t });
-      });
-    });
-    // Si aún no hay fotos de platos, recomendamos platos con la foto de portada
-    // del restaurante (uno al azar de cada restaurante con portada).
-    if (!out.length) {
-      DATA.forEach(function (r) {
-        if (!r.logo) return;
-        var platos = [];
-        (r.carta || []).forEach(function (s) { (s.items || []).forEach(function (it) { if (!it.agotado && it.p > 0) platos.push(it); }); });
-        if (!platos.length) return;
-        var it = platos[Math.floor(Math.random() * platos.length)];
-        out.push({ r: r, it: it, fotoRest: r.logo, clave: r.id + "::" + it.id });
-      });
-    }
-    // Si hay de restaurantes abiertos, solo esos.
-    var abiertos = out.filter(function (x) { return abiertoAhora(x.r); });
-    return abiertos.length ? abiertos : out;
-  }
-
-  function renderRecomendado(forzar) {
-    var sec = document.getElementById("recomendado");
-    var card = document.getElementById("recoCard");
-    if (!sec || !card) return;
-    if (enModoFiltro()) { sec.hidden = true; return; }
-    var lista = candidatosReco();
-    if (!lista.length) { sec.hidden = true; return; }
-    sec.hidden = false;
-    var otroBtn = sec.querySelector("[data-reco-otro]");
-    if (otroBtn) otroBtn.hidden = lista.length < 2;
-    var opciones = lista.length > 1 && _recoActual ? lista.filter(function (x) { return x.clave !== _recoActual; }) : lista;
-    var x = opciones[Math.floor(Math.random() * opciones.length)];
-    _recoActual = x.clave;
-
-    var foto, titulo, precio, accion;
-    if (x.menu) {
-      var M = MENUS[x.menu];
-      foto = x.a.foto; titulo = M.emoji + " " + (x.a.titulo || M.titulo);
-      precio = x.a.precio ? money(x.a.precio) : "";
-      accion = 'data-menu-abrir="' + esc(x.r.id) + '" data-tipo="' + x.menu + '"';
-    } else {
-      foto = x.it.foto || x.fotoRest; titulo = x.it.n;
-      precio = x.it.p > 0 ? (tieneOpciones(x.it) ? "desde " : "") + money(x.it.p) : "";
-      accion = 'data-ir-rest="' + esc(x.r.id) + '" data-ir-item="' + esc(x.it.id) + '"';
-    }
-    var html =
-      '<button type="button" class="reco" ' + accion + ' aria-label="Ver ' + esc(titulo) + " de " + esc(x.r.nombre) + '">' +
-        '<img class="reco__img" src="' + esc(foto) + '" alt="' + esc(titulo) + '" decoding="async" />' +
-        '<span class="reco__capa">' +
-          '<span class="reco__etq">⭐ Recomendado</span>' +
-          '<span class="reco__plato">' + esc(titulo) + "</span>" +
-          '<span class="reco__rest">' + esc(x.r.nombre) + "</span>" +
-          '<span class="reco__pie">' +
-            (precio ? '<span class="reco__precio">' + esc(precio) + "</span>" : "<span></span>") +
-            '<span class="reco__cta">' + (x.menu ? "Armar →" : "Pedir →") + "</span>" +
-          "</span>" +
-        "</span>" +
-      "</button>";
-    // Cargamos la foto antes de mostrarla, para que no parpadee.
-    var pre = new Image();
-    pre.onload = pre.onerror = function () {
-      if (_recoActual !== x.clave) return;
-      card.classList.add("reco-wrap--cambio");
-      setTimeout(function () { card.innerHTML = html; card.classList.remove("reco-wrap--cambio"); }, card.innerHTML ? 220 : 0);
-    };
-    pre.src = foto;
-    iniciarRotacionReco(lista.length > 1);
-  }
-
-  function iniciarRotacionReco(activa) {
-    if (_recoTimer) { clearInterval(_recoTimer); _recoTimer = null; }
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!activa || reduce) return;
-    _recoTimer = setInterval(function () {
-      var card = document.getElementById("recoCard");
-      if (elVistaInicio.hidden || document.hidden || (card && card.matches(":hover"))) return;
-      renderRecomendado();
-    }, 9000);
   }
 
   /* --------------------- Ver una foto en grande --------------------- */
@@ -3360,39 +3264,62 @@
     }, []);
   }
 
-  // Un plato por local abierto. Usa lo más pedido del panel cuando está disponible.
-  function renderAntojos() {
-    var sec = document.getElementById("antojosDestacados");
-    var grid = document.getElementById("gridAntojos");
+  // Respeta el orden de popularidad del panel y alterna locales en cada pasada.
+  function seleccionarRecomendados(locales, populares) {
+    var grupos = locales.map(function (r) {
+      var disponibles = productosDisponibles(r).filter(function (it) { return it.p > 0; });
+      var pedidos = populares.filter(function (p) { return p.rest === r.id; })
+        .map(function (p) { return p.item; });
+      var items = disponibles.map(function (it, i) {
+        var ranking = pedidos.indexOf(it.id);
+        return { it: it, i: i, ranking: ranking === -1 ? Infinity : ranking };
+      }).sort(function (a, b) {
+        return a.ranking - b.ranking || Number(!!b.it.foto) - Number(!!a.it.foto) || a.i - b.i;
+      }).map(function (x) { return { r: r, it: x.it }; });
+      return items;
+    }).filter(function (items) { return items.length; });
+
+    var lista = [];
+    for (var turno = 0; turno < (grupos.length === 1 ? 3 : 2) && lista.length < 6; turno++) {
+      grupos.forEach(function (items) {
+        if (items[turno] && lista.length < 6) lista.push(items[turno]);
+      });
+    }
+    return lista;
+  }
+
+  var _recomendadosHTML = "";
+  function renderRecomendados() {
+    var sec = document.getElementById("recomendado");
+    var grid = document.getElementById("gridRecomendados");
+    var aviso = document.getElementById("recomendadosAviso");
     if (enModoFiltro()) { sec.hidden = true; return; }
 
+    var abiertos = DATA.filter(abiertoAhora);
     var populares = Array.isArray(AJUSTES.populares) ? AJUSTES.populares : [];
-    var html = DATA.filter(abiertoAhora).map(function (r) {
-      var disponibles = productosDisponibles(r);
-      var popular = populares.find(function (p) {
-        return p.rest === r.id && disponibles.some(function (it) { return it.id === p.item; });
-      });
-      var it = popular ? findItem(r.id, popular.item) :
-        disponibles.find(function (it) { return it.foto && it.p > 0; }) ||
-        disponibles.find(function (it) { return it.p > 0; }) || disponibles[0];
-      return it ? { r: r, it: it } : null;
-    }).filter(Boolean).slice(0, 6).map(function (x) {
+    var lista = seleccionarRecomendados(abiertos.length ? abiertos : DATA, populares);
+    sec.hidden = !lista.length;
+    aviso.hidden = !!abiertos.length;
+    var html = lista.map(function (x) {
       var r = x.r, it = x.it;
-      var img = it.foto
-        ? '<img class="pop__img" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
-        : '<span class="pop__img pop__img--ini" aria-hidden="true">' + esc(iniciales(r.nombre)) + "</span>";
-      return '<button type="button" class="pop antojo" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">' +
-        img + '<span class="pop__info"><span class="pop__plato">' + esc(it.n) + '</span>' +
-        '<span class="pop__rest">' + esc(r.nombre) + '</span>' +
-        '<span class="pop__precio">' + esc(it.p > 0 ? (tieneOpciones(it) ? "desde " : "") + money(it.p) : precioTxt(0)) +
-        "</span></span></button>";
+      var imagen = it.foto
+        ? '<img class="recomendado-card__foto" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
+        : '<span class="recomendado-card__iniciales" aria-hidden="true">' + esc(iniciales(r.nombre)) + "</span>";
+      var estado = estadoApertura(r);
+      var precio = (tieneOpciones(it) ? "Desde " : "") + money(it.p);
+      return '<button type="button" class="recomendado-card" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">' +
+        '<span class="recomendado-card__portada">' + imagen + "</span>" +
+        '<span class="recomendado-card__info"><strong>' + esc(it.n) + "</strong>" +
+        '<span class="recomendado-card__local">' + esc(r.nombre) + "</span>" +
+        (!estado.abierto ? '<span class="recomendado-card__local">' + esc(estado.detalle || estado.texto) + "</span>" : "") +
+        '<span class="recomendado-card__pie"><span class="recomendado-card__precio">' + esc(precio) +
+        '</span><span class="recomendado-card__accion">' + (estado.abierto ? "Ver plato" : "Ver carta") +
+        "</span></span></span></button>";
     }).join("");
-    if (grid.innerHTML !== html) {
-      var scroll = grid.scrollLeft;
+    if (_recomendadosHTML !== html) {
       grid.innerHTML = html;
-      grid.scrollLeft = scroll;
+      _recomendadosHTML = html;
     }
-    sec.hidden = !html;
   }
 
   function pintarTodo() {
@@ -3455,7 +3382,7 @@
         aplicarVitrina();
         renderPromos();
         renderPopulares();
-        renderAntojos();
+        renderRecomendados();
         if (!elSheet.hidden && !_mostrandoConfirmacion) repintarHojaConservando();
         nubeLista("aj");
       })
@@ -3465,7 +3392,7 @@
   // Los horarios cambian con la hora: repintamos cada minuto (y al volver a la pestaña).
   function refrescarHorarios() {
     aplicarVitrina();  // la vitrina empieza o termina sola a la hora fijada
-    if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); renderAntojos(); }
+    if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); renderRecomendados(); }
   }
   setInterval(refrescarHorarios, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) refrescarHorarios(); });
