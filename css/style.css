@@ -1468,14 +1468,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   .logo__name { font-size: 1.02rem; }
 }
 
-/* Saludo corto */
-.inicio { padding: 18px 0 10px; }
-.inicio__titulo {
-  font-family: var(--font-title); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
-  font-size: clamp(1.45rem, 5.4vw, 2.4rem); margin: 0;
-}
 .inicio__sub { color: var(--text-2); font-size: 0.88rem; margin: 6px 0 0; display: flex; align-items: center; gap: 8px; }
-.resumen__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 25%, transparent); flex: 0 0 auto; }
 .inicio .repetir-box { margin-top: 12px; }
 .inicio .repetir { margin: 0; }
 
@@ -1803,52 +1796,65 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 
 /* Modo vitrina (lanzamiento): aviso en el inicio */
 .vitrina-aviso {
-  margin: 12px auto 0; max-width: 560px; padding: 10px 16px; border-radius: 999px; text-align: center;
+  margin: 12px auto 6px; max-width: 560px; padding: 10px 16px; border-radius: 999px; text-align: center;
   font-size: 0.88rem; font-weight: 700; color: var(--gold-soft);
   border: 1px solid color-mix(in srgb, var(--primary) 55%, transparent);
   background: linear-gradient(90deg, color-mix(in srgb, var(--primary) 6%, transparent), color-mix(in srgb, var(--primary) 16%, transparent), color-mix(in srgb, var(--primary) 6%, transparent));
 }
 
-/* Modo vitrina: todos los productos con foto en el inicio */
-.vit-show { padding-top: 8px; }
-.vit-rest + .vit-rest { margin-top: 28px; }
-.vit-head {
-  display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 6px; border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--border));
-  background: radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 60%), var(--surface);
+/* Portada de locales y antojos destacados */
+.locales__resumen { margin: -4px 0 12px; }
+#restaurantes .bloque__title { font-size: clamp(1.5rem, 5vw, 2rem); }
+#gridRestaurantes .card {
+  min-width: 0;
+  align-items: stretch;
+  background: linear-gradient(145deg, var(--surface-2), var(--surface));
 }
-.vit-head__logo { flex: 0 0 72px; width: 72px; height: 72px; border-radius: 16px; overflow: hidden; display: grid; place-items: center; font-weight: 800; font-size: 1.4rem; color: #fff; box-shadow: 0 0 0 2px var(--primary); }
-.vit-head__logo img { width: 100%; height: 100%; object-fit: cover; }
-.vit-head__txt { flex: 1 1 auto; min-width: 0; display: grid; gap: 3px; }
-.vit-head__kicker { font-size: 0.72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--primary); }
-.vit-head__n { margin: 0; font-size: 1.35rem; line-height: 1.15; }
-.vit-head__d { margin: 0; font-size: 0.85rem; color: var(--text-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.vit-head__estado { font-size: 0.78rem; font-weight: 700; color: var(--success); }
-.vit-head__estado--off { color: var(--text-2); }
-.vit-head__ver { flex: 0 0 auto; font-weight: 700; }
-@media (max-width: 480px) { .vit-head__ver { display: none; } .vit-head__logo { flex-basis: 60px; width: 60px; height: 60px; } }
-.vit-sec { margin: 20px 2px 10px; font-size: 1.05rem; }
-.vit-sec .muted { font-size: 0.8rem; font-weight: 600; }
-.vit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-@media (min-width: 700px) { .vit-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1000px) { .vit-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.vit-tile { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: var(--surface); border: 1px solid var(--border); transition: transform .15s ease, border-color .15s ease; }
-.vit-tile:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 60%, var(--border)); }
-.vit-tile__foto { position: relative; display: block; padding: 0; border: 0; background: var(--surface-2); cursor: pointer; aspect-ratio: 1 / 1; width: 100%; }
-.vit-tile__img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.vit-tile__img--ini { display: grid; place-items: center; font-weight: 800; font-size: 1.6rem; color: #fff; }
-.vit-tile__tag { position: absolute; left: 8px; top: 8px; max-width: calc(100% - 16px); padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; font-weight: 800; color: var(--text-oscuro); background: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vit-tile__info { display: grid; gap: 4px; padding: 10px 10px 6px; flex: 1 1 auto; }
-.vit-tile__n { font-weight: 700; font-size: 0.9rem; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.vit-tile__p { color: var(--primary); font-weight: 800; font-size: 0.92rem; }
-.vit-tile__accion { padding: 0 10px 10px; }
-.vit-tile__accion .add-btn, .vit-tile__accion .stepper { width: 100%; justify-content: space-between; }
-.vit-tile__accion .add-btn { justify-content: center; }
-@media (min-width: 700px) { .vit-tile__foto { aspect-ratio: 4 / 3; } }
+#gridRestaurantes .card--cerrado { opacity: 1; }
+.card--cerrado .card__cover { filter: saturate(.65); }
+#gridRestaurantes .card__cover { aspect-ratio: 16 / 9; }
+.card__cover--fondo { background: radial-gradient(ellipse at center, #383021, var(--bg)); }
+.card__foto { width: 100%; height: 100%; object-fit: cover; display: block; }
+#gridRestaurantes .card__name { font-size: clamp(.98rem, 2.8vw, 1.15rem); font-weight: 800; }
+#gridRestaurantes .card__meta { margin-top: auto; padding-top: 6px; justify-content: space-between; gap: 4px 6px; }
+#gridRestaurantes .state { font-size: .75rem; }
+.card__ver {
+  background: linear-gradient(145deg, var(--gold-soft), var(--primary));
+  border-radius: 8px;
+  padding: 5px 8px;
+  color: var(--text-oscuro);
+  font-size: .78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.card__horario { color: var(--text-2); font-size: .76rem; line-height: 1.3; }
+
+.antojos-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 10px) / 2);
+  gap: 10px;
+  overflow-x: auto;
+  padding: 3px 3px 10px;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 3px;
+}
+.antojos-grid .antojo {
+  scroll-snap-align: start;
+  min-width: 0;
+  padding: 8px;
+  gap: 10px;
+  background: linear-gradient(145deg, var(--surface-2), var(--surface));
+}
+.antojo .pop__img { width: 58px; height: 58px; flex-basis: 58px; }
+@media (max-width: 375px) { .antojos-grid { grid-auto-columns: 76%; } }
+@media (min-width: 780px) { .antojos-grid { grid-auto-columns: calc((100% - 30px) / 4); } }
+.antojo .pop__rest { white-space: normal; }
+.cart-bar { border-radius: 14px; }
 
 /* Al recargar: mientras llegan los datos de la nube no se muestra la copia vieja */
 .esperando-nube #gridRestaurantes, .esperando-nube #promos, .esperando-nube #recomendado,
-.esperando-nube #populares, .esperando-nube #almuerzos, .esperando-nube #vitrinaShow,
+.esperando-nube #populares, .esperando-nube #almuerzos, .esperando-nube #antojosDestacados,
 .esperando-nube #resumenAbiertos, .esperando-nube #chips { visibility: hidden; }
 .esperando-nube #restaurantes { position: relative; min-height: 180px; }
 .esperando-nube #restaurantes::after {

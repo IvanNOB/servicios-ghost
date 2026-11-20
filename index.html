@@ -87,7 +87,7 @@
         </span>
         <span class="logo__text">
           <span class="logo__name"><span class="logo__accent">SERVICIOS</span> GHOST</span>
-          <span class="logo__tag">Soluciones Express &amp; Domicilios</span>
+          <span class="logo__tag">Cartagena del Chairá</span>
         </span>
       </a>
 
@@ -121,18 +121,16 @@
     <section id="vistaInicio" class="vista">
 
       <!-- ===================== INICIO: buscar y elegir rápido ===================== -->
-      <section class="inicio">
-        <h1 class="inicio__titulo">¿Qué se te antoja hoy? <span class="gold">Te lo llevamos.</span></h1>
-        <p class="inicio__sub" id="resumenAbiertos">Domicilios en Cartagena del Chairá</p>
+      <div class="inicio">
         <div class="repetir-box" id="repetirBox" hidden></div>
-      </section>
+      </div>
 
       <!-- Buscador y categorías: quedan fijos arriba al bajar -->
       <div class="buscador-fijo" id="buscadorFijo">
         <div class="search__box">
           <svg class="search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input type="search" id="buscador" class="search__input"
-                 placeholder="Busca un plato o restaurante…"
+                 placeholder="Busca un local o un plato"
                  aria-label="Buscar plato o restaurante" autocomplete="off" enterkeyhint="search" />
           <button type="button" class="search__limpiar" id="buscadorLimpiar" hidden aria-label="Borrar búsqueda">✕</button>
         </div>
@@ -145,6 +143,27 @@
           <h2 class="bloque__title" id="resultadosTitulo">Platos</h2>
         </div>
         <div class="res-lista" id="resultadosPlatos" aria-live="polite"></div>
+      </section>
+
+      <!-- ===================== RESTAURANTES ===================== -->
+      <section id="restaurantes" class="bloque bloque--compacto">
+        <div class="bloque__head">
+          <h1 class="bloque__title" id="tituloRestaurantes">Locales</h1>
+          <button type="button" class="btn-link" id="btnQuitarFiltros" data-limpiar-filtros hidden>✕ Quitar filtros</button>
+        </div>
+        <p class="inicio__sub locales__resumen" id="resumenAbiertos"></p>
+        <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
+        <p class="empty" id="sinResultados" hidden>
+          No encontramos nada. Prueba con otra palabra o
+          <button type="button" class="btn-link" data-limpiar-filtros>mira todos los locales</button>.
+        </p>
+      </section>
+
+      <section id="antojosDestacados" class="bloque bloque--compacto" aria-labelledby="tituloAntojos" hidden data-portada>
+        <div class="bloque__head">
+          <h2 class="bloque__title" id="tituloAntojos">Antojos destacados</h2>
+        </div>
+        <div class="antojos-grid" id="gridAntojos"></div>
       </section>
 
       <!-- ========================= RECOMENDADO ========================= -->
@@ -175,19 +194,6 @@
           <h2 class="bloque__title">🔥 Lo más pedido</h2>
         </div>
         <div class="pop-grid" id="gridPopulares"></div>
-      </section>
-
-      <!-- ===================== RESTAURANTES ===================== -->
-      <section id="restaurantes" class="bloque bloque--compacto">
-        <div class="bloque__head">
-          <h2 class="bloque__title" id="tituloRestaurantes">Restaurantes</h2>
-          <button type="button" class="btn-link" id="btnQuitarFiltros" data-limpiar-filtros hidden>✕ Quitar filtros</button>
-        </div>
-        <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
-        <p class="empty" id="sinResultados" hidden>
-          No encontramos nada. Prueba con otra palabra o
-          <button type="button" class="btn-link" data-limpiar-filtros>mira todos los restaurantes</button>.
-        </p>
       </section>
 
       <!-- ===================== CÓMO FUNCIONA ===================== -->
@@ -237,7 +243,7 @@
   <button type="button" class="cart-bar" id="cartBar" hidden>
     <span class="cart-bar__left">
       <span class="cart-bar__badge" id="cartBarCount">0</span>
-      Ver mi pedido<span class="cart-bar__prod"> · <span id="cartBarProductos">0 productos</span></span>
+      Ver pedido<span class="cart-bar__prod"> · <span id="cartBarProductos">0 productos</span></span>
     </span>
     <span class="cart-bar__total" id="cartBarTotal"></span>
   </button>

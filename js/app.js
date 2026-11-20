@@ -652,15 +652,15 @@
     if (menu) menu.hidden = esMenu ? false : (filtrando || sinMenus);
     if (esMenu && tipoMenuDia !== filtroCategoria) { tipoMenuDia = filtroCategoria; renderMenuDia(); }
     if (!filtrando) { renderPromos(); renderRecomendado(); renderPopulares(); }
-    renderVitrinaShow();
+    renderAntojos();
     renderChips();
     renderResultadosPlatos();
     renderGrid();
     var titulo = document.getElementById("tituloRestaurantes");
     var n = restaurantesFiltrados().length;
     if (titulo) {
-      titulo.textContent = !filtrando ? "Restaurantes" :
-        (termino.trim() ? n + (n === 1 ? " restaurante" : " restaurantes") + " con “" + termino.trim() + "”"
+      titulo.textContent = !filtrando ? "Locales" :
+        (termino.trim() ? n + (n === 1 ? " local" : " locales") + " con “" + termino.trim() + "”"
                         : etiquetaFiltro(filtroCategoria) + " · " + n);
     }
     var quitar = document.getElementById("btnQuitarFiltros");
@@ -698,8 +698,8 @@
     var el = document.getElementById("resumenAbiertos");
     if (!el) return;
     var abiertos = DATA.filter(abiertoAhora).length;
-    el.innerHTML = '<span class="resumen__dot"></span>' + abiertos + " de " + DATA.length +
-      " restaurantes abiertos ahora · Cartagena del Chairá";
+    el.hidden = enModoFiltro() || !DATA.length;
+    el.textContent = abiertos === 1 ? "1 local abierto ahora" : abiertos + " locales abiertos ahora";
   }
 
   // Altura del encabezado (para que el buscador quede fijo justo debajo).
@@ -711,11 +711,11 @@
   medirEncabezado();
 
   // Etiqueta "Abierto · Hasta las 10 pm" / "Cerrado · Abre mañana 11 am".
-  function estadoHTML(r) {
+  function estadoHTML(r, mostrarDetalle) {
     var e = estadoApertura(r);
     var clase = e.abierto ? (e.pronto ? "state--soon" : "state--open") : "state--closed";
     return '<span class="state ' + clase + '"><span class="state__dot"></span>' + esc(e.texto) +
-      (e.detalle ? '<span class="state__det"> · ' + esc(e.detalle) + "</span>" : "") + "</span>";
+      (mostrarDetalle !== false && e.detalle ? '<span class="state__det"> · ' + esc(e.detalle) + "</span>" : "") + "</span>";
   }
 
   function renderGrid() {
@@ -734,25 +734,28 @@
     var html = "";
     for (var i = 0; i < lista.length; i++) {
       var r = lista[i];
-      // Foto de perfil tal como la acomodó el negocio (ver js/logo.js).
+      // Respeta la portada que el negocio configuró. Si falta, usa una foto de su carta.
+      var foto = !r.logo && productosDisponibles(r).find(function (it) { return it.foto; });
       var cover = r.logo
         ? LogoGhost.recuadro(r, "card__cover", { mosaico: true })
-        : '<div class="card__cover">' +
-          '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
+        : '<div class="card__cover card__cover--fondo">' +
+          (foto ? '<img class="card__foto" src="' + esc(foto.foto) + '" alt="" loading="lazy" decoding="async" />'
+            : '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span>") + "</div>";
 
-      // Mosaico compacto: logo + nombre + estado, para ver todos de un vistazo.
+      var estado = estadoApertura(r);
       var menuHoy = almuerzoVigente(r) ? "🍲" : menuVigente(r, "desayuno") ? "🍳" : "";
       html +=
-        '<button type="button" class="card' + (abiertoAhora(r) ? "" : " card--cerrado") + '" data-rest="' + esc(r.id) +
+        '<button type="button" class="card' + (estado.abierto ? "" : " card--cerrado") + '" data-rest="' + esc(r.id) +
         '" title="' + esc(r.nombre + " · " + r.cat + " · " + r.tiempo) + '"' +
-        ' aria-label="Ver la carta de ' + esc(r.nombre) + " (" + esc(r.cat) + ')">' +
+        ' aria-label="Ver la carta de ' + esc(r.nombre + ". " + estado.texto + (estado.detalle ? ". " + estado.detalle : "")) + '">' +
           cover +
           (promoVigente(r) ? '<span class="card__promo">🔥 ' + esc(r.promo.texto) + "</span>" : "") +
           (menuHoy ? '<span class="card__menu" aria-hidden="true">' + menuHoy + "</span>" : "") +
           '<div class="card__body">' +
             '<div class="card__name">' + esc(r.nombre) + "</div>" +
             '<div class="card__info">' + esc(r.cat) + " · " + esc(r.tiempo) + "</div>" +
-            '<div class="card__meta">' + estadoHTML(r) + "</div>" +
+            '<div class="card__meta">' + estadoHTML(r, false) + '<span class="card__ver">Ver carta</span></div>' +
+            (!estado.abierto && estado.detalle ? '<div class="card__horario">' + esc(estado.detalle) + "</div>" : "") +
           "</div>" +
         "</button>";
     }
@@ -1391,9 +1394,6 @@
       if (slot) slot.innerHTML = controlHTML(r, it, qty);
       // Platos con opciones no tienen stepper propio; su selector no se toca.
     }
-    // En la vitrina del inicio
-    var vt = document.querySelector('#vitrinaShow [data-vit-rest="' + cssId(restId) + '"][data-vit-item="' + cssId(itemId) + '"] .vit-tile__accion');
-    if (vt && !armable(r, it)) vt.innerHTML = controlHTML(r, it, qty);
   }
 
   // Escapa un id para usarlo dentro de un selector CSS (sin depender de CSS.escape).
@@ -3354,64 +3354,44 @@
     el.innerHTML = '<span class="vitrina-aviso__txt">' + esc(txt) + "</span>";
   }
 
-  // Vitrina de productos: en el inicio, TODOS los productos de los negocios
-  // elegidos con su foto (solo mientras el modo vitrina está activo).
-  function vitrinaTileHTML(r, it) {
-    var img = it.foto
-      ? '<img class="vit-tile__img" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
-      : '<span class="vit-tile__img vit-tile__img--ini" style="' + coverStyle({ color: r.color }) + '">' + esc(iniciales(it.n)) + "</span>";
-    var precio = it.p > 0 ? (tieneOpciones(it) ? "desde " : "") + money(it.p) : precioTxt(0);
-    var accion = armable(r, it)
-      ? '<button type="button" class="add-btn" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">Elegir</button>'
-      : controlHTML(r, it, getQty(r.id, it.id));
-    return '<article class="vit-tile" data-vit-rest="' + esc(r.id) + '" data-vit-item="' + esc(it.id) + '">' +
-        '<button type="button" class="vit-tile__foto" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '" aria-label="Ver ' + esc(it.n) + '">' + img +
-          (it.msg && it.msg.texto && it.msg.mostrar !== false ? '<span class="vit-tile__tag">' + esc(it.msg.texto) + "</span>" : "") +
-        "</button>" +
-        '<div class="vit-tile__info">' +
-          '<span class="vit-tile__n">' + esc(it.n) + "</span>" +
-          '<span class="vit-tile__p">' + esc(precio) + "</span>" +
-        "</div>" +
-        '<div class="vit-tile__accion">' + accion + "</div>" +
-      "</article>";
+  function productosDisponibles(r) {
+    return r.carta.reduce(function (lista, seccion) {
+      return lista.concat(seccion.items.filter(function (it) { return it.n && !it.agotado; }));
+    }, []);
   }
-  function renderVitrinaShow() {
-    var v = vitrinaActiva();
-    var sec = document.getElementById("vitrinaShow");
-    if (!v || enModoFiltro()) { if (sec) { sec.hidden = true; sec.innerHTML = ""; } return; }
-    if (!sec) {
-      var antes = document.getElementById("recomendado") || document.getElementById("restaurantes");
-      if (!antes) return;
-      sec = document.createElement("section");
-      sec.id = "vitrinaShow";
-      sec.className = "bloque bloque--compacto vit-show";
-      antes.parentNode.insertBefore(sec, antes);
-    }
-    var html = "";
-    v.ids.forEach(function (id) {
-      var r = findRest(id);
-      if (!r) return;
-      var cabeza = r.logo && window.LogoGhost ? LogoGhost.recuadro(r, "vit-head__logo", { sinLazy: true })
-        : '<span class="vit-head__logo" style="' + coverStyle(r) + '">' + esc(iniciales(r.nombre)) + "</span>";
-      var cuerpo = "";
-      (r.carta || []).forEach(function (s) {
-        var items = (s.items || []).filter(function (it) { return it.n && !it.agotado; });
-        if (!items.length) return;
-        cuerpo += '<h3 class="vit-sec">' + esc(s.sec || "Productos") + ' <span class="muted">' + items.length + "</span></h3>" +
-          '<div class="vit-grid">' + items.map(function (it) { return vitrinaTileHTML(r, it); }).join("") + "</div>";
+
+  // Un plato por local abierto. Usa lo más pedido del panel cuando está disponible.
+  function renderAntojos() {
+    var sec = document.getElementById("antojosDestacados");
+    var grid = document.getElementById("gridAntojos");
+    if (enModoFiltro()) { sec.hidden = true; return; }
+
+    var populares = Array.isArray(AJUSTES.populares) ? AJUSTES.populares : [];
+    var html = DATA.filter(abiertoAhora).map(function (r) {
+      var disponibles = productosDisponibles(r);
+      var popular = populares.find(function (p) {
+        return p.rest === r.id && disponibles.some(function (it) { return it.id === p.item; });
       });
-      if (!cuerpo) return;
-      html += '<div class="vit-rest">' +
-        '<div class="vit-head">' + cabeza +
-          '<div class="vit-head__txt"><span class="vit-head__kicker">✨ Solo por hoy en Servicios Ghost</span>' +
-            '<h2 class="vit-head__n">' + esc(r.nombre) + "</h2>" +
-            (r.desc ? '<p class="vit-head__d">' + esc(r.desc) + "</p>" : "") +
-            '<span class="vit-head__estado' + (abiertoAhora(r) ? "" : " vit-head__estado--off") + '">' + (abiertoAhora(r) ? "● Abierto · pide ya" : "● Cerrado ahora") + "</span>" +
-          "</div>" +
-          '<button type="button" class="btn-link vit-head__ver" data-ir-rest="' + esc(r.id) + '">Ver carta →</button>' +
-        "</div>" + cuerpo + "</div>";
-    });
-    sec.innerHTML = html;
+      var it = popular ? findItem(r.id, popular.item) :
+        disponibles.find(function (it) { return it.foto && it.p > 0; }) ||
+        disponibles.find(function (it) { return it.p > 0; }) || disponibles[0];
+      return it ? { r: r, it: it } : null;
+    }).filter(Boolean).slice(0, 6).map(function (x) {
+      var r = x.r, it = x.it;
+      var img = it.foto
+        ? '<img class="pop__img" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
+        : '<span class="pop__img pop__img--ini" aria-hidden="true">' + esc(iniciales(r.nombre)) + "</span>";
+      return '<button type="button" class="pop antojo" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">' +
+        img + '<span class="pop__info"><span class="pop__plato">' + esc(it.n) + '</span>' +
+        '<span class="pop__rest">' + esc(r.nombre) + '</span>' +
+        '<span class="pop__precio">' + esc(it.p > 0 ? (tieneOpciones(it) ? "desde " : "") + money(it.p) : precioTxt(0)) +
+        "</span></span></button>";
+    }).join("");
+    if (grid.innerHTML !== html) {
+      var scroll = grid.scrollLeft;
+      grid.innerHTML = html;
+      grid.scrollLeft = scroll;
+    }
     sec.hidden = !html;
   }
 
@@ -3475,6 +3455,7 @@
         aplicarVitrina();
         renderPromos();
         renderPopulares();
+        renderAntojos();
         if (!elSheet.hidden && !_mostrandoConfirmacion) repintarHojaConservando();
         nubeLista("aj");
       })
@@ -3484,7 +3465,7 @@
   // Los horarios cambian con la hora: repintamos cada minuto (y al volver a la pestaña).
   function refrescarHorarios() {
     aplicarVitrina();  // la vitrina empieza o termina sola a la hora fijada
-    if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); }
+    if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); renderAntojos(); }
   }
   setInterval(refrescarHorarios, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) refrescarHorarios(); });
