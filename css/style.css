@@ -1839,7 +1839,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   background: radial-gradient(ellipse at center, #383021, var(--bg));
 }
 .recomendado-card__foto { display: block; width: 100%; height: 100%; object-fit: cover; min-height: 0; }
-.recomendado-card__iniciales { color: var(--primary); font-size: 1.3rem; font-weight: 800; }
 .recomendado-card__info { display: grid; gap: 4px; width: 100%; flex: 1; padding: 10px; overflow-wrap: anywhere; }
 .recomendado-card__info strong { line-height: 1.25; }
 .recomendado-card__local { color: var(--text-2); font-size: .82rem; }
@@ -1902,3 +1901,23 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 
 /* Aviso de datos que faltan antes de enviar el pedido */
 .copy-msg--falta { color: var(--advertencia, #f59e0b); }
+
+/* Ilustraciones de categoría para productos sin foto */
+.producto-ilustrado {
+  display: grid;
+  place-items: center;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 1.45rem;
+  line-height: 1;
+  background: radial-gradient(ellipse at 50% 40%, #503922, #252019 74%);
+}
+.producto-ilustrado--frio { background: radial-gradient(ellipse at 50% 40%, #284653, #19252b 74%); }
+.producto-ilustrado--dulce { background: radial-gradient(ellipse at 50% 40%, #53303e, #2c1e27 74%); }
+.producto-ilustrado--fresco { background: radial-gradient(ellipse at 50% 40%, #354932, #20291f 74%); }
+.dishes .dish--ilustrado { grid-template-columns: 48px minmax(0, 1fr); }
+.dish__foto.producto-ilustrado { width: 48px; height: 48px; flex-basis: 48px; cursor: default; }
+.recomendado-card__ilustracion {
+  width: 100%;
+  height: 100%;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}

@@ -625,7 +625,7 @@
     cont.innerHTML = res.lista.map(function (x) {
       var img = x.it.foto
         ? '<img class="res__img" src="' + esc(x.it.foto) + '" alt="" loading="lazy" decoding="async" />'
-        : '<span class="res__img res__img--ini" style="' + coverStyle({ color: x.r.color }) + '">' + esc(iniciales(x.r.nombre)) + "</span>";
+        : ilustracionProducto(x.it, x.r, "res__img");
       var precio = x.it.p > 0 ? (tieneOpciones(x.it) ? "desde " : "") + money(x.it.p) : precioTxt(0);
       return '<button type="button" class="res' + (x.it.agotado || !abiertoAhora(x.r) ? " res--off" : "") + '" data-ir-rest="' + esc(x.r.id) + '" data-ir-item="' + esc(x.it.id) + '">' +
           img +
@@ -782,7 +782,7 @@
       var sec = r.carta[s];
       var platos = "";
       for (var i = 0; i < sec.items.length; i++) {
-        platos += dishHTML(r, sec.items[i]);
+        platos += dishHTML(r, sec.items[i], sec.sec);
       }
       totalPlatos += sec.items.length;
       secciones +=
@@ -911,7 +911,8 @@
     }
   }
 
-  function dishHTML(r, it) {
+  function dishHTML(r, it, seccion) {
+    var imagenClase = it.foto ? " dish--foto" : " dish--foto dish--ilustrado";
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
@@ -921,8 +922,8 @@
       var variaPrecio = (it.opciones || []).some(grupoTienePrecios);
       var precioMostrar = it.p > 0 ? (variaPrecio ? "desde " : "") + money(it.p) : precioTxt(0);
       return (
-        '<div class="dish dish--opciones' + (it.foto ? ' dish--foto' : '') + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
-          fotoHTML(it) +
+        '<div class="dish dish--opciones' + imagenClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
+          fotoHTML(it, r, seccion) +
           '<div class="dish__info">' +
             msgHTML(it) +
             '<div class="dish__name">' + esc(it.n) + "</div>" +
@@ -934,8 +935,8 @@
       );
     }
     return (
-      '<div class="dish' + agotadoClase + (it.foto ? ' dish--foto' : '') + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
-        fotoHTML(it) +
+      '<div class="dish' + agotadoClase + imagenClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
+        fotoHTML(it, r, seccion) +
         '<div class="dish__info">' +
           msgHTML(it) +
           '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
@@ -956,10 +957,39 @@
     return '<span class="dish__msg">' + esc(String(m.texto).trim()) + "</span>";
   }
 
+  var ICONOS_PRODUCTO = [
+    [/granizado|frappe|smoothie|malteada|batido|limonada|refresco|soda|gaseosa|jugo|iced|bebidas? frias/, "🥤", "frio"],
+    [/croas[ae]n|croissant|medialuna/, "🥐", "horno"],
+    [/cafe|latte|capuc+h?ino|espresso|dalgona|chocolisto|bebidas? calientes/, "☕", "horno"],
+    [/pizza/, "🍕", "horno"],
+    [/hamburgues|burger/, "🍔", "horno"],
+    [/sandwich|panini|tostada/, "🥪", "horno"],
+    [/taco|burrito|quesadilla|enchilada|mexican/, "🌮", "horno"],
+    [/helado|sundae/, "🍨", "dulce"],
+    [/postre|brownie|torta|crepe|dulces|cuchareable/, "🍰", "dulce"],
+    [/ensalada/, "🥗", "fresco"],
+    [/sopa|caldo/, "🥣", "horno"],
+    [/pollo|alitas/, "🍗", "horno"],
+    [/asado|parrill|carne/, "🥩", "horno"],
+    [/arroz/, "🍚", "horno"],
+  ];
+
+  function ilustracionProducto(it, r, clase, seccion) {
+    var tipo = ICONOS_PRODUCTO.find(function (icono) { return icono[0].test(norm(it.n)); });
+    if (!tipo) {
+      var grupo = seccion || (r.carta.find(function (s) { return s.items.indexOf(it) !== -1; }) || {}).sec;
+      tipo = ICONOS_PRODUCTO.find(function (icono) { return icono[0].test(norm(grupo)); });
+    }
+    var figura = tipo ? tipo[1] : "🍽️";
+    var tono = tipo ? tipo[2] : "horno";
+    return '<span class="' + clase + ' producto-ilustrado producto-ilustrado--' + tono +
+      '" aria-hidden="true">' + figura + '</span>';
+  }
+
   // Foto del plato (si la subieron en el panel). Carga diferida: no gasta datos
   // hasta que el cliente baja hasta ese plato.
-  function fotoHTML(it) {
-    if (!it.foto) return "";
+  function fotoHTML(it, r, seccion) {
+    if (!it.foto) return ilustracionProducto(it, r, "dish__foto", seccion);
     return '<img class="dish__foto" src="' + esc(it.foto) + '" alt="' + esc(it.n) + '" loading="lazy" decoding="async" width="96" height="96" data-foto-ver title="Ver foto" />';
   }
 
@@ -2647,7 +2677,7 @@
     cont.innerHTML = lista.map(function (x, i) {
       var img = x.item.foto
         ? '<img class="pop__img" src="' + esc(x.item.foto) + '" alt="" loading="lazy" decoding="async" />'
-        : '<span class="pop__img pop__img--ini" style="' + coverStyle({ color: x.rest.color }) + '">' + esc(iniciales(x.rest.nombre)) + "</span>";
+        : ilustracionProducto(x.item, x.rest, "pop__img");
       return '<button type="button" class="pop" data-ir-rest="' + esc(x.rest.id) + '" data-ir-item="' + esc(x.item.id) + '">' +
           '<span class="pop__rank">#' + (i + 1) + "</span>" + img +
           '<span class="pop__info">' +
@@ -3304,7 +3334,7 @@
       var r = x.r, it = x.it;
       var imagen = it.foto
         ? '<img class="recomendado-card__foto" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
-        : '<span class="recomendado-card__iniciales" aria-hidden="true">' + esc(iniciales(r.nombre)) + "</span>";
+        : ilustracionProducto(it, r, "recomendado-card__ilustracion");
       var estado = estadoApertura(r);
       var precio = (tieneOpciones(it) ? "Desde " : "") + money(it.p);
       return '<button type="button" class="recomendado-card" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">' +
