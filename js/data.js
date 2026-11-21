@@ -149,6 +149,13 @@ const DORADITO_VALENCIANO = [
   ] },
 ];
 
+const GRANIZADOS_DBARRIO_EMPAQUE = [
+  { nombre: "Empaque", opciones: [
+    { n: "Sin empaque para llevar" },
+    { n: "Para llevar (tapa y bolsa)", precio: 1000 },
+  ] },
+];
+
 const RESTAURANTES = [
   {
     id: "lucarnes",
@@ -2563,6 +2570,43 @@ const RESTAURANTES = [
           { id: "cb-milo-caliente", n: "Milo caliente", d: "", p: 7000, foto: "assets/croasan-bloom/milo-caliente.webp" },
           { id: "cb-chocolisto", n: "Chocolisto caliente", d: "", p: 6000, foto: "assets/croasan-bloom/chocolisto.webp" },
           { id: "cb-dalgona-caliente", n: "Café Dalgona caliente", d: "", p: 8000, foto: "assets/croasan-bloom/dalgona-caliente.webp" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "granizados-dbarrio",
+    nombre: "Granizados D’Barrio",
+    cat: "Granizados y snacks",
+    tiempo: "Tiempo por confirmar",
+    abierto: true,
+    color: "#ec1682",
+    desc: "Granizados, gomas, cuates y fruta enchilada. Para llevar, el empaque de los granizados suma $1.000 por tapa y bolsa.",
+    logo: "assets/granizados-dbarrio/portada.webp",
+    carta: [
+      {
+        sec: "Granizados",
+        items: [
+          { id: "gd-8", n: "Granizado de 8 onzas", d: "", p: 9000, opciones: GRANIZADOS_DBARRIO_EMPAQUE },
+          { id: "gd-12", n: "Granizado de 12 onzas", d: "", p: 12000, opciones: GRANIZADOS_DBARRIO_EMPAQUE },
+          { id: "gd-16", n: "Granizado de 16 onzas", d: "", p: 16000, opciones: GRANIZADOS_DBARRIO_EMPAQUE },
+          { id: "gd-fruta", n: "Granizado con fruta", d: "", p: 16000, opciones: GRANIZADOS_DBARRIO_EMPAQUE },
+        ],
+      },
+      {
+        sec: "Gomas y cuates",
+        items: [
+          { id: "gd-gomas", n: "Solo gomas", d: "", p: 18000 },
+          { id: "gd-gomas-fruta", n: "Mitad fruta y mitad gomas", d: "", p: 15000 },
+          { id: "gd-cuates", n: "Cuates", d: "", p: 7000 },
+          { id: "gd-cuates-fruta", n: "Cuates con fruta", d: "", p: 12000 },
+        ],
+      },
+      {
+        sec: "Para compartir",
+        items: [
+          { id: "gd-pecera", n: "Pecera", d: "Alcanza para 4 personas.", p: 48000 },
+          { id: "gd-bandeja", n: "Bandeja de fruta enchilada", d: "Sandía, mango, kiwi, manzana, lulo o maracuyá y pepino. Puedes combinar o cambiar las frutas a tu gusto. Indica tu elección en las notas del pedido.", p: 38000 },
         ],
       },
     ],
