@@ -73,11 +73,54 @@
     };
   }
 
+  function agregarFotosObleas(lista) {
+    var restaurante = lista.find(function (r) { return r.id === "obleas-y-mas"; });
+    if (!restaurante) return;
+    var productos = new Set([
+      "bf-lim-cerezada",
+      "bf-lim-hierbabuena",
+      "bf-lim-maracuya",
+      "bf-michelada",
+      "bs-helado",
+      "he-affogato",
+      "he-crujiente",
+      "he-ensalada",
+      "he-fantasia",
+      "he-festival",
+      "he-fresas-crema",
+      "he-frutal",
+      "he-frutos-amarillos",
+      "he-frutos-rojos",
+      "he-malteada",
+      "he-maracumango",
+      "he-michelada-mango",
+      "he-queso",
+      "he-sunday",
+      "mi-oceano",
+      "mi-osito",
+      "mi-payasito",
+      "ob-nachos",
+      "sa-deditos",
+      "sa-panzerotti",
+      "sa-sandwich-ranchero",
+      "so-queso",
+      "sp-especial",
+      "wa-especial",
+    ]);
+    restaurante.carta.forEach(function (sec) {
+      sec.items.forEach(function (it) {
+        var archivo = String(it.id || "").slice(3);
+        if (!it.foto && productos.has(archivo)) it.foto = "assets/obleas-y-mas/" + archivo + ".webp";
+      });
+    });
+  }
+
   // Lee todos los restaurantes. Combina Supabase + data.js: la nube manda y
   // se AÑADEN los de data.js cuyo id aún no exista en Supabase.
   async function listar(opciones) {
     var base = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []).slice();
     var sb = client();
+    agregarFotosObleas(base);
     if (!sb) return base;
 
     try {
@@ -93,6 +136,7 @@
       quitarIlustraciones(nube);
       if (opciones && opciones.completarCartaPublica) {
         completarCartaCroasanBloom(nube, base);
+        agregarFotosObleas(nube);
       }
       var idsNube = {};
       for (var i = 0; i < nube.length; i++) idsNube[nube[i].id] = true;
@@ -111,16 +155,7 @@
     var publicada = base.find(function (r) { return r.id === "croasan-bloom"; });
     if (!actual || !publicada) return;
 
-    var porId = new Map();
-    actual.carta.forEach(function (sec) {
-      sec.items.forEach(function (it) { porId.set(it.id, it); });
-    });
-    publicada.carta.forEach(function (sec) {
-      sec.items.forEach(function (it) {
-        var guardado = porId.get(it.id);
-        if (guardado && !guardado.foto && it.foto) guardado.foto = it.foto;
-      });
-    });
+    var porId = completarFotosCarta(nube, base, "croasan-bloom");
 
     var nuevos = ["cb-sandwich-carne", "cb-perro-sencillo", "cb-perro-especial"];
     var salados = publicada.carta.find(function (sec) { return sec.sec === "Salados"; });
@@ -133,6 +168,25 @@
     salados.items.forEach(function (it) {
       if (nuevos.indexOf(it.id) !== -1) destino.items.push(Object.assign({}, it));
     });
+  }
+
+  function completarFotosCarta(nube, base, restauranteId) {
+    var actual = nube.find(function (r) { return r.id === restauranteId; });
+    var publicada = base.find(function (r) { return r.id === restauranteId; });
+    var porId = new Map();
+    if (!actual || !publicada) return porId;
+
+    actual.carta.forEach(function (sec) {
+      sec.items.forEach(function (it) { porId.set(it.id, it); });
+    });
+    publicada.carta.forEach(function (sec) {
+      sec.items.forEach(function (it) {
+        var guardado = porId.get(it.id);
+        if (guardado && !guardado.foto && it.foto) guardado.foto = it.foto;
+      });
+    });
+
+    return porId;
   }
 
   // Las imágenes ilustrativas (assets/platos/…) ya no existen: si alguna quedó
