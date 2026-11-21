@@ -2526,22 +2526,22 @@ const RESTAURANTES = [
       {
         sec: "Salados",
         items: [
-          { id: "cb-sandwich-pollo", n: "Sándwich de pollo gratinado", d: "", p: 16000, foto: "assets/croasan-bloom/sandwich-pollo.webp" },
-          { id: "cb-jamon-queso", n: "Croasan de jamón y queso", d: "Con vegetales frescos.", p: 16000, foto: "assets/croasan-bloom/jamon-queso.webp" },
+          { id: "cb-sandwich-pollo", n: "Sándwich de pollo gratinado", d: "", p: 16000, foto: "assets/croasan-bloom/sandwich-pollo-hd.webp" },
+          { id: "cb-jamon-queso", n: "Croasan de jamón y queso", d: "Con vegetales frescos.", p: 16000, foto: "assets/croasan-bloom/jamon-queso-hd.webp" },
           { id: "cb-pollo-jamon", n: "Croasan de pollo, jamón y queso", d: "", p: 19000, foto: "assets/croasan-bloom/pollo-jamon.webp" },
           { id: "cb-carne", n: "Croasan de carne desmechada", d: "Con vegetales frescos, pepinillos, jamón y queso.", p: 19000 },
           { id: "cb-sandwich-carne", n: "Sándwich de carne desmechada", d: "Con vegetales frescos.", p: 16000, foto: "assets/croasan-bloom/sandwich-carne.webp" },
           { id: "cb-mixto", n: "Croasan mixto", d: "Lechuga, tomate, carne desmechada, pollo desmechado, tocineta, queso y pepinillos.", p: 22000, foto: "assets/croasan-bloom/mixto.webp" },
           { id: "cb-perro-sencillo", n: "Perro caliente sencillo", d: "Salchicha, cebolla caramelizada, tocineta, queso gratinado con maíz tierno.", p: 15000, foto: "assets/croasan-bloom/perro-sencillo.webp" },
-          { id: "cb-perro-especial", n: "Perro caliente especial", d: "Cebolla caramelizada, salchicha, carne desmechada, salsas de la casa y queso gratinado con maíz tierno.", p: 17000, foto: "assets/croasan-bloom/perro-especial.webp" },
+          { id: "cb-perro-especial", n: "Perro caliente especial", d: "Cebolla caramelizada, salchicha, carne desmechada, salsas de la casa y queso gratinado con maíz tierno.", p: 17000, foto: "assets/croasan-bloom/perro-especial-hd.webp" },
         ],
       },
       {
         sec: "Dulces",
         items: [
-          { id: "cb-dulce", n: "Croasan dulce", d: "Con fresa, banano y crema de la casa.", p: 15000, foto: "assets/croasan-bloom/dulce.webp" },
+          { id: "cb-dulce", n: "Croasan dulce", d: "Con fresa, banano y crema de la casa.", p: 15000, foto: "assets/croasan-bloom/dulce-hd.webp" },
           { id: "cb-nutella", n: "Croasan de Nutella con maní", d: "", p: 14000 },
-          { id: "cb-cuchareable", n: "Cuchareable", d: "Con banano, fresas, arándanos, crema de la casa y granola.", p: 15000 },
+          { id: "cb-cuchareable", n: "Cuchareable", d: "Con banano, fresas, arándanos, crema de la casa y granola.", p: 15000, foto: "assets/croasan-bloom/cuchareable-hd.webp" },
         ],
       },
       {
@@ -2551,7 +2551,7 @@ const RESTAURANTES = [
           { id: "cb-gran-milo", n: "Granizado de Milo", d: "", p: 13000, foto: "assets/croasan-bloom/gran-milo.webp" },
           { id: "cb-gran-maracuya", n: "Granizado de maracuyá", d: "", p: 12000, foto: "assets/croasan-bloom/gran-maracuya.webp" },
           { id: "cb-gran-fresa", n: "Granizado de fresa", d: "", p: 13000, foto: "assets/croasan-bloom/gran-fresa.webp" },
-          { id: "cb-gran-oreo", n: "Granizado de Oreo", d: "", p: 13000, foto: "assets/croasan-bloom/gran-oreo.webp" },
+          { id: "cb-gran-oreo", n: "Granizado de Oreo", d: "", p: 13000, foto: "assets/croasan-bloom/gran-oreo-hd.webp" },
           { id: "cb-gran-mora", n: "Granizado de mora", d: "", p: 13000, foto: "assets/croasan-bloom/gran-mora.webp" },
           { id: "cb-milo-frio", n: "Milo frío", d: "", p: 11000, foto: "assets/croasan-bloom/milo-frio.webp" },
           { id: "cb-dalgona-frio", n: "Café Dalgona frío", d: "", p: 9000, foto: "assets/croasan-bloom/dalgona-frio.webp" },
