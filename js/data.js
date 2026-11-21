@@ -2530,7 +2530,10 @@ const RESTAURANTES = [
           { id: "cb-jamon-queso", n: "Croasan de jamón y queso", d: "Con vegetales frescos.", p: 16000 },
           { id: "cb-pollo-jamon", n: "Croasan de pollo, jamón y queso", d: "", p: 19000 },
           { id: "cb-carne", n: "Croasan de carne desmechada", d: "Con vegetales frescos, pepinillos, jamón y queso.", p: 19000 },
+          { id: "cb-sandwich-carne", n: "Sándwich de carne desmechada", d: "Con vegetales frescos.", p: 16000 },
           { id: "cb-mixto", n: "Croasan mixto", d: "Lechuga, tomate, carne desmechada, pollo desmechado, tocineta, queso y pepinillos.", p: 22000 },
+          { id: "cb-perro-sencillo", n: "Perro caliente sencillo", d: "Salchicha, cebolla caramelizada, tocineta, queso gratinado con maíz tierno.", p: 15000 },
+          { id: "cb-perro-especial", n: "Perro caliente especial", d: "Cebolla caramelizada, salchicha, carne desmechada, salsas de la casa y queso gratinado con maíz tierno.", p: 17000 },
         ],
       },
       {
