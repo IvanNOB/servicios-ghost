@@ -625,7 +625,7 @@
     cont.innerHTML = res.lista.map(function (x) {
       var img = x.it.foto
         ? '<img class="res__img" src="' + esc(x.it.foto) + '" alt="" loading="lazy" decoding="async" />'
-        : ilustracionProducto(x.it, x.r, "res__img");
+        : imagenProductoSinFoto(x.it, x.r, "res__img");
       var precio = x.it.p > 0 ? (tieneOpciones(x.it) ? "desde " : "") + money(x.it.p) : precioTxt(0);
       return '<button type="button" class="res' + (x.it.agotado || !abiertoAhora(x.r) ? " res--off" : "") + '" data-ir-rest="' + esc(x.r.id) + '" data-ir-item="' + esc(x.it.id) + '">' +
           img +
@@ -974,7 +974,7 @@
     [/arroz/, "🍚", "horno"],
   ];
 
-  function ilustracionProducto(it, r, clase, seccion) {
+  function imagenProductoSinFoto(it, r, clase, seccion) {
     var tipo = ICONOS_PRODUCTO.find(function (icono) { return icono[0].test(norm(it.n)); });
     if (!tipo) {
       var grupo = seccion || (r.carta.find(function (s) { return s.items.indexOf(it) !== -1; }) || {}).sec;
@@ -982,14 +982,18 @@
     }
     var figura = tipo ? tipo[1] : "🍽️";
     var tono = tipo ? tipo[2] : "horno";
+    var logo = r.logo
+      ? '<img class="producto-ilustrado__logo" src="' + esc(r.logo) +
+        '" alt="" loading="lazy" decoding="async" onerror="this.hidden=true" />'
+      : "";
     return '<span class="' + clase + ' producto-ilustrado producto-ilustrado--' + tono +
-      '" aria-hidden="true">' + figura + '</span>';
+      '" aria-hidden="true"><span>' + figura + "</span>" + logo + "</span>";
   }
 
   // Foto del plato (si la subieron en el panel). Carga diferida: no gasta datos
   // hasta que el cliente baja hasta ese plato.
   function fotoHTML(it, r, seccion) {
-    if (!it.foto) return ilustracionProducto(it, r, "dish__foto", seccion);
+    if (!it.foto) return imagenProductoSinFoto(it, r, "dish__foto", seccion);
     return '<img class="dish__foto" src="' + esc(it.foto) + '" alt="' + esc(it.n) + '" loading="lazy" decoding="async" width="96" height="96" data-foto-ver title="Ver foto" />';
   }
 
@@ -2677,7 +2681,7 @@
     cont.innerHTML = lista.map(function (x, i) {
       var img = x.item.foto
         ? '<img class="pop__img" src="' + esc(x.item.foto) + '" alt="" loading="lazy" decoding="async" />'
-        : ilustracionProducto(x.item, x.rest, "pop__img");
+        : imagenProductoSinFoto(x.item, x.rest, "pop__img");
       return '<button type="button" class="pop" data-ir-rest="' + esc(x.rest.id) + '" data-ir-item="' + esc(x.item.id) + '">' +
           '<span class="pop__rank">#' + (i + 1) + "</span>" + img +
           '<span class="pop__info">' +
@@ -3334,7 +3338,7 @@
       var r = x.r, it = x.it;
       var imagen = it.foto
         ? '<img class="recomendado-card__foto" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
-        : ilustracionProducto(it, r, "recomendado-card__ilustracion");
+        : imagenProductoSinFoto(it, r, "recomendado-card__ilustracion");
       var estado = estadoApertura(r);
       var precio = (tieneOpciones(it) ? "Desde " : "") + money(it.p);
       return '<button type="button" class="recomendado-card" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">' +
