@@ -3388,7 +3388,7 @@
 
   // Luego traemos los datos de la nube (restaurantes + ajustes) y repintamos.
   if (window.Store && typeof window.Store.listar === "function") {
-    window.Store.listar()
+    window.Store.listar({ completarCartaPublica: true })
       .then(function (lista) {
         if (Array.isArray(lista) && lista.length) {
           cargarRestaurantes(lista);

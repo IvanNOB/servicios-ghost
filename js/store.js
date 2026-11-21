@@ -75,7 +75,7 @@
 
   // Lee todos los restaurantes. Combina Supabase + data.js: la nube manda y
   // se AÑADEN los de data.js cuyo id aún no exista en Supabase.
-  async function listar() {
+  async function listar(opciones) {
     var base = (typeof RESTAURANTES !== "undefined" ? RESTAURANTES : []).slice();
     var sb = client();
     if (!sb) return base;
@@ -91,6 +91,9 @@
       if (res.data && res.data[0]) columnasTabla = Object.keys(res.data[0]);
       var nube = (res.data || []).map(filaARestaurante);
       quitarIlustraciones(nube);
+      if (opciones && opciones.completarCartaPublica) {
+        completarCartaCroasanBloom(nube, base);
+      }
       var idsNube = {};
       for (var i = 0; i < nube.length; i++) idsNube[nube[i].id] = true;
       var faltantes = base.filter(function (r) { return !idsNube[r.id]; });
@@ -99,6 +102,37 @@
       console.warn("Supabase no respondió, uso data.js:", e && e.message);
       return base;
     }
+  }
+
+  // Completa la carta publicada de Croasan Bloom con sus fotos y los salados
+  // incorporados después de que se guardó la primera versión en el panel.
+  function completarCartaCroasanBloom(nube, base) {
+    var actual = nube.find(function (r) { return r.id === "croasan-bloom"; });
+    var publicada = base.find(function (r) { return r.id === "croasan-bloom"; });
+    if (!actual || !publicada) return;
+
+    var porId = new Map();
+    actual.carta.forEach(function (sec) {
+      sec.items.forEach(function (it) { porId.set(it.id, it); });
+    });
+    publicada.carta.forEach(function (sec) {
+      sec.items.forEach(function (it) {
+        var guardado = porId.get(it.id);
+        if (guardado && !guardado.foto && it.foto) guardado.foto = it.foto;
+      });
+    });
+
+    var nuevos = ["cb-sandwich-carne", "cb-perro-sencillo", "cb-perro-especial"];
+    var salados = publicada.carta.find(function (sec) { return sec.sec === "Salados"; });
+    var destino = actual.carta.find(function (sec) { return sec.sec === "Salados"; });
+    // El catálogo del panel manda cuando ya incorpora los platos nuevos.
+    if (!salados || !destino || nuevos.some(function (id) { return porId.has(id); })) return;
+    var versionAnterior = publicada.carta.flatMap(function (sec) { return sec.items; })
+      .filter(function (it) { return nuevos.indexOf(it.id) === -1; });
+    if (porId.size !== versionAnterior.length || !versionAnterior.every(function (it) { return porId.has(it.id); })) return;
+    salados.items.forEach(function (it) {
+      if (nuevos.indexOf(it.id) !== -1) destino.items.push(Object.assign({}, it));
+    });
   }
 
   // Las imágenes ilustrativas (assets/platos/…) ya no existen: si alguna quedó
