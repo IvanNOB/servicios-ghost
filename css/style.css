@@ -1934,3 +1934,136 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   border-radius: inherit;
 }
 .recomendado-card__ilustracion .producto-ilustrado__logo { padding: 12px; }
+
+/* Vaso interactivo de Granizados D’Barrio */
+.vaso-dbarrio {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  overflow: hidden;
+  border: 1px solid #713755;
+  border-radius: 20px;
+  background: #171119;
+  color: #fff;
+}
+.vaso-dbarrio[hidden] { display: none; }
+.vaso-dbarrio__escena {
+  display: grid;
+  place-items: end center;
+  min-height: 270px;
+  padding: 42px 12px 22px;
+  background:
+    radial-gradient(ellipse at 50% 85%, #e5007b55, transparent 59%),
+    repeating-linear-gradient(165deg, #251a2870 0 2px, transparent 2px 29px),
+    #0c0a10;
+}
+.vaso-dbarrio__vaso {
+  position: relative;
+  width: 130px;
+  height: 164px;
+  opacity: 0;
+  transform: translateY(16px) scale(.9);
+  transform-origin: bottom center;
+  transition: width .32s, height .32s, opacity .3s, transform .32s;
+}
+.vaso-dbarrio[data-vaso-medida]:not([data-vaso-medida=""]) .vaso-dbarrio__vaso {
+  opacity: 1;
+  transform: none;
+}
+.vaso-dbarrio[data-vaso-medida="8"] .vaso-dbarrio__vaso { width: 104px; height: 117px; }
+.vaso-dbarrio[data-vaso-medida="16"] .vaso-dbarrio__vaso { width: 150px; height: 190px; }
+.vaso-dbarrio__cuerpo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border: 2px solid #f8edffad;
+  border-radius: 13px 13px 34% 34% / 11px 11px 12% 12%;
+  background: linear-gradient(105deg, #ffffff26, #ffffff0b 44%, #ffffff32 92%);
+  box-shadow: inset 6px 0 10px #ffffff25, inset -4px 0 6px #eee1ff38;
+}
+.vaso-dbarrio__cuerpo b {
+  z-index: 1;
+  transform: rotate(-8deg);
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: #100c17;
+  color: #c2fb34;
+  font-size: 1rem;
+  font-style: italic;
+}
+.vaso-dbarrio__liquido {
+  position: absolute;
+  inset: 6% 0 0;
+  border-radius: 14% 14% 0 0 / 7% 7% 0 0;
+  background:
+    radial-gradient(circle at 35% 22%, #ffffff8c 0 1px, transparent 2px) 0 0 / 12px 15px,
+    radial-gradient(circle at 65% 75%, #ffffff65 0 1px, transparent 2px) 0 0 / 16px 11px,
+    linear-gradient(105deg, var(--granizado-a, #78d5ee) 24%, var(--granizado-b, #78d5ee) 74%);
+  transform: translateY(106%);
+  transition: transform .66s cubic-bezier(.22,.72,.15,1);
+}
+.vaso-dbarrio--lleno .vaso-dbarrio__liquido { transform: none; }
+.vaso-dbarrio__gomas {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  position: absolute;
+  inset: 10% 0 auto;
+  opacity: 0;
+  transform: translateY(-35px);
+  transition: transform .4s ease-out, opacity .25s;
+}
+.vaso-dbarrio--gomas .vaso-dbarrio__gomas { opacity: 1; transform: none; }
+.vaso-dbarrio__gomas i {
+  width: 13px;
+  height: 17px;
+  rotate: -20deg;
+  border-radius: 45% 50% 32% 33%;
+  background: #ff7043;
+  box-shadow: inset 2px 2px 3px #ffffffe0;
+}
+.vaso-dbarrio__gomas i:nth-child(2n) { background: #c2fb34; rotate: 14deg; }
+.vaso-dbarrio__gomas i:nth-child(3n) { background: #ff367f; rotate: 25deg; }
+.vaso-dbarrio__tapa {
+  position: absolute;
+  z-index: 2;
+  inset: -14px -5px auto;
+  height: 24px;
+  border: 2px solid #f8edffbd;
+  border-radius: 50% 50% 8px 8px;
+  background: linear-gradient(#ffffff32, #ffffff16 55%, #ffffff6e);
+  opacity: 0;
+  transform: translateY(-30px);
+  transition: transform .38s ease-out, opacity .25s;
+}
+.vaso-dbarrio--sellado .vaso-dbarrio__tapa { opacity: 1; transform: none; }
+.vaso-dbarrio__controles { display: grid; gap: 12px; padding: 18px; align-content: center; }
+.vaso-dbarrio__controles h4 { margin: 0; color: #c2fb34; font-size: 1.45rem; }
+.vaso-dbarrio__controles p { margin: 0; color: #ecdfe9; }
+.vaso-dbarrio__controles label { display: grid; gap: 5px; font-size: .92rem; }
+.vaso-dbarrio__controles select,
+.vaso-dbarrio__sabores button {
+  padding: 8px 10px;
+  min-height: 40px;
+  border: 1px solid #9d6a8b;
+  border-radius: 9px;
+  background: #281d2d;
+  color: #fff;
+  font: inherit;
+}
+.vaso-dbarrio__sabores { display: flex; flex-wrap: wrap; gap: 7px; }
+.vaso-dbarrio__sabores button[aria-pressed="true"] { background: #c2fb34; border-color: #c2fb34; color: #140d15; }
+.vaso-dbarrio__controles .vaso-dbarrio__extra { display: flex; align-items: center; gap: 8px; }
+.vaso-dbarrio__extra input { accent-color: #c2fb34; width: 18px; height: 18px; }
+.vaso-dbarrio__listo { min-height: 44px; }
+.vaso-dbarrio__listo:disabled { opacity: .55; }
+.vaso-dbarrio [data-vaso-estado]:empty { display: none; }
+@media (max-width: 620px) {
+  .vaso-dbarrio { grid-template-columns: minmax(0, 1fr); }
+  .vaso-dbarrio__escena { min-height: 235px; padding-block: 26px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vaso-dbarrio__vaso, .vaso-dbarrio__liquido, .vaso-dbarrio__gomas, .vaso-dbarrio__tapa { transition: none; }
+}

@@ -116,8 +116,32 @@
   }
   var _vitrinaClave = "";
   var _vitrinaOcultos = {};  // negocios que la vitrina esconde (su carrito no se borra)
+  const SABORES_DBARRIO = [
+    { n: "Alpinito Cremoso", color: "#ff4b9f" },
+    { n: "Tote D’Barrio", color: "#078fff" },
+    { n: "Eclipse (fresa con uva)", color: "#fb3156", color2: "#8f2fec" },
+    { n: "Frutos Amarillos", color: "#ffba18" },
+    { n: "Mango Biche sin licor", color: "#94e819" },
+    { n: "Uva sin licor", color: "#a634de" },
+  ];
+  const SABOR_DBARRIO_POR_CONFIRMAR = "Sabor por confirmar";
+
+  function prepararVasoDbarrio(r) {
+    if (r.id !== "granizados-dbarrio") return r;
+    var grupoSabor = { nombre: "Sabor", opciones: [{ n: SABOR_DBARRIO_POR_CONFIRMAR }].concat(SABORES_DBARRIO) };
+    return Object.assign({}, r, { carta: r.carta.map(function (seccion) {
+      if (seccion.sec !== "Granizados") return seccion;
+      return Object.assign({}, seccion, { items: seccion.items.map(function (it) {
+        if (!/^gd-(8|12|16|fruta)$/.test(it.id) || !it.opciones || it.opciones.length !== 1 ||
+            it.opciones[0].nombre !== "Empaque" || !Array.isArray(it.opciones[0].opciones) ||
+            it.opciones[0].opciones.length !== 2) return it;
+        return Object.assign({}, it, { opciones: it.opciones.concat(grupoSabor) });
+      }) });
+    }) });
+  }
+
   function cargarRestaurantes(lista) {
-    TODOS = lista.slice();
+    TODOS = lista.map(prepararVasoDbarrio);
     var v = vitrinaActiva();
     _vitrinaClave = v ? v.ids.join(",") + "|" + v.hasta : "";
     _vitrinaOcultos = {};
@@ -780,9 +804,12 @@
     var secciones = "", indice = "", totalPlatos = 0;
     for (var s = 0; s < r.carta.length; s++) {
       var sec = r.carta[s];
-      var platos = "";
+      var productosVaso = r.id === "granizados-dbarrio" && sec.sec === "Granizados"
+        ? sec.items.filter(function (it) { return /^gd-(8|12|16|fruta)$/.test(it.id) &&
+            (it.opciones || []).some(function (g) { return g.nombre === "Sabor"; }); }) : [];
+      var platos = productosVaso.length ? vasoDbarrioHTML(r, productosVaso) : "";
       for (var i = 0; i < sec.items.length; i++) {
-        platos += dishHTML(r, sec.items[i], sec.sec);
+        if (productosVaso.indexOf(sec.items[i]) === -1) platos += dishHTML(r, sec.items[i], sec.sec);
       }
       totalPlatos += sec.items.length;
       secciones +=
@@ -866,7 +893,9 @@
       var todaSec = t && tit && coincide(norm(tit.firstChild ? tit.firstChild.textContent : ""), rs);
       sec.querySelectorAll("[data-dish]").forEach(function (d) {
         var nom = d.querySelector(".dish__name"), des = d.querySelector(".dish__desc");
-        var ok = !t || todaSec || coincide(norm((nom ? nom.textContent : "") + " " + (des ? des.textContent : "")), rs);
+        var texto = (nom ? nom.textContent : "") + " " + (des ? des.textContent : "") + " " +
+          (d.getAttribute("data-busqueda") || "");
+        var ok = !t || todaSec || coincide(norm(texto), rs);
         d.hidden = !ok;
         if (ok) n++;
       });
@@ -1068,6 +1097,7 @@
     var extra = 0, valores = [], grupos = it.opciones || [];
     for (var gi = 0; gi < grupos.length; gi++) {
       var g = grupos[gi] || {}, val = elecciones[gi];
+      if (!val && r.id === "granizados-dbarrio" && g.nombre === "Sabor") continue;
       var op = (g.opciones || []).filter(function (o) { return o.n === val && !o.agotado; })[0];
       if (!op) return null;
       extra += Number(op.precio) || 0;
@@ -1095,6 +1125,102 @@
       _elec: valores,
       _adic: elegidas,
     };
+  }
+
+  elVistaCarta.addEventListener("change", function (e) {
+    if (e.target.matches("[data-vaso-tamano], [data-vaso-gomas], [data-vaso-empaque]")) {
+      actualizarVasoDbarrio(e.target.closest("[data-vaso-dbarrio]"));
+    }
+  });
+
+  function vasoDbarrioHTML(r, productos) {
+    var dia = ahoraColombia().dia;
+    var finDeSemana = dia === 0 || dia === 6;
+    var gomas = findItem(r.id, "gd-gomas");
+    var habilitado = abiertoAhora(r) && !MODO_PANEL;
+    var busqueda = productos.map(function (it) { return it.n; }).concat(
+      SABORES_DBARRIO.map(function (sabor) { return sabor.n; })
+    ).join(" ");
+    return '<div class="vaso-dbarrio" data-vaso-dbarrio data-dish data-busqueda="' + esc(busqueda) + '">' +
+      '<div class="vaso-dbarrio__escena" aria-hidden="true"><div class="vaso-dbarrio__vaso">' +
+        '<div class="vaso-dbarrio__cuerpo"><div class="vaso-dbarrio__liquido"></div>' +
+        '<div class="vaso-dbarrio__gomas"><i></i><i></i><i></i><i></i><i></i></div>' +
+        '<b>D’Barrio</b></div><div class="vaso-dbarrio__tapa"></div></div></div>' +
+      '<div class="vaso-dbarrio__controles"><h4 class="dish__name">Arma tu granizado</h4>' +
+      '<label>Tamaño o presentación<select data-vaso-tamano><option value="">Selecciona tu vaso</option>' +
+      productos.filter(function (it) { return !it.agotado; }).map(function (it) {
+        var nombre = it.id === "gd-fruta" ? "Con fruta" : it.id.slice(3) + " onzas";
+        return '<option value="' + esc(it.id) + '">' + esc(nombre + " · " + money(it.p)) + '</option>';
+      }).join("") + '</select></label>' +
+      '<p class="dish__desc">' + (finDeSemana ? "Elige tu sabor." :
+        "Entre semana preparan tres sabores. El local confirma la disponibilidad al recibir el pedido.") + '</p>' +
+      '<div class="vaso-dbarrio__sabores" role="group" aria-label="Sabor" data-vaso-sabores>' +
+      (finDeSemana ? SABORES_DBARRIO : [{ n: SABOR_DBARRIO_POR_CONFIRMAR }]).map(function (sabor) {
+        return '<button type="button" aria-pressed="false" data-vaso-sabor="' + esc(sabor.n) + '">' + esc(sabor.n) + '</button>';
+      }).join("") + '</div>' +
+      (gomas && !gomas.agotado ? '<label class="vaso-dbarrio__extra"><input type="checkbox" data-vaso-gomas> Agregar porción de gomas · ' + esc(money(gomas.p)) + '</label>' : "") +
+      '<label class="vaso-dbarrio__extra"><input type="checkbox" data-vaso-empaque checked> Para llevar (tapa y bolsa)</label>' +
+      '<p data-vaso-estado role="status"></p>' +
+      '<button type="button" class="add-btn vaso-dbarrio__listo" data-vaso-listo' +
+      (habilitado ? "" : ' data-vaso-cerrado') + ' disabled>' +
+      (habilitado ? "Agregar al pedido" : "Pedidos no disponibles") + '</button></div></div>';
+  }
+
+  function actualizarVasoDbarrio(box) {
+    var tamano = box.querySelector("[data-vaso-tamano]").value;
+    var marcado = box.querySelector('[data-vaso-sabor][aria-pressed="true"]');
+    var sabor = marcado && SABORES_DBARRIO.find(function (s) { return s.n === marcado.dataset.vasoSabor; });
+    var gomas = box.querySelector("[data-vaso-gomas]:checked");
+    var it = findItem("granizados-dbarrio", tamano);
+    var porcion = gomas && findItem("granizados-dbarrio", "gd-gomas");
+    var empaque = box.querySelector("[data-vaso-empaque]").checked;
+    var boton = box.querySelector("[data-vaso-listo]");
+    box.dataset.vasoMedida = tamano.slice(3);
+    box.classList.toggle("vaso-dbarrio--lleno", !!(it && marcado));
+    box.classList.toggle("vaso-dbarrio--gomas", !!(it && porcion));
+    box.classList.remove("vaso-dbarrio--sellado");
+    box.style.setProperty("--granizado-a", sabor ? sabor.color : "#78d5ee");
+    box.style.setProperty("--granizado-b", sabor ? sabor.color2 || sabor.color : "#78d5ee");
+    if (boton.hasAttribute("data-vaso-cerrado")) return;
+    boton.disabled = !it || !marcado;
+    var empaquePrecio = it ? Number(it.opciones[0].opciones[empaque ? 1 : 0].precio) || 0 : 0;
+    var total = it ? it.p + empaquePrecio + (porcion ? porcion.p : 0) : 0;
+    boton.textContent = "Agregar al pedido" + (total ? " · " + money(total) : "");
+    box.querySelector("[data-vaso-estado]").textContent = "";
+  }
+
+  function terminarVasoDbarrio(box) {
+    var r = findRest("granizados-dbarrio");
+    var it = findItem(r.id, box.querySelector("[data-vaso-tamano]").value);
+    var sabor = box.querySelector('[data-vaso-sabor][aria-pressed="true"]');
+    var boton = box.querySelector("[data-vaso-listo]");
+    if (!it || it.agotado || !sabor || boton.disabled || MODO_PANEL || !abiertoAhora(r)) return;
+    var empaque = box.querySelector("[data-vaso-empaque]").checked;
+    var porcion = box.querySelector("[data-vaso-gomas]:checked") && findItem(r.id, "gd-gomas");
+    var elecciones = it.opciones.map(function (g) {
+      return g.nombre === "Sabor" ? sabor.dataset.vasoSabor : g.opciones[empaque ? 1 : 0].n;
+    });
+    var combo = armarCombo(r, it, elecciones, []);
+    if (!combo || (porcion && porcion.agotado)) return;
+    almuerzosArmados[combo.id] = { restId: r.id, item: combo };
+    setQty(r.id, combo.id, getQty(r.id, combo.id) + 1);
+    if (porcion) setQty(r.id, porcion.id, getQty(r.id, porcion.id) + 1);
+    refreshCart();
+    if (porcion) repintarPlato(r.id, porcion.id);
+
+    var controles = box.querySelectorAll("button, input, select");
+    controles.forEach(function (control) { control.disabled = true; });
+    box.classList.add("vaso-dbarrio--sellado");
+    box.querySelector("[data-vaso-estado]").textContent = "Agregado a tu pedido.";
+    window.setTimeout(function () {
+      if (!box.isConnected || vistaActual !== r.id) return;
+      controles.forEach(function (control) { control.disabled = false; });
+      openSheet();
+      if (porcion) {
+        box.querySelector("[data-vaso-gomas]").checked = false;
+        actualizarVasoDbarrio(box);
+      }
+    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450);
   }
 
   // Lee las opciones elegidas de un plato y lo agrega al carrito como línea única.
@@ -2325,6 +2451,28 @@
     }
 
     // --- Agregar plato con opciones (ej. alitas + salsa) ---
+    var saborVaso = t.closest("[data-vaso-sabor]");
+    if (saborVaso) {
+      var cajaVaso = saborVaso.closest("[data-vaso-dbarrio]");
+      var volverALlenar = cajaVaso.classList.contains("vaso-dbarrio--lleno") &&
+        saborVaso.getAttribute("aria-pressed") !== "true";
+      cajaVaso.querySelectorAll("[data-vaso-sabor]").forEach(function (boton) {
+        boton.setAttribute("aria-pressed", String(boton === saborVaso));
+      });
+      actualizarVasoDbarrio(cajaVaso);
+      var liquido = cajaVaso.querySelector(".vaso-dbarrio__liquido");
+      if (volverALlenar && liquido.animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        liquido.getAnimations().forEach(function (animacion) { animacion.cancel(); });
+        liquido.animate([{ transform: "translateY(106%)" }, { transform: "none" }],
+          { duration: 660, easing: "cubic-bezier(.22,.72,.15,1)" });
+      }
+      return;
+    }
+    var listoVaso = t.closest("[data-vaso-listo]");
+    if (listoVaso) {
+      terminarVasoDbarrio(listoVaso.closest("[data-vaso-dbarrio]"));
+      return;
+    }
     var opcAdd = t.closest("[data-opc-add]");
     if (opcAdd) {
       agregarPlatoConOpciones(opcAdd.getAttribute("data-rest"), opcAdd.getAttribute("data-item"));
