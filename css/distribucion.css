@@ -28,3 +28,10 @@
  #vistaCarta .carta-rest-head {margin-bottom:24px}
  #vistaCarta .barra .vaso-dbarrio__controles {padding:18px 12px 22px;gap:20px}
 }
+#sheetBody [hidden]{display:none!important}
+#sheetBody .personalizar {width:100%;min-width:0;overflow-wrap:anywhere}
+#sheetBody .personalizar summary {display:block;cursor:pointer;padding:9px 0;line-height:1.4}
+#sheetBody .personalizar summary b,#sheetBody [data-editor-guardar] {color:var(--primary)}
+#sheetBody .personalizar[open] .cart-nota__campo {display:grid;gap:6px}
+#sheetBody .personalizar[open] {padding-bottom:8px}
+#sheetBody [data-bolsa] > [data-bolsa-paso] {display:block;width:100%;margin-top:18px;padding:14px;border:0;border-radius:12px;background:var(--primary);color:#17130a;font-weight:750}

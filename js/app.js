@@ -1632,6 +1632,7 @@
   }
 
   function closeSheet() {
+    pasoEntrega = false;
     elSheet.hidden = true;
     document.body.classList.remove("no-scroll");
     _mostrandoConfirmacion = false;
@@ -1975,6 +1976,35 @@
     return { nombre: q("r_nombre"), telefono: q("r_telefono"), referencia: q("r_referencia") };
   }
 
+  var pasoEntrega = false;
+
+  function resumenPersonalizacion(key) {
+    var nota = notaDe(key);
+    var mensajes = (tarjetasCart[key] || []).filter(tieneTexto);
+    return [nota && "Nota: " + nota, mensajes.length && ("Mensaje: " + (mensajes[0].msg || "Tarjeta personalizada") + (mensajes.length > 1 ? " (+" + (mensajes.length - 1) + ")" : ""))].filter(Boolean).join(" · ");
+  }
+
+  function distribuirBolsa() {
+    var bolsa = elSheetBody.querySelector("[data-bolsa]");
+    if (!bolsa) return;
+    var form = elSheetBody.querySelector("#pedidoForm");
+    bolsa.hidden = pasoEntrega;
+    form.hidden = !pasoEntrega;
+    var totales = document.getElementById("resumenTotales");
+    if (totales) {
+      if (pasoEntrega) form.insertBefore(totales, form.querySelector(".actions"));
+      else bolsa.insertBefore(totales, bolsa.querySelector("[data-vaciar-pedido]"));
+    }
+    bolsa.querySelectorAll("[data-editor-origen]").forEach(function (origen) {
+      var editor = origen._editor || (origen._editor = origen.querySelector("details"));
+      if (!editor) return;
+      var destino = pasoEntrega && modoEntrega === "regalo" && editor.querySelector(".cart-tarj")
+        ? form.querySelector("[data-editor-regalo]") : origen;
+      if (editor.parentNode !== destino) { editor.open = false; destino.appendChild(editor); }
+      editor.querySelector("[data-editor-producto]").hidden = destino === origen;
+    });
+  }
+
   function renderSheet() {
     var groups = groupedCart();
 
@@ -2003,19 +2033,11 @@
               stepperHTML(g.rest.id, item, qty) +
               '<span class="cart-line__sub">' + esc(item.p > 0 ? money(item.p * qty) : "—") + "</span>" +
             "</div>" +
-            // Nota para el restaurante (opcional)
-            '<div class="cart-nota' + (nota ? " cart-nota--abierta" : "") + '">' +
-              '<div class="cart-nota__btns">' +
-                '<button type="button" class="cart-nota__btn" data-nota-abrir' + (nota ? " hidden" : "") + ">✏️ Nota (ej. sin cebolla)</button>" +
-                (maxDed ? '<button type="button" class="cart-nota__btn" data-tarj-abrir' + (tarj ? " hidden" : "") + ">💌 Mensaje en vaso o tarjeta</button>" : "") +
-              "</div>" +
-              '<label class="cart-nota__campo"' + (nota ? "" : " hidden") + ">" +
-                '<span>✏️ Nota para ' + esc(g.rest.nombre) + "</span>" +
-                '<input class="field__input" data-nota="' + esc(kNota) + '" maxlength="120" value="' + esc(nota) + '" placeholder="Ej: sin cebolla, la carne bien asada, salsa aparte" enterkeyhint="done" />' +
-              "</label>" +
-              // Mensaje en vaso o tarjeta (solo si el negocio lo activó en este producto)
-              (maxDed ? tarjetasHTML(kNota, qty, maxDed, tarj, modoEntrega === "regalo") : "") +
-            "</div>" +
+            '<div data-editor-origen class="cart-nota"><details class="personalizar cart-nota" data-editor-key="' + esc(kNota) + '">' +
+              '<summary><strong data-editor-producto hidden>' + esc(item.n) + ' · </strong><span data-editor-resumen>' + esc(resumenPersonalizacion(kNota)) + '</span> <b data-editor-accion>' + (resumenPersonalizacion(kNota) ? "Editar" : "Personalizar") + '</b></summary>' +
+              '<label class="cart-nota__campo"><span>Nota para el restaurante</span><input class="field__input" data-nota="' + esc(kNota) + '" maxlength="120" value="' + esc(nota) + '" placeholder="Escribe una indicación opcional"></label>' +
+              (maxDed ? tarjetasHTML(kNota, qty, maxDed, tarj || [], modoEntrega === "regalo") : "") +
+              '<button type="button" class="btn-link" data-editor-guardar>Guardar</button></details></div>' +
           "</div>";
       }
       var directo = window.Store && Store.normalizarWhatsapp && Store.normalizarWhatsapp(g.rest.whatsapp);
@@ -2041,13 +2063,14 @@
     var datosPrevios = { barrio: vBarrio, domicilio: tarifaDomicilio(vBarrio) };
 
     elSheetBody.innerHTML =
-      gruposHTML +
+      '<section data-bolsa><h3>Tu bolsa</h3>' + gruposHTML +
       avisosCerrados(groups) +
       '<div id="resumenTotales">' + resumenTotalesHTML(datosPrevios) + "</div>" +
       (hayPorConfirmar()
         ? '<p class="cart-note">Algunos productos tienen precio a confirmar: te lo decimos por WhatsApp.</p>' : "") +
       '<button type="button" class="btn-link cart-vaciar" data-vaciar-pedido>🗑️ Vaciar todo el pedido</button>' +
-      '<form class="form" id="pedidoForm" novalidate>' +
+      '<button class="btn btn--primary" type="button" data-bolsa-paso>Continuar a entrega</button></section>' +
+      '<form class="form" id="pedidoForm" novalidate><button type="button" class="btn-link" data-bolsa-paso>Volver a la bolsa</button><h3>Entrega y pago</h3>'  +
         // ¿Para quién es? (antes de los datos de entrega)
         '<div class="field">' +
           '<span class="field__label">¿Para quién es el pedido?</span>' +
@@ -2093,7 +2116,7 @@
             '<input class="field__input" id="fRReferencia" name="r_referencia" type="text" maxlength="160" placeholder="Ej: Hospital, entrada principal · Yamaha · Supergiros de la calle principal" autocomplete="off" value="' + esc(destPrevio ? destPrevio.referencia : "") + '" />' +
             '<small class="muted">Lo mínimo para que el domiciliario encuentre el lugar. Si no la sabes, escribe un punto de referencia.</small>' +
           "</div>" +
-          '<small class="muted">💌 Si quieres un mensaje en el vaso o en una tarjeta, escríbelo arriba, en cada producto.</small>' +
+          '<div data-editor-regalo></div>' +
           '<p class="form__hint">📲 Si no sabes la dirección exacta, escribe un punto de referencia (un negocio, una esquina). Le escribiremos por WhatsApp a quien recibe para confirmar. El pago y las dudas del pedido se hablan contigo.</p>' +
         "</div>" +
         '<div class="field">' +
@@ -2165,6 +2188,7 @@
       if (ln) ln.textContent = regalo ? "Tu nombre *" : "Nombre *";
       var lt = form.querySelector("[data-modo-lbl-tel]");
       if (lt) lt.textContent = regalo ? "Tu teléfono (WhatsApp) *" : "Teléfono (WhatsApp) *";
+      distribuirBolsa();
       // "Para" y "De" del mensaje en vaso/tarjeta: solo cuando es regalo.
       document.querySelectorAll("[data-solo-regalo]").forEach(function (el) {
         el.hidden = !regalo;
@@ -2614,28 +2638,38 @@
     if (ok) ok.textContent = " ✓";
   });
 
-  // Mensaje en vaso o tarjeta: abrir, escribir, quitar
   document.addEventListener("click", function (e) {
-    var a = e.target.closest && e.target.closest("[data-tarj-abrir]");
-    if (a) {
-      var box = a.closest(".cart-nota");
-      a.hidden = true;
-      var t = box.querySelector(".cart-tarj");
-      t.hidden = false;
-      var m = t.querySelector('[data-campo-t="msg"]');
-      if (m) m.focus();
-      return;
+    if (e.target.closest("[data-bolsa-paso]")) {
+      pasoEntrega = !pasoEntrega;
+      distribuirBolsa();
+      elSheetBody.scrollTop = 0;
+      elSheetBody.querySelector(pasoEntrega ? "form [data-bolsa-paso]" : "section [data-bolsa-paso]").focus({preventScroll:true});
     }
-    var q = e.target.closest && e.target.closest("[data-tarj-quitar]");
-    if (q) {
-      delete tarjetasCart[q.getAttribute("data-tarj-quitar")];
+    var quitar = e.target.closest("[data-tarj-quitar]");
+    if (quitar) {
+      var tarjeta = quitar.closest(".cart-tarj");
+      delete tarjetasCart[quitar.dataset.tarjQuitar];
       guardarTarjetas();
-      var b2 = q.closest(".cart-nota"), tj = b2.querySelector(".cart-tarj");
-      tj.querySelectorAll("input,textarea").forEach(function (i) { i.value = ""; });
-      tj.hidden = true;
-      b2.querySelector("[data-tarj-abrir]").hidden = false;
+      tarjeta.querySelectorAll("input,textarea").forEach(function (campo) { campo.value = ""; });
+      tarjeta.querySelectorAll("[data-max]").forEach(function (n) { n.textContent = "0/" + n.dataset.max; });
+      actualizarResumenEditor(tarjeta);
+    }
+    var guardar = e.target.closest("[data-editor-guardar]");
+    if (guardar) {
+      var editor = guardar.closest("details");
+      editor.open = false;
+      editor.querySelector("summary").focus();
     }
   });
+
+  function actualizarResumenEditor(campo) {
+    var editor = campo.closest("[data-editor-key]");
+    if (!editor) return;
+    var resumen = resumenPersonalizacion(editor.dataset.editorKey);
+    editor.querySelector("[data-editor-resumen]").textContent = resumen;
+    editor.querySelector("[data-editor-accion]").textContent = resumen ? "Editar" : "Personalizar";
+  }
+
   document.addEventListener("input", function (e) {
     var t = e.target;
     if (!t || !t.hasAttribute || !t.hasAttribute("data-tarj")) return;
@@ -2649,25 +2683,15 @@
       if (n) n.textContent = t.value.length + "/" + n.getAttribute("data-max");
     }
     guardarTarjetas();
+    actualizarResumenEditor(t);
   });
 
-  // Nota del cliente en un producto del pedido
-  document.addEventListener("click", function (e) {
-    var b = e.target.closest && e.target.closest("[data-nota-abrir]");
-    if (!b) return;
-    var box = b.closest(".cart-nota");
-    b.hidden = true;
-    var campo = box.querySelector(".cart-nota__campo");
-    campo.hidden = false;
-    box.classList.add("cart-nota--abierta");
-    var inp = campo.querySelector("input");
-    if (inp) inp.focus();
-  });
   document.addEventListener("input", function (e) {
     var t = e.target;
     if (!t || !t.hasAttribute || !t.hasAttribute("data-nota")) return;
     notasCart[t.getAttribute("data-nota")] = t.value.slice(0, 120);
     guardarNotas();
+    actualizarResumenEditor(t);
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && e.target && e.target.hasAttribute && e.target.hasAttribute("data-nota")) { e.preventDefault(); e.target.blur(); }
