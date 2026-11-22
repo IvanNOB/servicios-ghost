@@ -2619,3 +2619,25 @@ body:has(#vistaCarta:not([hidden])) .carta-count:not([hidden]) {
 .carta-grupo .dish__action .add-btn[data-add] { width: 44px; height: 44px; padding: 0; font-size: 1.45rem; }
 .carta-grupo .dish__action .add-btn:disabled { max-width: 80px; padding-inline: 6px; }
 .carta-grupo .vaso-dbarrio { margin-block: 10px; grid-column: 1 / -1; }
+
+/* Las fotos reales tienen más espacio sin estrechar el nombre ni el precio. */
+.carta-grupo .dish--foto:not(.dish--ilustrado) {
+  --carta-foto: clamp(100px, 31vw, 144px);
+}
+.carta-grupo .dish--foto:not(.dish--ilustrado) > .dish__foto {
+  width: var(--carta-foto);
+  max-width: 100%;
+  object-fit: contain;
+}
+.carta-grupo .dish--foto:not(.dish--ilustrado):not(.dish--opciones) {
+  grid-template-columns: var(--carta-foto) minmax(0, 1fr);
+  grid-template-areas: "foto info" "foto pie";
+}
+.carta-grupo .dish--foto:not(.dish--ilustrado):not(.dish--opciones) .dish__pie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+}
+.carta-grupo .dish--opciones.dish--foto:not(.dish--ilustrado) {
+  grid-template-columns: var(--carta-foto) minmax(0, 1fr);
+}
