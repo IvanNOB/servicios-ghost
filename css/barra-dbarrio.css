@@ -140,3 +140,5 @@ body:has(#vistaCarta:not([hidden])) #cartBar {display:none}
  .barra .vaso-dbarrio__controles {padding:14px}
 }
 .barra[data-vaso-vista="modelo"] .vaso-dbarrio__giro {bottom:48px}
+
+.barra-con-foto :is(.vaso-dbarrio__caida,.barra-tapa) {display:none}
