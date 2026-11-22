@@ -68,6 +68,7 @@
   </script>
   <noscript><link rel="stylesheet" href="css/style.css" /></noscript>
   <link rel="stylesheet" href="css/barra-dbarrio.css?v=4">
+  <link rel="stylesheet" href="css/distribucion.css?v=1">
 </head>
 <body>
 
@@ -127,7 +128,7 @@
                  aria-label="Buscar plato o restaurante" autocomplete="off" enterkeyhint="search" />
           <button type="button" class="search__limpiar" id="buscadorLimpiar" hidden aria-label="Borrar búsqueda">✕</button>
         </div>
-        <nav class="chips" id="chips" aria-label="Categorías"></nav>
+        <details class="filtros-inicio"><summary>Filtrar por categoría</summary><nav class="chips" id="chips" aria-label="Categorías"></nav></details>
       </div>
 
       <!-- Resultados de búsqueda: platos de todos los restaurantes -->
@@ -182,10 +183,8 @@
       </section>
 
       <!-- ===================== CÓMO FUNCIONA ===================== -->
-      <section id="como-funciona" class="bloque">
-        <div class="bloque__head">
-          <h2 class="bloque__title">Cómo funciona</h2>
-        </div>
+      <details id="como-funciona" class="bloque ayuda-inicio">
+        <summary>Cómo funciona el pedido</summary>
         <div class="pasos">
           <article class="paso-card">
             <span class="paso-card__ico" aria-hidden="true">
@@ -209,7 +208,7 @@
             <p class="paso-card__text">Confirmamos tu pedido y te lo llevamos.</p>
           </article>
         </div>
-      </section>
+      </details>
 
       <!-- ===================== LLAMADO FINAL ===================== -->
       <section class="cta">
