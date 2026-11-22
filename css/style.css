@@ -2641,3 +2641,58 @@ body:has(#vistaCarta:not([hidden])) .carta-count:not([hidden]) {
 .carta-grupo .dish--opciones.dish--foto:not(.dish--ilustrado) {
   grid-template-columns: var(--carta-foto) minmax(0, 1fr);
 }
+/* La preparación fotográfica sigue a la selección del cliente. */
+.vaso-dbarrio__toma {
+  --escala-vaso: 1;
+  transform: translate(-50%, -50%) scale(var(--escala-vaso));
+  transition: transform .28s ease-out;
+}
+[data-vaso-medida="8"] .vaso-dbarrio__toma { --escala-vaso: .86; }
+[data-vaso-medida="16"] .vaso-dbarrio__toma { --escala-vaso: 1.04; }
+@media (prefers-reduced-motion: reduce) {
+  .vaso-dbarrio__toma { transition: none; }
+}
+
+@media (max-width: 760px) {
+  body:has(#vistaCarta:not([hidden]) .vaso-dbarrio:not([hidden])):not(.no-scroll) { overflow-x: clip; }
+  #vistaCarta:has(.vaso-dbarrio:not([hidden])) .carta-nav { position: static; }
+  .vaso-dbarrio--pedido { overflow: visible; }
+  .vaso-dbarrio--pedido .vaso-dbarrio__presentacion {
+    position: sticky;
+    top: var(--alto-header, 64px);
+    z-index: 12;
+    height: clamp(148px, 29svh, 225px);
+    min-height: 0;
+    aspect-ratio: auto;
+    overflow: hidden;
+    border-radius: 23px 23px 0 0;
+    box-shadow: 0 5px 12px #0006;
+  }
+  .vaso-dbarrio--pedido .vaso-dbarrio__foto-referencia {
+    background: radial-gradient(ellipse at 46% 42%, #77563f, #32251f 77%);
+  }
+  .vaso-dbarrio--pedido .vaso-dbarrio__toma {
+    width: min(100%, clamp(148px, 29svh, 225px));
+  }
+  .vaso-dbarrio--pedido .vaso-dbarrio__vistas {
+    top: 5px;
+    right: 5px;
+    border-radius: 10px;
+  }
+  .vaso-dbarrio--pedido .vaso-dbarrio__vistas button {
+    min-height: 35px;
+    border-radius: 7px;
+    padding-inline: 7px;
+    font-size: .69rem;
+  }
+  .vaso-dbarrio--pedido .vaso-dbarrio__foto-referencia figcaption {
+    padding: 11px 9px 6px;
+    font-size: .72rem;
+  }
+  .vaso-dbarrio--pedido .vaso-dbarrio__foto-referencia figcaption small { display: none; }
+  .vaso-dbarrio--pedido .vaso-dbarrio__ficha { top: 8px; left: 8px; width: 36%; }
+  .vaso-dbarrio--pedido .vaso-dbarrio__giro { inset: auto 7px 7px auto; min-height: 34px; padding-inline: 8px; }
+  .vaso-dbarrio--pedido :is(button, input) {
+    scroll-margin-top: calc(var(--alto-header, 64px) + clamp(148px, 29svh, 225px) + 12px);
+  }
+}
