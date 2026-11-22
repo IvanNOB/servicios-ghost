@@ -2519,3 +2519,103 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   .vaso-dbarrio--lleno .vaso-dbarrio__llenado,
   .vaso-dbarrio--lleno.vaso-dbarrio--gomas .vaso-dbarrio__caida i { animation: none; }
 }
+
+/* Carta plegable de cada restaurante */
+.carta-volver, .carta-count { display: none; }
+body:has(#vistaCarta:not([hidden])) .header__inner {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  max-width: 760px;
+  gap: 10px;
+}
+body:has(#vistaCarta:not([hidden])) .header__nav,
+body:has(#vistaCarta:not([hidden])) .logo__tag,
+body:has(#vistaCarta:not([hidden])) .header__cart-text { display: none; }
+body:has(#vistaCarta:not([hidden])) .logo { justify-self: center; }
+body:has(#vistaCarta:not([hidden])) :is(.carta-volver, .header__cart) {
+  display: grid;
+  position: relative;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border-fuerte);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+body:has(#vistaCarta:not([hidden])) .carta-count:not([hidden]) {
+  display: grid;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  place-items: center;
+  min-width: 19px;
+  padding: 1px 4px;
+  background: var(--primary);
+  color: var(--text-oscuro);
+  border-radius: var(--radius-pill);
+  font-size: .75rem;
+  font-weight: 800;
+}
+#vistaCarta { max-width: 760px; margin-inline: auto; }
+.carta-rest-head { display: block; text-align: center; margin: 20px auto 14px; }
+.carta-rest-head .rest-head__name { font-size: clamp(1.8rem, 7vw, 3.25rem); margin: 0; }
+.carta-rest-head .rest-head__meta { justify-content: center; }
+#vistaCarta .carta-nav { margin-inline: 0; padding-inline: 0; border-bottom: 0; }
+#vistaCarta .carta-nav__buscar input { min-height: 44px; font-size: 1rem; }
+.carta-categorias { margin: 14px 0 10px; font: 800 1.3rem var(--font-title); }
+.carta-grupo.section {
+  margin: 0 0 9px;
+  border: 1px solid var(--border-fuerte);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.carta-grupo .carta-grupo__titulo {
+  display: flex;
+  gap: 12px;
+  min-height: 46px;
+  margin: 0;
+  padding: 11px 14px;
+  list-style: none;
+  font: 800 1.07rem var(--font-title);
+  cursor: pointer;
+}
+.carta-grupo__titulo::-webkit-details-marker { display: none; }
+.carta-grupo__titulo::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  margin: -4px 3px 0 auto;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.carta-grupo__icono { color: var(--silver); flex: none; }
+.carta-grupo[open] .carta-grupo__icono, .carta-grupo[open] .carta-grupo__titulo::after { color: var(--primary); }
+.carta-grupo[open] .carta-grupo__titulo::after { transform: rotate(225deg); margin-top: 4px; }
+.carta-grupo > .dishes { grid-template-columns: minmax(0, 1fr); gap: 0; border-top: 1px solid var(--border); padding: 0 10px; }
+.carta-grupo .dishes > .dish:not(.vaso-dbarrio) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 9px 0;
+  gap: 5px 10px;
+}
+.carta-grupo .dishes > .dish:not([hidden]) ~ .dish:not([hidden]):not(.vaso-dbarrio) { border-top: 1px solid var(--border); }
+.carta-grupo .dish--foto:not(.dish--opciones) {
+  grid-template-columns: clamp(54px, 17vw, 84px) minmax(0, 1fr) auto;
+  grid-template-areas: "foto info accion" "foto precio accion";
+  align-content: center;
+}
+.carta-grupo .dish__foto { width: clamp(54px, 17vw, 84px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 10px; }
+.carta-grupo .dish__foto.producto-ilustrado { max-width: 100%; }
+.carta-grupo .dish--opciones.dish--foto { grid-template-columns: clamp(54px, 17vw, 84px) minmax(0, 1fr); }
+.carta-grupo .dish--foto:not(.dish--opciones) .dish__pie { display: contents; }
+.carta-grupo .dish__pie .dish__price { grid-area: precio; }
+.carta-grupo .dish__action { grid-area: accion; align-self: center; }
+.carta-grupo .dish__desc { overflow-wrap: anywhere; }
+.carta-grupo .dish__action .add-btn[data-add] { width: 44px; height: 44px; padding: 0; font-size: 1.45rem; }
+.carta-grupo .dish__action .add-btn:disabled { max-width: 80px; padding-inline: 6px; }
+.carta-grupo .vaso-dbarrio { margin-block: 10px; grid-column: 1 / -1; }

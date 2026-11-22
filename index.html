@@ -73,6 +73,9 @@
   <!-- ============================ ENCABEZADO ============================ -->
   <header class="header" role="banner">
     <div class="header__inner">
+      <button type="button" class="carta-volver" data-back aria-label="Volver a restaurantes">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
+      </button>
       <a class="logo" href="#" aria-label="Servicios Ghost, inicio" id="logoHome">
         <span class="logo__mark" aria-hidden="true">
           <svg viewBox="0 0 48 48" width="38" height="38" role="img" aria-hidden="true">
@@ -100,7 +103,7 @@
 
       <button type="button" class="header__cart" id="cartBtnTop" aria-label="Ver mi pedido">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-        <span class="header__cart-text">Mi pedido</span>
+        <span class="header__cart-text">Mi pedido</span><span id="cartaCount" class="carta-count" aria-hidden="true" hidden></span>
       </button>
     </div>
   </header>

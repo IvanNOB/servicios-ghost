@@ -801,15 +801,13 @@
     } : null;
     vistaActual = restId;
 
-    var cover = r.logo
-      ? LogoGhost.recuadro(r, "rest-head__cover", { sinLazy: true })
-      : '<div class="rest-head__cover" style="' + coverStyle(r) + '">' +
-        '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span></div>";
-
     // Desayuno y almuerzo del día (si el restaurante los publicó hoy)
     var almuerzoBloque = menuHTML(r, "desayuno") + menuHTML(r, "almuerzo");
 
-    var secciones = "", indice = "", totalPlatos = 0;
+    var abiertos = _buscaCarta.rest === restId && !_buscaCarta.q && elVistaCarta.querySelector(".carta-grupo")
+      ? Array.from(elVistaCarta.querySelectorAll(".carta-grupo[open]"), function (grupo) { return grupo.id; })
+      : null;
+    var secciones = "";
     for (var s = 0; s < r.carta.length; s++) {
       var sec = r.carta[s];
       var productosVaso = r.id === "granizados-dbarrio" && sec.sec === "Granizados"
@@ -819,28 +817,23 @@
       for (var i = 0; i < sec.items.length; i++) {
         if (productosVaso.indexOf(sec.items[i]) === -1) platos += dishHTML(r, sec.items[i], sec.sec);
       }
-      totalPlatos += sec.items.length;
+      var abierto = abiertos ? abiertos.includes("sec-" + s) : (s === 0 || productosVaso.length > 0);
       secciones +=
-        '<section class="section" id="sec-' + s + '" data-sec="' + s + '">' +
-          '<h3 class="section__title">' + esc(sec.sec) + ' <span class="section__n">' + sec.items.length + "</span></h3>" +
-          '<div class="dishes">' + platos + "</div>" +
-        "</section>";
-      indice += '<button type="button" class="carta-nav__chip" data-ir-sec="' + s + '">' + esc(sec.sec) + "</button>";
+        '<details class="section carta-grupo" id="sec-' + s + '" data-sec="' + s + '"' + (abierto ? " open" : "") + '>' +
+          '<summary class="section__title carta-grupo__titulo">' +
+            iconoCategoriaCarta(sec.sec) + '<span class="carta-grupo__nombre">' + esc(sec.sec) + '</span>' +
+          '</summary><div class="dishes">' + platos + '</div>' +
+        '</details>';
     }
-    // Índice fijo (secciones + buscador) solo si la carta es larga.
-    var conIndice = r.carta.length > 1 || totalPlatos > 8;
-    if (_buscaCarta.rest !== r.id) _buscaCarta = { rest: r.id, q: "", sec: null };
-    indice = '<button type="button" class="carta-nav__chip carta-nav__chip--on" data-ir-sec="todo">Todo</button>' + indice;
-    var navCarta = !conIndice ? "" :
+    if (_buscaCarta.rest !== r.id) _buscaCarta = { rest: r.id, q: "", abiertos: null };
+    if (secciones) secciones =
       '<div class="carta-nav" id="cartaNav">' +
         '<div class="carta-nav__buscar">' +
-          '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>' +
-          '<input type="search" id="buscaCarta" placeholder="Buscar en la carta de ' + esc(r.nombre) + '…" aria-label="Buscar en la carta" autocomplete="off" enterkeyhint="search" value="' + esc(_buscaCarta.q) + '" />' +
-        "</div>" +
-        (r.carta.length > 1 ? '<nav class="carta-nav__chips" id="cartaChips" aria-label="Secciones de la carta">' + indice + "</nav>" : "") +
-      "</div>";
-    secciones = navCarta + secciones +
-      '<p class="empty" id="cartaVacia" hidden>No encontramos ese plato aquí. <button type="button" class="btn-link" data-limpiar-carta>Ver toda la carta</button></p>';
+          '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>' +
+          '<input type="search" id="buscaCarta" placeholder="Buscar productos…" aria-label="Buscar en toda la carta" autocomplete="off" enterkeyhint="search" value="' + esc(_buscaCarta.q) + '" />' +
+        '</div>' +
+      '</div><h2 class="carta-categorias">Categorías</h2>' + secciones +
+      '<p class="empty" id="cartaVacia" role="status" hidden>No encontramos ese producto. <button type="button" class="btn-link" data-limpiar-carta>Ver toda la carta</button></p>';
 
     elVistaCarta.innerHTML =
       (r.visible === false && !MODO_PANEL
@@ -850,14 +843,15 @@
         ? '<div class="panel-aviso"><span>👁️ <strong>Vista previa de tu negocio.</strong> ' +
             (r.visible === false ? "Aún no está publicado: tus clientes todavía no lo ven. Se publica desde tu panel." : "Así lo ven tus clientes.") + "</span>" +
             '<button type="button" class="btn-primary-sm" data-volver-panel>← Volver a mi panel</button></div>'
-        : '<div class="rest-nav"><button type="button" class="back-btn" data-back>← Todos los restaurantes</button>' +
-          (r.visible === false ? "" : '<button type="button" class="btn-link" data-compartir="' + esc(r.id) + '">🔗 Compartir</button>') + "</div>") +
-      '<div class="rest-head">' + cover +
+        : "") +
+      '<div class="rest-head carta-rest-head">' +
         "<div>" +
           '<h1 class="rest-head__name">' + esc(r.nombre) + "</h1>" +
-          '<p class="rest-head__desc">' + esc(r.desc) + "</p>" +
+          (r.cat || r.desc ? '<p class="rest-head__desc">' + esc(r.cat || r.desc) + "</p>" : "") +
           '<div class="rest-head__meta"><span>⏱ ' + esc(r.tiempo) + "</span>" +
-            estadoHTML(r) + "</div>" +
+            estadoHTML(r) +
+            (r.visible === false ? "" : '<button type="button" class="btn-link" data-compartir="' + esc(r.id) + '">Compartir</button>') +
+          "</div>" +
         "</div>" +
       "</div>" +
       (promoVigente(r) ? '<div class="promo-carta">🔥 <strong>' + esc(r.promo.texto) + "</strong>" + (r.promo.hasta ? ' <span class="muted">· hasta el ' + esc(r.promo.hasta.slice(8, 10) + "/" + r.promo.hasta.slice(5, 7)) + "</span>" : "") + "</div>" : "") +
@@ -886,12 +880,23 @@
       });
     }
     window.scrollTo(0, 0);
-    if (_buscaCarta.q) filtrarCarta(_buscaCarta.q);
-    vigilarSecciones();
+    if (_buscaCarta.q) filtrarCarta();
   }
 
   /* ---------------- Carta: buscador e índice de secciones ---------------- */
-  var _buscaCarta = { rest: null, q: "", sec: null }, _obsSecciones = null;
+  var _buscaCarta = { rest: null, q: "", abiertos: null };
+
+  function iconoCategoriaCarta(nombre) {
+    var categoria = norm(nombre);
+    var trazos = /helad|postre|maltead/.test(categoria)
+      ? '<path d="m7 13 5 9 5-9M7 14a3 3 0 0 1-2-5 6 6 0 0 1 12 0 3 3 0 0 1 0 5c-1 1-3 1-5 0-2 1-4 1-5 0Z"/>'
+      : /bebida|limonada|graniz|jugo/.test(categoria)
+      ? '<path d="M5 7h14l-2 14H7L5 7Zm8 0 2-5h4M4 7h16"/>'
+      : /oblea|waffle/.test(categoria)
+      ? '<ellipse cx="12" cy="12" rx="9" ry="6"/><path d="m8 9 7 6m-3-7 6 5M7 13l6-5m-1 8 6-5"/>'
+      : '<path d="M3 15a9 9 0 0 1 18 0M2 15h20l-2 4H4l-2-4Z"/><path d="M12 6V4"/>';
+    return '<svg class="carta-grupo__icono" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + trazos + '</svg>';
+  }
 
   // "granizado" también encuentra "granizada" y "granizados".
   function raices(t) {
@@ -905,21 +910,18 @@
     return true;
   }
 
-  // Muestra la sección elegida (o todas) y, dentro, lo que coincida con la búsqueda.
   function filtrarCarta(q) {
     if (typeof q === "string") _buscaCarta.q = q;
     var t = norm(String(_buscaCarta.q || "").trim()), rs = raices(t), visibles = 0;
-    var soloSec = _buscaCarta.sec;
-    elVistaCarta.querySelectorAll(".section[data-sec]").forEach(function (sec) {
+    var grupos = Array.from(elVistaCarta.querySelectorAll(".carta-grupo"));
+    if (t && !_buscaCarta.abiertos) {
+      _buscaCarta.abiertos = grupos.filter(function (grupo) { return grupo.open; })
+        .map(function (grupo) { return grupo.id; });
+    }
+    grupos.forEach(function (grupo) {
       var n = 0;
-      if (soloSec != null && sec.getAttribute("data-sec") !== String(soloSec)) {
-        sec.hidden = true;
-        return;
-      }
-      // Si escribe el nombre de la sección ("perros"), se ve toda la sección.
-      var tit = sec.querySelector(".section__title");
-      var todaSec = t && tit && coincide(norm(tit.firstChild ? tit.firstChild.textContent : ""), rs);
-      sec.querySelectorAll("[data-dish]").forEach(function (d) {
+      var todaSec = t && coincide(norm(grupo.querySelector(".carta-grupo__nombre").textContent), rs);
+      grupo.querySelectorAll("[data-dish]").forEach(function (d) {
         var nom = d.querySelector(".dish__name"), des = d.querySelector(".dish__desc");
         var texto = (nom ? nom.textContent : "") + " " + (des ? des.textContent : "") + " " +
           (d.getAttribute("data-busqueda") || "");
@@ -927,45 +929,14 @@
         d.hidden = !ok;
         if (ok) n++;
       });
-      sec.hidden = n === 0;
+      grupo.hidden = !!t && n === 0;
+      if (t) grupo.open = n > 0;
+      else if (_buscaCarta.abiertos) grupo.open = _buscaCarta.abiertos.includes(grupo.id);
       visibles += n;
     });
+    if (!t) _buscaCarta.abiertos = null;
     var vacia = document.getElementById("cartaVacia");
     if (vacia) vacia.hidden = visibles > 0;
-    var chips = document.getElementById("cartaChips");
-    if (chips) chips.querySelectorAll("[data-ir-sec]").forEach(function (c) {
-      var k = c.getAttribute("data-ir-sec");
-      c.classList.toggle("carta-nav__chip--on", soloSec == null ? k === "todo" : k === String(soloSec));
-    });
-  }
-
-  function marcarSeccion(i) {
-    var chips = document.getElementById("cartaChips");
-    if (!chips) return;
-    var activo = chips.querySelector('[data-ir-sec="' + i + '"]');
-    // Mueve la fila de secciones (solo de lado) para que se vea la elegida.
-    if (activo) {
-      var izq = activo.offsetLeft - (chips.clientWidth - activo.offsetWidth) / 2;
-      chips.scrollTo ? chips.scrollTo({ left: Math.max(0, izq), behavior: "smooth" }) : (chips.scrollLeft = izq);
-    }
-  }
-
-  function vigilarSecciones() {
-    if (_obsSecciones) { _obsSecciones.disconnect(); _obsSecciones = null; }
-    if (_buscaCarta.sec != null || _buscaCarta.q) filtrarCarta();
-  }
-
-  // Tocar una sección: muestra SOLO esa sección. "Todo" vuelve a la carta completa.
-  function irASeccion(i) {
-    _buscaCarta.sec = i === "todo" || String(_buscaCarta.sec) === String(i) ? null : Number(i);
-    filtrarCarta();
-    marcarSeccion(_buscaCarta.sec == null ? "todo" : _buscaCarta.sec);
-    var nav = document.getElementById("cartaNav");
-    if (nav) {
-      var alto = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--alto-header"), 10) || 64;
-      var y = nav.getBoundingClientRect().top + window.scrollY - alto;
-      if (window.scrollY > y) window.scrollTo({ top: y, behavior: "smooth" });
-    }
   }
 
   function dishHTML(r, it, seccion) {
@@ -1387,7 +1358,7 @@
     }
     if (qty <= 0) {
       return '<button type="button" class="add-btn" data-add data-rest="' + esc(r.id) +
-             '" data-item="' + esc(it.id) + '" aria-label="Agregar ' + esc(it.n) + '">Agregar</button>';
+             '" data-item="' + esc(it.id) + '" aria-label="Agregar ' + esc(it.n) + '">+</button>';
     }
     return stepperHTML(r.id, it, qty);
   }
@@ -1594,7 +1565,6 @@
   function irAInicio() {
     vistaActual = null;
     PREVIA = null;
-    if (_obsSecciones) { _obsSecciones.disconnect(); _obsSecciones = null; }
     if (/^#r=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
     elVistaCarta.hidden = true;
     elVistaCarta.innerHTML = "";
@@ -1606,6 +1576,8 @@
 
   function refreshCart() {
     var n = totalProductos();
+    var insignia = $("#cartaCount");
+    if (insignia) { insignia.textContent = n; insignia.hidden = n === 0; }
     if (n <= 0) {
       elCartBar.hidden = true;
     } else {
@@ -2603,12 +2575,9 @@
     }
 
     // --- Carta: índice de secciones y buscador ---
-    var irSec = t.closest("[data-ir-sec]");
-    if (irSec) { irASeccion(irSec.getAttribute("data-ir-sec")); return; }
     if (t.closest("[data-limpiar-carta]")) {
       var bc = document.getElementById("buscaCarta");
       if (bc) { bc.value = ""; bc.focus(); }
-      _buscaCarta.sec = null;
       filtrarCarta("");
       return;
     }
@@ -2969,6 +2938,8 @@
     if (!itemId) return;
     var nodo = elVistaCarta.querySelector('[data-dish][data-item="' + cssId(itemId) + '"]');
     if (!nodo) return;
+    var grupo = nodo.closest(".carta-grupo");
+    if (grupo) grupo.open = true;
     setTimeout(function () {
       if (nodo.scrollIntoView) nodo.scrollIntoView({ behavior: "smooth", block: "center" });
       nodo.classList.add("dish--destacado");
