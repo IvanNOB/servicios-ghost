@@ -66,7 +66,7 @@
 }
 .barra .vaso-dbarrio__sabores .barra-sabor span {
   flex:none;width:100%;height:auto;aspect-ratio:2.7;
-  border:0;border-radius:0;background:url("../assets/granizados-dbarrio/sabores-barra.webp") var(--recorte) / 300% 200% no-repeat;
+  border:0;border-radius:0;background-image:var(--foto-sabor);background-position:center 22%;background-size:cover;background-repeat:no-repeat;
 }
 .barra .barra-sabor strong {padding:0 8px;color:#fff;text-wrap:balance}
 .barra .barra-sabor[aria-pressed=true] {outline:2px solid var(--sabor-a);outline-offset:-2px}
@@ -97,3 +97,10 @@
 }
 @media (max-width:375px) { .barra-firma{max-width:68px} }
 @media (prefers-reduced-motion:reduce) {.barra .barra-tapa{transition:none}}
+
+.barra-con-foto .vaso-dbarrio__foto-referencia::before {background-image:var(--fondo-sabor)}
+.barra-con-foto .vaso-dbarrio__llenado {mask-image:none}
+.barra-con-foto .vaso-dbarrio__llenado img {object-fit:contain}
+.barra-con-foto .vaso-dbarrio__llenado .vaso-dbarrio__tinte {display:none}
+.barra-con-foto .vaso-dbarrio__toma {mask-image:none}
+.barra-con-foto .vaso-dbarrio__foto-referencia figcaption {width:fit-content;max-width:60%;padding:3px 8px;border-radius:0 6px 0 0;background:#161215d9}
