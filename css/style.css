@@ -2113,3 +2113,40 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 @media (max-width: 620px) {
   .vaso-dbarrio__escena--3d { min-height: 285px; }
 }
+
+/* Vista alternativa con el mismo vaso blanco y el pitillo rojo. */
+.vaso-dbarrio__vaso { width: 118px; height: 171px; }
+.vaso-dbarrio[data-vaso-medida="8"] .vaso-dbarrio__vaso { width: 98px; height: 125px; }
+.vaso-dbarrio[data-vaso-medida="16"] .vaso-dbarrio__vaso { width: 142px; height: 196px; }
+.vaso-dbarrio__cuerpo {
+  overflow: visible;
+  clip-path: polygon(0 0, 100% 0, 86% 98%, 76% 100%, 24% 100%, 14% 98%);
+  border: 0;
+  border-radius: 16% 16% 25% 25%;
+  background: linear-gradient(102deg, #bba4dd, #fff8fa 39%, #ead8ee 76%, #d59bc9);
+}
+.vaso-dbarrio__liquido {
+  inset: -2px 6px auto;
+  height: 23px;
+  border-radius: 50%;
+  opacity: 0;
+  transform: scaleY(.25);
+  transition: transform .45s, opacity .45s;
+}
+.vaso-dbarrio--lleno .vaso-dbarrio__liquido { opacity: 1; transform: none; }
+.vaso-dbarrio--lleno:not(.vaso-dbarrio--sellado) .vaso-dbarrio__vaso::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -47px;
+  left: 65%;
+  width: 8px;
+  height: 60px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #a4002a, #ff4363 41%, #d31036);
+  transform: rotate(17deg);
+}
+.vaso-dbarrio__gomas { inset: 2px 0 auto; }
+@media (prefers-reduced-motion: reduce) {
+  .vaso-dbarrio__liquido { transition: none; }
+}

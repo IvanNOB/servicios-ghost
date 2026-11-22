@@ -37,8 +37,8 @@ function crearEscena(T, local) {
   render.toneMappingExposure = 1.16;
   const escena = new T.Scene();
   const camara = new T.PerspectiveCamera(34, 1, 0.1, 40);
-  camara.position.set(0, 2.65, 6.8);
-  camara.lookAt(0, 1.34, 0);
+  camara.position.set(0, 4.05, 6.5);
+  camara.lookAt(0, 1.68, 0);
 
   let reflejos;
   if (contexto) {
@@ -73,25 +73,19 @@ function crearEscena(T, local) {
 
   const vaso = new T.Group();
   escena.add(vaso);
-  const plastico = new T.MeshPhysicalMaterial({
-    color: "#eef7ff", metalness: .06, roughness: .14, transparent: true, opacity: .23,
-    clearcoat: 1, clearcoatRoughness: .08, envMapIntensity: 1.15, depthWrite: false, side: T.DoubleSide,
+  const blancoVaso = new T.MeshPhysicalMaterial({
+    color: "#f7f4f1", roughness: .76, envMapIntensity: .29, clearcoat: .12,
   });
-  const reborde = plastico.clone();
-  reborde.opacity = .55;
+  const plasticoTapa = new T.MeshPhysicalMaterial({
+    color: "#fff5ff", roughness: .18, transparent: true, opacity: .27,
+    clearcoat: .92, envMapIntensity: .95, depthWrite: false,
+  });
   const lathe = (puntos, material) =>
-    new T.Mesh(new T.LatheGeometry(puntos.map(([x, y]) => new T.Vector2(x, y)), contexto ? 72 : 36), material);
-  const pared = lathe([[0,.03],[.44,.03],[.49,.075],[.515,.17],[.697,1.76],[.706,1.83],
-    [.689,1.84],[.677,1.76],[.492,.17],[.46,.075],[0,.065]], plastico);
-  pared.renderOrder = 4;
+    new T.Mesh(new T.LatheGeometry(puntos.map(([x, y]) => new T.Vector2(x, y)), contexto ? 72 : 48), material);
+  const pared = lathe([[0,.045],[.415,.045],[.466,.064],[.489,.109],[.506,.19],
+    [.720,2.03],[.733,2.066],[.730,2.095],[.712,2.106],[.693,2.097],[.685,2.066],
+    [.675,2.02],[.462,.19],[.440,.13],[0,.13]], blancoVaso);
   vaso.add(pared);
-  [.13, .18, 1.73, 1.78, 1.84].forEach((y) => {
-    const aro = new T.Mesh(new T.TorusGeometry(.49 + y * .117, y > 1.7 ? .013 : .009, 8, 72), reborde);
-    aro.rotation.x = Math.PI / 2;
-    aro.position.y = y;
-    aro.renderOrder = 5;
-    vaso.add(aro);
-  });
 
   let semilla = 4385;
   const azar = () => {
@@ -122,8 +116,8 @@ function crearEscena(T, local) {
     color: "#ffffff", vertexColors: true, roughness: .30, clearcoat: .65,
     clearcoatRoughness: .18, map: grano, bumpMap: grano, bumpScale: .034,
   });
-  const base = lathe([[0,.07],[.454,.07],[.48,.12],[.645,1.65],[.65,1.72],
-    [.61,1.77],[.47,1.87],[.31,1.91],[0,1.95]], hieloMaterial);
+  const base = lathe([[0,.13],[.438,.13],[.454,.18],[.649,1.90],[.664,1.98],
+    [.618,2.016],[.47,2.073],[.29,2.103],[0,2.116]], hieloMaterial);
   const posiciones = base.geometry.getAttribute("position");
   const colores = new T.BufferAttribute(new Float32Array(posiciones.count * 3), 3);
   base.geometry.setAttribute("color", colores);
@@ -135,7 +129,7 @@ function crearEscena(T, local) {
   for (let i = 0; i < cubos.count; i++) {
     const angulo = azar() * Math.PI * 2;
     const radio = Math.sqrt(azar()) * .63;
-    const y = 1.74 + Math.max(0, .19 * (1 - radio / .64)) + (azar() - .5) * .10;
+    const y = 1.995 + .115 * (1 - radio / .64) + (azar() - .5) * .055;
     const x = Math.cos(angulo) * radio;
     matriz.position.set(x, y, Math.sin(angulo) * radio);
     const tam = .025 + azar() * .052;
@@ -166,49 +160,30 @@ function crearEscena(T, local) {
     cubos.instanceColor.needsUpdate = true;
   }
 
-  const gotaGeo = new T.SphereGeometry(1, 9, 7);
-  const gotas = new T.InstancedMesh(gotaGeo, new T.MeshPhysicalMaterial({
-    color: "#fff8fb", transparent: true, opacity: .50, roughness: .11,
-    metalness: .08, clearcoat: 1, depthWrite: false,
-  }), contexto ? 122 : 52);
-  for (let i = 0; i < gotas.count; i++) {
-    const a = azar() * Math.PI * 2;
-    const y = .14 + azar() * 1.56;
-    const radio = .501 + y * .113;
-    matriz.position.set(Math.sin(a) * radio, y, Math.cos(a) * radio);
-    const s = .006 + azar() ** 2 * .022;
-    matriz.scale.set(s, 1.32 * s, .56 * s);
-    matriz.rotation.set(0, a, 0);
-    matriz.updateMatrix();
-    gotas.setMatrixAt(i, matriz.matrix);
-  }
-  gotas.renderOrder = 6;
-  vaso.add(gotas);
-
   const logo = document.createElement("canvas");
   logo.width = 512;
   logo.height = 256;
   const tinta = logo.getContext("2d");
   tinta.translate(256, 130);
   tinta.rotate(-.10);
-  tinta.font = "italic 900 92px system-ui";
+  tinta.font = "italic 900 74px system-ui";
   tinta.textAlign = "center";
   tinta.textBaseline = "middle";
   tinta.lineJoin = "round";
   tinta.strokeStyle = "#15101a";
-  tinta.lineWidth = 23;
+  tinta.lineWidth = 10;
   tinta.strokeText("D’Barrio", 0, -9);
-  tinta.fillStyle = "#f9f3fb";
+  tinta.fillStyle = "#5c234f";
   tinta.fillText("D’Barrio", 0, -9);
   tinta.beginPath();
-  tinta.ellipse(37, 55, 123, 7, -.04, 0, Math.PI * 2);
-  tinta.fillStyle = "#cbff35";
+  tinta.ellipse(31, 38, 103, 5, -.04, 0, Math.PI * 2);
+  tinta.fillStyle = "#f14a91";
   tinta.fill();
   const etiquetaMapa = new T.CanvasTexture(logo);
   etiquetaMapa.colorSpace = T.SRGBColorSpace;
-  const etiqueta = new T.Mesh(new T.CylinderGeometry(.650, .588, .54, 40, 1, true, -.79, 1.58),
+  const etiqueta = new T.Mesh(new T.CylinderGeometry(.634, .572, .50, 40, 1, true, -.77, 1.54),
     new T.MeshBasicMaterial({ map: etiquetaMapa, transparent: true, depthWrite: false }));
-  etiqueta.position.y = 1.03;
+  etiqueta.position.y = .97;
   etiqueta.renderOrder = 7;
   etiqueta.userData.etiqueta = logo;
   vaso.add(etiqueta);
@@ -234,14 +209,37 @@ function crearEscena(T, local) {
     return gomita;
   });
 
-  const tapa = lathe([[0,.44],[.19,.438],[.32,.401],[.44,.32],[.56,.23],[.655,.115],[.695,.048],
-    [.735,.046],[.738,0],[.705,-.015],[.704,.035],[.676,.049],[.64,.112],[.54,.22],
-    [.435,.307],[.315,.385],[.185,.424],[0,.425]], plastico);
+  const pitillo = lathe([[.040,-.83],[.052,-.83],[.052,.42],[.049,.432],
+    [.039,.432],[.037,.415],[.037,-.83],[.040,-.83]], new T.MeshPhysicalMaterial({
+      color: "#e81136", roughness: .26, clearcoat: .62, envMapIntensity: .55,
+    }));
+  pitillo.rotation.z = -.25;
+  pitillo.rotation.x = .10;
+  pitillo.position.set(.31, 2.59, -.15);
+  vaso.add(pitillo);
+
+  const fruta = new T.Group();
+  const pulpa = new T.MeshPhysicalMaterial({ color: "#ffad47", roughness: .38, clearcoat: .45 });
+  const corte = new T.Shape();
+  corte.moveTo(-.22, -.085);
+  corte.quadraticCurveTo(-.10, -.15, .19, -.07);
+  corte.quadraticCurveTo(.27, -.03, .19, .005);
+  corte.lineTo(-.14, .16);
+  corte.quadraticCurveTo(-.22, .18, -.22, -.085);
+  const frutaGeo = new T.ExtrudeGeometry(corte, { depth: .07, steps: 1, bevelSize: .018,
+    bevelThickness: .018, bevelSegments: 2, curveSegments: 6 });
+  [[-.20, .09, -.42], [.10, .21, .37]].forEach(([x, z, giro]) => {
+    const trozo = new T.Mesh(frutaGeo, pulpa);
+    trozo.position.set(x, 2.13, z);
+    trozo.rotation.set(-.82, giro, giro);
+    fruta.add(trozo);
+  });
+  vaso.add(fruta);
+
+  const tapa = lathe([[0,.28],[.36,.27],[.54,.21],[.66,.13],[.728,.035],[.751,.029],
+    [.753,-.035],[.732,-.047],[.716,.025],[.648,.12],[.53,.197],[.35,.254],[0,.263]],
+    plasticoTapa);
   tapa.renderOrder = 8;
-  const banda = new T.Mesh(new T.TorusGeometry(.72, .018, 9, 72), reborde);
-  banda.rotation.x = Math.PI / 2;
-  banda.renderOrder = 9;
-  tapa.add(banda);
   vaso.add(tapa);
 
   const canvas = render.domElement;
@@ -286,14 +284,16 @@ function crearEscena(T, local) {
     vaso.rotation.y = l(vaso.rotation.y, angulo, 15);
     granizado.visible = relleno > .012;
     granizado.scale.y = Math.max(.001, relleno);
-    gomitas.visible = gomas > .028 && meta.lleno > 0;
+    pitillo.visible = relleno > .42 && cierre < .13;
+    fruta.visible = meta.fruta && relleno > .89;
+    gomitas.visible = gomas > .028 && relleno > .74;
     figuras.forEach((figura, i) => {
       const progreso = Math.min(1, gomas * (1 + i * .10));
-      figura.position.y = 1.93 + (1 - progreso) ** 2 * (1.1 + i * .13);
+      figura.position.y = 2.13 + (1 - progreso) ** 2 * (1.1 + i * .13);
       figura.scale.setScalar(Math.min(1, gomas * 4));
     });
     tapa.visible = cierre > .018;
-    tapa.position.y = 1.83 + (1 - cierre) * .87;
+    tapa.position.y = 2.09 + (1 - cierre) * .87;
     tapa.rotation.z = (1 - cierre) * -.20;
     render.render(escena, camara);
     if (escala !== meta.medida || relleno !== meta.lleno || cierre !== meta.cierre ||
@@ -313,7 +313,7 @@ function crearEscena(T, local) {
     }
     meta = {
       visible: Boolean(medida), medida: { 8: .76, 12: .91, 16: 1.05, fruta: .91 }[medida] || .91,
-      lleno: Number(lleno), gomas: Number(local.classList.contains("vaso-dbarrio--gomas")),
+      lleno: Number(lleno), fruta: medida === "fruta", gomas: Number(local.classList.contains("vaso-dbarrio--gomas")),
       cierre: Number(local.classList.contains("vaso-dbarrio--sellado")),
     };
     pista.hidden = !meta.visible;
@@ -482,8 +482,13 @@ function crearRenderCanvas(T) {
               color.g *= (colores.getY(ia) + colores.getY(ib) + colores.getY(ic)) / 3;
               color.b *= (colores.getZ(ia) + colores.getZ(ib) + colores.getZ(ic)) / 3;
             }
-            const brillo = .58 + Math.max(0, normal.dot(luz)) * .58 + Math.max(0, frente) ** 12 * .34;
+            const brillo = .60 + Math.max(0, normal.dot(luz)) * .45 + Math.max(0, frente) ** 12 * .20;
             color.multiplyScalar(brillo);
+            if (material.roughness > .7) {
+              color.r *= .95 + .035 * normal.x;
+              color.g *= .88 + .04 * normal.x;
+              color.b *= 1.04;
+            }
             const sombra = material.transparent
               ? material.opacity * (.48 + .73 * (1 - frente) + .35 * Math.max(0, normal.dot(luz)) ** 4)
               : 1;
