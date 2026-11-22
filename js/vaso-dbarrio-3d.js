@@ -3,6 +3,7 @@ const movimientoReducido = matchMedia("(prefers-reduced-motion: reduce)");
 let modelo;
 let localActual;
 let motor;
+let portadaMarca;
 
 function prepararCarta() {
   const local = carta.querySelector("[data-vaso-dbarrio]");
@@ -208,6 +209,7 @@ function crearEscena(T, local) {
   logo.width = 512;
   logo.height = 256;
   const tinta = logo.getContext("2d");
+  tinta.save();
   tinta.translate(256, 130);
   tinta.rotate(-.10);
   tinta.font = "italic 900 74px system-ui";
@@ -223,14 +225,50 @@ function crearEscena(T, local) {
   tinta.ellipse(31, 38, 103, 5, -.04, 0, Math.PI * 2);
   tinta.fillStyle = "#f14a91";
   tinta.fill();
+  tinta.restore();
   const etiquetaMapa = new T.CanvasTexture(logo);
   etiquetaMapa.colorSpace = T.SRGBColorSpace;
-  const etiqueta = new T.Mesh(new T.CylinderGeometry(.634, .572, .50, 40, 1, true, -.77, 1.54),
+  const etiqueta = new T.Mesh(new T.CylinderGeometry(.650, .561, .74, 48, 1, true, -1.03, 2.06),
     new T.MeshBasicMaterial({ map: etiquetaMapa, transparent: true, depthWrite: false }));
   etiqueta.position.y = .97;
   etiqueta.renderOrder = 7;
   etiqueta.userData.etiqueta = logo;
   vaso.add(etiqueta);
+
+  // Extrae el distintivo del arte de portada de D’Barrio, conservando su diseño.
+  portadaMarca ??= new Promise((resolver) => {
+    const imagen = new Image();
+    imagen.onload = () => resolver(imagen);
+    imagen.onerror = () => resolver(null);
+    imagen.src = new URL("../assets/granizados-dbarrio/portada.webp", import.meta.url).href;
+  });
+  portadaMarca.then((imagen) => {
+    if (!imagen || destruido) return;
+    tinta.clearRect(0, 0, logo.width, logo.height);
+    tinta.beginPath();
+    tinta.roundRect(15, 30, 482, 196, 57);
+    tinta.fillStyle = "#100913";
+    tinta.fill();
+    tinta.save();
+    tinta.translate(26, 47);
+    tinta.scale(3.95, 3.72);
+    tinta.beginPath();
+    tinta.moveTo(0, 40);
+    tinta.lineTo(6, 13);
+    tinta.lineTo(22, 2);
+    tinta.lineTo(49, 9);
+    tinta.lineTo(115, 3);
+    tinta.lineTo(116, 29);
+    tinta.lineTo(105, 42);
+    tinta.lineTo(28, 44);
+    tinta.closePath();
+    tinta.clip();
+    const escala = imagen.naturalWidth / 400;
+    tinta.drawImage(imagen, 162 * escala, 216 * escala, 117 * escala, 45 * escala, 0, 0, 117, 45);
+    tinta.restore();
+    etiquetaMapa.needsUpdate = true;
+    solicitar();
+  });
 
   const gomitas = new T.Group();
   vaso.add(gomitas);
@@ -244,7 +282,7 @@ function crearEscena(T, local) {
     malla.scale.set(sx, sy, sz);
     grupo.add(malla);
   };
-  const figuras = Array.from({ length: 9 }, (_, i) => {
+  const figuras = Array.from({ length: 16 }, (_, i) => {
     const gomita = new T.Group();
     if (i < 2) {
       const material = materialGoma(i === 0 ? "#f21846" : "#eaa22d");
@@ -269,10 +307,11 @@ function crearEscena(T, local) {
       gomita.add(dulce);
       esferaGoma(gomita, materialGoma("#4fa524"), 0, -.058, .023, .155, .028, .035);
     } else {
-      esferaGoma(gomita, materialGoma(["#2596ec", "#ff3151", "#ffd63e"][i - 6]), 0,0,0,.079,.052,.066);
+      const coloresGoma = ["#2596ec", "#ff3151", "#ffd63e", "#a1df25", "#ff70aa", "#ffa02b"];
+      esferaGoma(gomita, materialGoma(coloresGoma[(i - 6) % coloresGoma.length]), 0, 0, 0, .084, .059, .074);
     }
-    const a = i * Math.PI * 2 / 9;
-    const r = i % 2 ? .36 : .44;
+    const a = i * 2.39996;
+    const r = i < 6 ? .41 : i < 12 ? .28 : .13;
     gomita.position.set(r * Math.cos(a), 2.13, r * Math.sin(a));
     gomita.rotation.set(-.75, a, i % 2 ? .53 : -.46);
     gomitas.add(gomita);
@@ -363,8 +402,9 @@ function crearEscena(T, local) {
     gomitas.visible = gomas > .028 && relleno > .74;
     figuras.forEach((figura, i) => {
       const progreso = Math.min(1, gomas * (1 + i * .025));
-      figura.position.y = 2.13 + (1 - progreso) ** 2 * (.57 + (i % 4) * .17);
-      figura.scale.setScalar(Math.min(1, gomas * 4));
+      const altura = (i < 6 ? 2.24 : i < 12 ? 2.29 : 2.37) - cierre * (i < 6 ? .11 : .18);
+      figura.position.y = altura + (1 - progreso) ** 2 * (.57 + (i % 4) * .17);
+      figura.scale.setScalar(Math.min(1, gomas * 4) * (i < 6 ? 1.21 : 1.03));
     });
     tapa.visible = cierre > .018;
     tapa.position.y = 2.13 + (1 - cierre) * .87;
@@ -518,9 +558,10 @@ function crearRenderCanvas(T) {
           const angulo = frente.dot(haciaCamara);
           if (angulo > .15) {
             const centro = punto(origen.addScaledVector(frente, .64));
-            const punta = punto(new T.Vector3(.47, 0, .64).applyMatrix4(malla.matrixWorld));
-            const base = punto(new T.Vector3(0, .24, .64).applyMatrix4(malla.matrixWorld));
-            logo = { imagen: malla.userData.etiqueta, centro, w: 2 * Math.abs(punta[0] - centro[0]),
+            const izq = punto(new T.Vector3(-.53, 0, .54).applyMatrix4(malla.matrixWorld));
+            const der = punto(new T.Vector3(.53, 0, .54).applyMatrix4(malla.matrixWorld));
+            const base = punto(new T.Vector3(0, .37, .64).applyMatrix4(malla.matrixWorld));
+            logo = { imagen: malla.userData.etiqueta, centro, w: Math.abs(der[0] - izq[0]),
               h: 2 * Math.abs(base[1] - centro[1]) };
           }
           return;
