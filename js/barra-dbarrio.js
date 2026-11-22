@@ -48,12 +48,30 @@ export function abrirBarra(box, pasoInicial) {
   const progreso = document.createElement('span');
   progreso.className = 'barra-nivel';
   marco.append(progreso);
-  botones.forEach((b,i) => {
-    if (botones.length === 6) {
-      b.classList.add('barra-sabor');
-      b.style.setProperty('--recorte', (i % 3 * 50) + '% ' + (Math.floor(i / 3) * 100) + '%');
-    }
-  });
+  const fotos = new Map([
+    ['Alpinito Cremoso','alpinito'], ['Tote D’Barrio','tote'],
+    ['Eclipse (fresa con uva)','eclipse'], ['Frutos Amarillos','frutos-amarillos'],
+    ['Mango Biche sin licor','mango-biche'], ['Uva sin licor','uva']
+  ]);
+  const imagen = capa.querySelector('img');
+  const original = imagen.getAttribute('src');
+  const base = escena.querySelector(':scope > img');
+  const descripcionInicial = base.alt;
+  for (const boton of botones) {
+    const archivo = fotos.get(boton.dataset.vasoSabor);
+    if (!archivo) continue;
+    boton.dataset.foto = 'assets/granizados-dbarrio/' + archivo + '.webp';
+    boton.classList.add('barra-sabor');
+    boton.style.setProperty('--foto-sabor', 'url("../' + boton.dataset.foto + '")');
+  }
+  function mostrarFoto(boton) {
+    const foto = boton?.dataset.foto;
+    box.classList.toggle('barra-con-foto', Boolean(foto));
+    imagen.src = foto || original;
+    base.alt = foto ? 'Granizado ' + boton.dataset.vasoSabor : descripcionInicial;
+    if (foto) box.style.setProperty('--fondo-sabor','url("../' + foto + '")');
+  }
+  mostrarFoto(botones.find(b => b.getAttribute('aria-pressed') === 'true'));
   let paso, fotograma = 0, sosteniendo = false, dedo = null;
   function mostrar(i) {
     paso = i;
@@ -98,6 +116,8 @@ export function abrirBarra(box, pasoInicial) {
     ctx.restore();
   }
   function servir(boton) {
+    mostrarFoto(boton);
+    if (box.dataset.vasoVista !== "foto") box.querySelector('[data-vaso-ver="foto"]').click();
     cancelAnimationFrame(fotograma);
     capa.getAnimations().forEach(a => a.cancel());
     if (reducido.matches) { capa.style.clipPath = ''; ctx?.clearRect(0,0,440,440); box.classList.remove('barra-sirviendo'); return; }
