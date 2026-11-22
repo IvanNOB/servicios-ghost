@@ -2581,7 +2581,7 @@ const RESTAURANTES = [
     tiempo: "Tiempo por confirmar",
     abierto: true,
     color: "#ec1682",
-    desc: "Granizados, gomas, cuates y fruta enchilada. Para llevar, el empaque de los granizados suma $1.000 por tapa y bolsa.",
+    desc: "Los fines de semana preparamos seis sabores de granizado: Alpinito Cremoso, Tote D’Barrio, Eclipse (fresa con uva), Frutos Amarillos, Mango Biche sin licor y Uva sin licor. Entre semana preparamos tres sabores. Consulta cuáles hay al hacer tu pedido. Para llevar, el empaque de los granizados suma $1.000 por tapa y bolsa.",
     logo: "assets/granizados-dbarrio/portada.webp",
     carta: [
       {
