@@ -104,3 +104,39 @@
 .barra-con-foto .vaso-dbarrio__llenado .vaso-dbarrio__tinte {display:none}
 .barra-con-foto .vaso-dbarrio__toma {mask-image:none}
 .barra-con-foto .vaso-dbarrio__foto-referencia figcaption {width:fit-content;max-width:60%;padding:3px 8px;border-radius:0 6px 0 0;background:#161215d9}
+
+/* Una zona para explorar y otra para decidir. */
+#vistaInicio .section {margin-block:28px}
+#vistaInicio .section__title {margin-bottom:14px}
+#vistaInicio .grid {gap:18px}
+#vistaCarta .carta-grupo.section {margin-block:12px}
+#vistaCarta .carta-grupo__titulo {padding:15px 16px}
+#vistaCarta .dishes > .dish:not(.vaso-dbarrio) {padding-block:16px;row-gap:9px}
+#vistaCarta .carta-categorias {margin-block:24px 12px}
+#fab {text-align:center;padding:18px 0}
+#fab .logo-flotante {position:relative;inset:auto;display:inline-flex;align-items:center;gap:8px;width:auto;height:44px;padding:4px 14px;border-radius:24px;background:var(--surface-2);color:var(--text);box-shadow:none;opacity:1;transform:none;pointer-events:auto}
+#fab .logo-flotante img {width:30px;height:30px}
+#fab .logo-flotante::after {content:"Menú de servicios";font-weight:700}
+#fab .fab__pista,#fab .fab__badge {display:none}
+body:has(#vistaCarta:not([hidden])) #cartBar {display:none}
+.barra .barra-firma,.barra .vaso-dbarrio__foto-referencia figcaption {display:none}
+.barra .vaso-dbarrio__vistas {top:auto;bottom:0;left:0;right:0;justify-content:center;gap:12px;border:0;border-radius:0;background:#161616;padding:2px}
+.barra .vaso-dbarrio__vistas button {color:#bcbab5;background:transparent;min-height:38px}
+.barra .vaso-dbarrio__vistas button[aria-pressed=true] {background:transparent;color:#fff;text-decoration:underline;text-underline-offset:5px}
+.barra[data-vaso-vista="foto"] .vaso-dbarrio__foto-referencia {bottom:42px}
+.barra .vaso-dbarrio__foto-referencia {container-type:size}
+.barra .vaso-dbarrio__foto-referencia .vaso-dbarrio__toma {width:min(100%,100cqh)}
+.barra .vaso-dbarrio__controles {gap:18px}
+.barra .vaso-dbarrio__sabores {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.barra .vaso-dbarrio__sabores .barra-sabor {display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:8px;min-height:50px;padding:6px;background:#20211e;border-color:#393a35}
+.barra .vaso-dbarrio__sabores .barra-sabor span {width:34px;height:34px;border-radius:7px}
+.barra .vaso-dbarrio__sabores .barra-sabor strong {padding:0;text-wrap:initial;text-align:left;line-height:1.25}
+.barra .vaso-dbarrio__sabores .barra-sabor[aria-pressed=true] {outline:2px solid var(--vaso-acento);box-shadow:none}
+.barra .vaso-dbarrio__grupo .barra-gesto {margin-top:12px;line-height:1.45}
+@media(max-width:760px){
+ .carta-grupo:has(.barra) > .dishes {padding-inline:0}
+ .carta-grupo .vaso-dbarrio.barra {margin:0;border:0;border-radius:0}
+ .vaso-dbarrio.barra .vaso-dbarrio__presentacion {height:clamp(200px,36svh,335px);border-radius:0}
+ .barra .vaso-dbarrio__controles {padding:14px}
+}
+.barra[data-vaso-vista="modelo"] .vaso-dbarrio__giro {bottom:48px}
