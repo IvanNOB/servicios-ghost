@@ -1,0 +1,99 @@
+.vaso-dbarrio.barra {
+  --barra-negro:#141414;
+  --vaso-acento:#e4ff53;
+  --vaso-secundario:#c1c0b8;
+  grid-template-columns:minmax(0,1fr);
+  background:var(--barra-negro);
+  border:1px solid #47483d;
+  gap:0;
+  padding:0;
+}
+.barra [hidden] {display:none!important}
+.barra .vaso-dbarrio__presentacion {
+  height:clamp(310px,44vh,420px);
+  min-height:0;
+  overflow:hidden;
+  border-radius:22px 22px 0 0;
+  container-type:size;
+}
+.barra .vaso-dbarrio__foto-referencia {overflow:hidden}
+.barra .vaso-dbarrio__foto-referencia::before {
+  content:"";position:absolute;inset:-18%;
+  background:linear-gradient(90deg,#15191175,transparent 60%,#1611186b),url("../assets/granizados-dbarrio/vaso-escarchado.webp") center 53% / cover;
+  filter:blur(19px) brightness(.72);
+}
+.barra .vaso-dbarrio__toma {
+  width:min(100cqh,100%);top:50%;
+  mask-image:linear-gradient(90deg,transparent,#000 14% 87%,transparent);
+}
+.barra[data-vaso-medida="16"] .vaso-dbarrio__toma {--escala-vaso:1;}
+.barra[data-vaso-medida="12"] .vaso-dbarrio__toma {--escala-vaso:.95;}
+.barra-firma {
+  position:absolute;z-index:2;left:15px;top:14px;
+  color:#fff6db;text-shadow:0 1px 4px #000;
+  font:italic 900 clamp(1rem,3.8vw,1.6rem)/1 var(--font-title,sans-serif);
+  letter-spacing:-.045em;pointer-events:none;
+}
+.barra .vaso-dbarrio__vistas {top:8px;right:8px}
+.barra .vaso-dbarrio__foto-referencia figcaption {
+  padding:26px 14px 9px;background:linear-gradient(transparent,#100f0ec9);
+  font-size:.9rem;
+}
+.barra .vaso-dbarrio__foto-referencia figcaption small {display:none}
+.barra .vaso-dbarrio__controles {
+  padding:clamp(13px,3vw,23px);border:0;
+  background:var(--barra-negro);align-content:start;gap:14px;
+}
+.barra-pasos {display:flex;gap:5px}
+.barra-pasos button {
+  flex:1;min-height:40px;color:#c7c7bb;background:transparent;
+  border:0;border-bottom:2px solid #45443d;font:700 .92rem var(--font-title,sans-serif);cursor:pointer
+}
+.barra-pasos button[aria-current] {color:var(--vaso-acento);border-color:currentColor}
+.barra .vaso-dbarrio__controles h4 {font-size:clamp(1.9rem,6vw,3rem);margin:0;letter-spacing:-.055em}
+.barra fieldset legend {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.barra .vaso-dbarrio__medidas span,.barra .vaso-dbarrio__extra {
+  background:#242522;border:1px solid #46463e;border-radius:13px;
+}
+.barra .vaso-dbarrio__medidas span {min-height:72px}
+.barra .vaso-dbarrio__medidas strong {font-size:1.05rem}
+.barra .vaso-dbarrio__sabores {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.barra .vaso-dbarrio__sabores .barra-sabor {
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  gap:5px;padding:0 0 7px;min-width:0;overflow:hidden;
+  background:#23251f;border:1px solid #45463d;border-radius:12px;
+  touch-action:manipulation;user-select:none;-webkit-touch-callout:none;
+}
+.barra .vaso-dbarrio__sabores .barra-sabor span {
+  flex:none;width:100%;height:auto;aspect-ratio:2.7;
+  border:0;border-radius:0;background:url("../assets/granizados-dbarrio/sabores-barra.webp") var(--recorte) / 300% 200% no-repeat;
+}
+.barra .barra-sabor strong {padding:0 8px;color:#fff;text-wrap:balance}
+.barra .barra-sabor[aria-pressed=true] {outline:2px solid var(--sabor-a);outline-offset:-2px}
+.barra .vaso-dbarrio__grupo .barra-gesto {margin:9px 0 0;color:#d6d4c8;font-size:.86rem}
+.barra .barra-siguiente,.barra .vaso-dbarrio__listo {min-height:46px;background:var(--vaso-acento);border:0;border-radius:12px;color:#171916;font-weight:850;cursor:pointer}
+.barra .barra-siguiente:disabled {background:#45473d;color:#d7d8d2;cursor:default}
+.barra .vaso-dbarrio__compra {border-color:#43443b}
+.barra-chorro {position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.barra-nivel {position:absolute;bottom:0;left:0;width:100%;height:3px;background:var(--granizado-a);transform-origin:left;transform:scaleX(var(--nivel,0));opacity:0}
+.barra-sirviendo .barra-nivel {opacity:1}
+.barra.vaso-dbarrio--lleno .vaso-dbarrio__llenado {animation:none!important}
+.barra-tapa {
+  position:absolute;left:23.6%;width:49%;height:26%;top:12%;pointer-events:none;
+  border:1.5px solid #fff9;border-bottom:4px double #fff9;
+  border-radius:50% 50% 44% 44% / 88% 88% 19% 19%;
+  background:radial-gradient(ellipse at 25% 26%,#fff9,transparent 9%),linear-gradient(113deg,#fff4,transparent 21% 62%,#fff5 71%,transparent 82%);
+  box-shadow:inset -3px 0 6px #f8f3ee40,0 2px 2px #20190959;
+  opacity:0;transform:translateY(-130%) rotate(-7deg);
+}
+.barra-para-llevar.vaso-dbarrio--sellado .barra-tapa {opacity:1;transform:none;transition:transform .42s cubic-bezier(.2,.82,.25,1),opacity .2s}
+@media (max-width:760px) {
+ .vaso-dbarrio.barra .vaso-dbarrio__presentacion {height:clamp(164px,34svh,325px);aspect-ratio:auto}
+ .vaso-dbarrio.barra .vaso-dbarrio__toma {width:min(100%,clamp(164px,34svh,325px))}
+ .barra .vaso-dbarrio__vistas button {min-height:35px}
+ .barra-firma {font-size:1rem;top:13px;left:10px}
+ .barra .vaso-dbarrio__sabores {gap:6px}
+ .barra .barra-sabor strong {font-size:.79rem}
+}
+@media (max-width:375px) { .barra-firma{max-width:68px} }
+@media (prefers-reduced-motion:reduce) {.barra .barra-tapa{transition:none}}

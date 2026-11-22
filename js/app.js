@@ -798,6 +798,7 @@
       gomas: !!vasoAnterior.querySelector("[data-vaso-gomas]:checked"),
       empaque: !!vasoAnterior.querySelector("[data-vaso-empaque]:checked"),
       foto: vasoAnterior.dataset.vasoVista !== "modelo",
+      pasoBarra: Number(vasoAnterior.dataset.pasoBarra) || 0,
     } : null;
     vistaActual = restId;
 
@@ -876,6 +877,9 @@
         cambiarVistaVasoDbarrio(vaso, seleccionVaso.foto ? "foto" : "modelo");
       }
       actualizarVasoDbarrio(vaso);
+      import("./barra-dbarrio.js?v=1").then(function (modulo) {
+        if (vaso.isConnected) modulo.abrirBarra(vaso, seleccionVaso && seleccionVaso.pasoBarra);
+      }).catch(function (error) { console.warn("Barra interactiva", error); });
       import("./vaso-dbarrio-3d.js?v=8").catch(function (error) {
         console.warn("Vista 3D de D’Barrio no disponible", error);
       });
