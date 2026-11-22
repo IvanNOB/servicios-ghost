@@ -67,7 +67,7 @@
     document.write('<link rel="stylesheet" href="css/style.css?t=' + Date.now() + '" />');
   </script>
   <noscript><link rel="stylesheet" href="css/style.css" /></noscript>
-  <link rel="stylesheet" href="css/barra-dbarrio.css?v=2">
+  <link rel="stylesheet" href="css/barra-dbarrio.css?v=3">
 </head>
 <body>
 
@@ -108,17 +108,6 @@
       </button>
     </div>
   </header>
-
-  <!-- Fantasma flotante: al tocarlo muestra todo lo que se puede hacer -->
-  <div class="fab" id="fab">
-    <div class="fab__fondo" data-fab-cerrar hidden></div>
-    <div class="fab__menu" id="fabMenu" role="menu" aria-label="¿Qué quieres hacer?" hidden></div>
-    <span class="fab__pista" id="fabPista" hidden>¡Tócame! 👻 Aquí está todo</span>
-    <button type="button" class="logo-flotante" id="fabBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="fabMenu" aria-label="Abrir menú: qué puedo hacer">
-      <img src="assets/logo-sm.png" width="64" height="64" alt="" onerror="this.style.display='none'" />
-      <span class="fab__badge" id="fabBadge" hidden>0</span>
-    </button>
-  </div>
 
   <main class="main" id="main">
     <!-- Vista: inicio -->
@@ -287,6 +276,17 @@
   </div>
 
   <!-- ============================ PIE ============================ -->
+  <!-- Fantasma flotante: al tocarlo muestra todo lo que se puede hacer -->
+  <div class="fab" id="fab">
+    <div class="fab__fondo" data-fab-cerrar hidden></div>
+    <div class="fab__menu" id="fabMenu" role="menu" aria-label="¿Qué quieres hacer?" hidden></div>
+    <span class="fab__pista" id="fabPista" hidden>¡Tócame! 👻 Aquí está todo</span>
+    <button type="button" class="logo-flotante" id="fabBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="fabMenu" aria-label="Abrir menú: qué puedo hacer">
+      <img src="assets/logo-sm.png" width="64" height="64" alt="" onerror="this.style.display='none'" />
+      <span class="fab__badge" id="fabBadge" hidden>0</span>
+    </button>
+  </div>
+
   <footer class="footer">
     <div class="footer__inner">
       <span class="footer__brand"><span class="gold">SERVICIOS</span> GHOST</span>
