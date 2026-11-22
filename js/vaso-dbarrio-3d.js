@@ -26,7 +26,12 @@ prepararCarta();
 
 function crearEscena(T, local) {
   const escenaDOM = local.querySelector(".vaso-dbarrio__escena");
-  const render = new T.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
+  const lienzoWebGL = document.createElement("canvas");
+  const opciones = { alpha: true, antialias: true, powerPreference: "low-power" };
+  const contexto = lienzoWebGL.getContext("webgl2", opciones);
+  const render = contexto
+    ? new T.WebGLRenderer({ ...opciones, canvas: lienzoWebGL, context: contexto })
+    : crearRenderCanvas(T);
   render.setPixelRatio(Math.min(devicePixelRatio, 1.65));
   render.toneMapping = T.ACESFilmicToneMapping;
   render.toneMappingExposure = 1.16;
@@ -35,26 +40,29 @@ function crearEscena(T, local) {
   camara.position.set(0, 2.65, 6.8);
   camara.lookAt(0, 1.34, 0);
 
-  const estudio = new T.Scene();
-  estudio.background = new T.Color("#262330");
-  const paneles = [
-    { p: [-3, 3, 4], s: [2.3, 5], c: "#ffffff", i: 5 },
-    { p: [3, 2, -2], s: [1.8, 4], c: "#ee65bd", i: 4 },
-    { p: [0, 5, -1], s: [4, 3], c: "#e8f6ff", i: 5 },
-    { p: [3, 1, 4], s: [.7, 4], c: "#f4ffdc", i: 3 },
-  ];
-  paneles.forEach(({ p, s, c, i }) => {
-    const m = new T.Mesh(new T.PlaneGeometry(...s),
-      new T.MeshBasicMaterial({ color: new T.Color(c).multiplyScalar(i), side: T.DoubleSide }));
-    m.position.set(...p);
-    m.lookAt(0, 1, 0);
-    estudio.add(m);
-  });
-  const pmrem = new T.PMREMGenerator(render);
-  const reflejos = pmrem.fromScene(estudio, .05);
-  escena.environment = reflejos.texture;
-  liberar(estudio);
-  pmrem.dispose();
+  let reflejos;
+  if (contexto) {
+    const estudio = new T.Scene();
+    estudio.background = new T.Color("#262330");
+    const paneles = [
+      { p: [-3, 3, 4], s: [2.3, 5], c: "#ffffff", i: 5 },
+      { p: [3, 2, -2], s: [1.8, 4], c: "#ee65bd", i: 4 },
+      { p: [0, 5, -1], s: [4, 3], c: "#e8f6ff", i: 5 },
+      { p: [3, 1, 4], s: [.7, 4], c: "#f4ffdc", i: 3 },
+    ];
+    paneles.forEach(({ p, s, c, i }) => {
+      const m = new T.Mesh(new T.PlaneGeometry(...s),
+        new T.MeshBasicMaterial({ color: new T.Color(c).multiplyScalar(i), side: T.DoubleSide }));
+      m.position.set(...p);
+      m.lookAt(0, 1, 0);
+      estudio.add(m);
+    });
+    const pmrem = new T.PMREMGenerator(render);
+    reflejos = pmrem.fromScene(estudio, .05);
+    escena.environment = reflejos.texture;
+    liberar(estudio);
+    pmrem.dispose();
+  }
 
   const ambiente = new T.HemisphereLight("#e7eaff", "#362136", 1.55);
   const principal = new T.DirectionalLight("#fff5ed", 2.9);
@@ -72,7 +80,7 @@ function crearEscena(T, local) {
   const reborde = plastico.clone();
   reborde.opacity = .55;
   const lathe = (puntos, material) =>
-    new T.Mesh(new T.LatheGeometry(puntos.map(([x, y]) => new T.Vector2(x, y)), 72), material);
+    new T.Mesh(new T.LatheGeometry(puntos.map(([x, y]) => new T.Vector2(x, y)), contexto ? 72 : 36), material);
   const pared = lathe([[0,.03],[.44,.03],[.49,.075],[.515,.17],[.697,1.76],[.706,1.83],
     [.689,1.84],[.677,1.76],[.492,.17],[.46,.075],[0,.065]], plastico);
   pared.renderOrder = 4;
@@ -121,7 +129,7 @@ function crearEscena(T, local) {
   base.geometry.setAttribute("color", colores);
   granizado.add(base);
   const cubos = new T.InstancedMesh(new T.IcosahedronGeometry(1, 0),
-    new T.MeshPhysicalMaterial({ roughness: .27, clearcoat: .95, envMapIntensity: 1.05 }), 330);
+    new T.MeshPhysicalMaterial({ roughness: .27, clearcoat: .95, envMapIntensity: 1.05 }), contexto ? 330 : 126);
   const matriz = new T.Object3D();
   const sitios = [];
   for (let i = 0; i < cubos.count; i++) {
@@ -162,7 +170,7 @@ function crearEscena(T, local) {
   const gotas = new T.InstancedMesh(gotaGeo, new T.MeshPhysicalMaterial({
     color: "#fff8fb", transparent: true, opacity: .50, roughness: .11,
     metalness: .08, clearcoat: 1, depthWrite: false,
-  }), 122);
+  }), contexto ? 122 : 52);
   for (let i = 0; i < gotas.count; i++) {
     const a = azar() * Math.PI * 2;
     const y = .14 + azar() * 1.56;
@@ -202,11 +210,12 @@ function crearEscena(T, local) {
     new T.MeshBasicMaterial({ map: etiquetaMapa, transparent: true, depthWrite: false }));
   etiqueta.position.y = 1.03;
   etiqueta.renderOrder = 7;
+  etiqueta.userData.etiqueta = logo;
   vaso.add(etiqueta);
 
   const gomitas = new T.Group();
   vaso.add(gomitas);
-  const gomitaGeo = new T.SphereGeometry(1, 16, 11);
+  const gomitaGeo = new T.SphereGeometry(1, contexto ? 16 : 8, contexto ? 11 : 5);
   const figuras = ["#fb3156", "#f0991c", "#99e800", "#a43fea", "#ff6fa0"].map((color, i) => {
     const gomita = new T.Group();
     const material = new T.MeshPhysicalMaterial({ color, roughness: .28, clearcoat: .95, envMapIntensity: 1 });
@@ -329,7 +338,7 @@ function crearEscena(T, local) {
     liberar(escena);
     grano.dispose();
     etiquetaMapa.dispose();
-    reflejos.dispose();
+    reflejos?.dispose();
     render.dispose();
   }
 
@@ -387,4 +396,132 @@ function liberar(objeto) {
   });
   geometrias.forEach((geometria) => geometria.dispose());
   materiales.forEach((material) => material.dispose());
+}
+
+// Proyecta las mismas mallas en Canvas cuando WebGL está desactivado.
+function crearRenderCanvas(T) {
+  const domElement = document.createElement("canvas");
+  const ctx = domElement.getContext("2d");
+  if (!ctx) throw new Error("Canvas no está disponible");
+  const luz = new T.Vector3(-.34, .68, .65).normalize();
+  const proyeccion = new T.Matrix4();
+  const instancia = new T.Matrix4();
+  const matriz = new T.Matrix4();
+  const a = new T.Vector3(), b = new T.Vector3(), c = new T.Vector3();
+  const normal = new T.Vector3(), arista = new T.Vector3(), vista = new T.Vector3();
+  const proyectado = new T.Vector3();
+  const color = new T.Color(), colorInstancia = new T.Color();
+  let ancho = 0, alto = 0, densidad = 1;
+
+  function punto(v) {
+    proyectado.copy(v).applyMatrix4(proyeccion);
+    return [(proyectado.x + 1) * ancho / 2, (1 - proyectado.y) * alto / 2, proyectado.z];
+  }
+
+  return {
+    domElement,
+    setPixelRatio(valor) { densidad = Math.min(1.4, valor); },
+    setSize(w, h) {
+      ancho = w;
+      alto = h;
+      domElement.width = Math.round(w * densidad);
+      domElement.height = Math.round(h * densidad);
+      ctx.setTransform(densidad, 0, 0, densidad, 0, 0);
+    },
+    render(escena, camara) {
+      if (!ancho || !alto) return;
+      escena.updateMatrixWorld();
+      camara.updateMatrixWorld();
+      proyeccion.multiplyMatrices(camara.projectionMatrix, camara.matrixWorldInverse);
+      const caras = [];
+      let logo;
+      escena.traverseVisible((malla) => {
+        if (!malla.isMesh) return;
+        if (malla.userData.etiqueta) {
+          const origen = new T.Vector3().setFromMatrixPosition(malla.matrixWorld);
+          const frente = new T.Vector3(0, 0, 1).transformDirection(malla.matrixWorld);
+          const haciaCamara = new T.Vector3().subVectors(camara.position, origen).normalize();
+          const angulo = frente.dot(haciaCamara);
+          if (angulo > .15) {
+            const centro = punto(origen.addScaledVector(frente, .64));
+            const punta = punto(new T.Vector3(.47, 0, .64).applyMatrix4(malla.matrixWorld));
+            const base = punto(new T.Vector3(0, .24, .64).applyMatrix4(malla.matrixWorld));
+            logo = { imagen: malla.userData.etiqueta, centro, w: 2 * Math.abs(punta[0] - centro[0]),
+              h: 2 * Math.abs(base[1] - centro[1]) };
+          }
+          return;
+        }
+        const { geometry, material } = malla;
+        const vertices = geometry.getAttribute("position");
+        const colores = geometry.getAttribute("color");
+        const indices = geometry.index;
+        const limite = indices ? indices.count : vertices.count;
+        const numero = malla.isInstancedMesh ? malla.count : 1;
+        for (let n = 0; n < numero; n++) {
+          matriz.copy(malla.matrixWorld);
+          colorInstancia.set("#ffffff");
+          if (malla.isInstancedMesh) {
+            malla.getMatrixAt(n, instancia);
+            matriz.multiply(instancia);
+            if (malla.instanceColor) malla.getColorAt(n, colorInstancia);
+          }
+          for (let i = 0; i < limite; i += 3) {
+            const ia = indices ? indices.getX(i) : i;
+            const ib = indices ? indices.getX(i + 1) : i + 1;
+            const ic = indices ? indices.getX(i + 2) : i + 2;
+            a.fromBufferAttribute(vertices, ia).applyMatrix4(matriz);
+            b.fromBufferAttribute(vertices, ib).applyMatrix4(matriz);
+            c.fromBufferAttribute(vertices, ic).applyMatrix4(matriz);
+            normal.subVectors(b, a).cross(arista.subVectors(c, a)).normalize();
+            vista.subVectors(camara.position, a).normalize();
+            const frente = normal.dot(vista);
+            if (frente < .001) continue;
+            color.copy(material.color).multiply(colorInstancia);
+            if (colores) {
+              color.r *= (colores.getX(ia) + colores.getX(ib) + colores.getX(ic)) / 3;
+              color.g *= (colores.getY(ia) + colores.getY(ib) + colores.getY(ic)) / 3;
+              color.b *= (colores.getZ(ia) + colores.getZ(ib) + colores.getZ(ic)) / 3;
+            }
+            const brillo = .58 + Math.max(0, normal.dot(luz)) * .58 + Math.max(0, frente) ** 12 * .34;
+            color.multiplyScalar(brillo);
+            const sombra = material.transparent
+              ? material.opacity * (.48 + .73 * (1 - frente) + .35 * Math.max(0, normal.dot(luz)) ** 4)
+              : 1;
+            const p = punto(a), q = punto(b), r = punto(c);
+            caras.push({ p, q, r, profundidad: (p[2] + q[2] + r[2]) / 3,
+              orden: malla.renderOrder, color: "#" + color.getHexString(), sombra });
+          }
+        }
+      });
+      caras.sort((a, b) => a.orden - b.orden || b.profundidad - a.profundidad);
+      ctx.clearRect(0, 0, ancho, alto);
+      ctx.lineJoin = "round";
+      ctx.lineWidth = .65;
+      const dibujarLogo = () => {
+        if (!logo || logo.w <= .1 || logo.h <= .1) return;
+        const { imagen, centro, w, h } = logo;
+        ctx.globalAlpha = 1;
+        ctx.drawImage(imagen, centro[0] - w / 2, centro[1] - h / 2, w, h);
+        logo = undefined;
+      };
+      for (const { p, q, r, orden, color, sombra } of caras) {
+        if (orden > 7) dibujarLogo();
+        ctx.globalAlpha = Math.min(1, sombra);
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(p[0], p[1]);
+        ctx.lineTo(q[0], q[1]);
+        ctx.lineTo(r[0], r[1]);
+        ctx.closePath();
+        ctx.fill();
+        if (sombra === 1) {
+          ctx.strokeStyle = color;
+          ctx.stroke();
+        }
+      }
+      dibujarLogo();
+      ctx.globalAlpha = 1;
+    },
+    dispose() { domElement.width = domElement.height = 0; },
+  };
 }
