@@ -38,7 +38,7 @@ function crearEscena(T, local) {
   const escena = new T.Scene();
   const camara = new T.PerspectiveCamera(34, 1, 0.1, 40);
   camara.position.set(0, 4.05, 6.5);
-  camara.lookAt(0, 1.68, 0);
+  camara.lookAt(0, 1.79, 0);
 
   let reflejos;
   if (contexto) {
@@ -93,6 +93,48 @@ function crearEscena(T, local) {
     semilla = (Math.imul(1664525, semilla) + 1013904223) >>> 0;
     return semilla / 4294967296;
   };
+  const azucar = new T.InstancedMesh(new T.IcosahedronGeometry(1, contexto ? 1 : 0),
+    new T.MeshPhysicalMaterial({ roughness: .37, clearcoat: .5 }), contexto ? 420 : 250);
+  const chispas = ["#ff2737", "#fff7e3", "#ffdc33", "#2386ff", "#ff72a1", "#44c54f", "#ff8c2e"];
+  const gragea = new T.Object3D();
+  for (let i = 0; i < azucar.count; i++) {
+    const a = (i / azucar.count) * Math.PI * 2 + azar() * .055;
+    const r = .712 + (azar() - .45) * .069;
+    const tam = .012 + azar() * .016;
+    gragea.position.set(Math.sin(a) * r, 2.086 + (azar() - .38) * .095, Math.cos(a) * r);
+    gragea.scale.set(tam, tam * (.78 + azar() * .45), tam);
+    gragea.rotation.set(azar() * 6, azar() * 6, 0);
+    gragea.updateMatrix();
+    azucar.setMatrixAt(i, gragea.matrix);
+    azucar.setColorAt(i, new T.Color(chispas[i % chispas.length]));
+  }
+  azucar.renderOrder = 5;
+  const almibar = lathe([[.705,2.038],[.736,2.045],[.750,2.073],[.744,2.109],
+    [.719,2.130],[.686,2.119],[.678,2.097],[.688,2.072]],
+    new T.MeshPhysicalMaterial({ color: "#c34a31", roughness: .34, clearcoat: .72 }));
+  almibar.renderOrder = 4;
+  vaso.add(almibar, azucar);
+
+  const chorroMaterial = new T.MeshPhysicalMaterial({
+    color: "#e62646", roughness: .28, clearcoat: .85, clearcoatRoughness: .14,
+  });
+  const recorrido = new T.CatmullRomCurve3([
+    new T.Vector3(.48, 3.68, -.07), new T.Vector3(.40, 3.30, -.055),
+    new T.Vector3(.24, 2.94, -.02), new T.Vector3(.135, 2.56, .015),
+    new T.Vector3(.085, 2.2, .045), new T.Vector3(.06, 1.87, .055),
+  ]);
+  const chorro = new T.Mesh(new T.TubeGeometry(recorrido, 28, .095, 9, false), chorroMaterial);
+  const verticesChorro = chorro.geometry.getAttribute("position");
+  for (let i = 0; i < verticesChorro.count; i++) {
+    const anillo = Math.floor(i / 10);
+    const centro = recorrido.getPointAt(anillo / 28);
+    const factor = .83 + .22 * Math.sin(anillo * 1.18 + i % 10);
+    verticesChorro.setXYZ(i, centro.x + (verticesChorro.getX(i) - centro.x) * factor,
+      verticesChorro.getY(i), centro.z + (verticesChorro.getZ(i) - centro.z) * factor);
+  }
+  chorro.geometry.computeVertexNormals();
+  vaso.add(chorro);
+
   const hieloMapa = document.createElement("canvas");
   hieloMapa.width = hieloMapa.height = 256;
   const textura = hieloMapa.getContext("2d");
@@ -147,6 +189,7 @@ function crearEscena(T, local) {
   function pintarSabor(a, b) {
     tonoA.set(a);
     tonoB.set(b);
+    chorroMaterial.color.copy(tonoA).lerp(tonoB, .18);
     for (let i = 0; i < posiciones.count; i++) {
       const lado = T.MathUtils.smoothstep(posiciones.getX(i), -.19, .19);
       brillo.copy(tonoA).lerp(tonoB, lado).multiplyScalar(.77 + posiciones.getY(i) * .13);
@@ -192,20 +235,46 @@ function crearEscena(T, local) {
   const gomitas = new T.Group();
   vaso.add(gomitas);
   const gomitaGeo = new T.SphereGeometry(1, contexto ? 16 : 8, contexto ? 11 : 5);
-  const figuras = ["#fb3156", "#f0991c", "#99e800", "#a43fea", "#ff6fa0"].map((color, i) => {
+  const materialGoma = (color) => new T.MeshPhysicalMaterial({
+    color, roughness: .36, clearcoat: .84, envMapIntensity: .82,
+  });
+  const esferaGoma = (grupo, material, x, y, z, sx, sy, sz) => {
+    const malla = new T.Mesh(gomitaGeo, material);
+    malla.position.set(x, y, z);
+    malla.scale.set(sx, sy, sz);
+    grupo.add(malla);
+  };
+  const figuras = Array.from({ length: 9 }, (_, i) => {
     const gomita = new T.Group();
-    const material = new T.MeshPhysicalMaterial({ color, roughness: .28, clearcoat: .95, envMapIntensity: 1 });
-    [[0,0,.08,.083],[0,.1,.065,.058],[-.05,.145,.025,.025],[.05,.145,.025,.025],
-     [-.064,.005,.036,.048],[.064,.005,.036,.048],[-.042,-.064,.033,.036],[.042,-.064,.033,.036]]
-      .forEach(([x, y, sx, sy]) => {
-        const pieza = new T.Mesh(gomitaGeo, material);
-        pieza.scale.set(sx, sy, sx * .66);
-        pieza.position.set(x, y, 0);
-        gomita.add(pieza);
+    if (i < 2) {
+      const material = materialGoma(i === 0 ? "#f21846" : "#eaa22d");
+      [[0,0,.08,.083],[0,.1,.065,.058],[-.05,.145,.025,.025],[.05,.145,.025,.025],
+       [-.064,.005,.036,.048],[.064,.005,.036,.048],[-.042,-.064,.033,.036],[.042,-.064,.033,.036]]
+        .forEach(([x, y, sx, sy]) => esferaGoma(gomita, material, x, y, 0, sx, sy, sx * .72));
+    } else if (i < 4) {
+      gomita.add(new T.Mesh(new T.TorusGeometry(.095, .041, 8, 22),
+        materialGoma(i === 2 ? "#ff741c" : "#a5dc23")));
+    } else if (i === 4) {
+      const curva = new T.CatmullRomCurve3([new T.Vector3(-.17,.04,0), new T.Vector3(-.085,-.062,0),
+        new T.Vector3(.065,-.046,.014), new T.Vector3(.16,.06,.026)]);
+      ["#237bcf", "#f15e9b", "#ffc62c"].forEach((color, j) => {
+        const tramo = new T.CatmullRomCurve3(Array.from({ length: 5 }, (_, k) => curva.getPoint((j + k / 4) / 3)));
+        gomita.add(new T.Mesh(new T.TubeGeometry(tramo, 5, .041, 7, false), materialGoma(color)));
       });
-    const a = i * Math.PI * 2 / 5;
-    gomita.position.set(.29 * Math.cos(a), 2.01, .29 * Math.sin(a));
-    gomita.rotation.set(-.9, a, (i % 2 ? .6 : -.52));
+    } else if (i === 5) {
+      const sandia = new T.Shape();
+      sandia.moveTo(-.15,-.06); sandia.lineTo(.15,-.06); sandia.lineTo(0,.145); sandia.closePath();
+      const dulce = new T.Mesh(new T.ExtrudeGeometry(sandia, { depth: .047, bevelEnabled: true,
+        bevelSegments: 2, bevelSize: .012, bevelThickness: .012 }), materialGoma("#ff456e"));
+      gomita.add(dulce);
+      esferaGoma(gomita, materialGoma("#4fa524"), 0, -.058, .023, .155, .028, .035);
+    } else {
+      esferaGoma(gomita, materialGoma(["#2596ec", "#ff3151", "#ffd63e"][i - 6]), 0,0,0,.079,.052,.066);
+    }
+    const a = i * Math.PI * 2 / 9;
+    const r = i % 2 ? .36 : .44;
+    gomita.position.set(r * Math.cos(a), 2.13, r * Math.sin(a));
+    gomita.rotation.set(-.75, a, i % 2 ? .53 : -.46);
     gomitas.add(gomita);
     return gomita;
   });
@@ -285,16 +354,20 @@ function crearEscena(T, local) {
     vaso.rotation.y = l(vaso.rotation.y, angulo, 15);
     granizado.visible = relleno > .012;
     granizado.scale.y = Math.max(.001, relleno);
-    pitillo.visible = relleno > .42 && cierre < .13;
+    chorro.visible = !movimientoReducido.matches && meta.visible && meta.lleno > 0 &&
+      relleno > .04 && relleno < .94 && cierre < .03;
+    const caudal = Math.min(1, relleno * 9, (1 - relleno) * 12);
+    chorro.scale.set(Math.max(.04, caudal), 1, Math.max(.04, caudal));
+    pitillo.visible = relleno > .94 && cierre < .13;
     fruta.visible = meta.fruta && relleno > .89;
     gomitas.visible = gomas > .028 && relleno > .74;
     figuras.forEach((figura, i) => {
-      const progreso = Math.min(1, gomas * (1 + i * .10));
-      figura.position.y = 2.13 + (1 - progreso) ** 2 * (1.1 + i * .13);
+      const progreso = Math.min(1, gomas * (1 + i * .025));
+      figura.position.y = 2.13 + (1 - progreso) ** 2 * (.57 + (i % 4) * .17);
       figura.scale.setScalar(Math.min(1, gomas * 4));
     });
     tapa.visible = cierre > .018;
-    tapa.position.y = 2.09 + (1 - cierre) * .87;
+    tapa.position.y = 2.13 + (1 - cierre) * .87;
     tapa.rotation.z = (1 - cierre) * -.20;
     render.render(escena, camara);
     if (escala !== meta.medida || relleno !== meta.lleno || cierre !== meta.cierre ||

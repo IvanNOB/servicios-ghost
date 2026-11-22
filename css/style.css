@@ -2150,3 +2150,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 @media (prefers-reduced-motion: reduce) {
   .vaso-dbarrio__liquido { transition: none; }
 }
+
+.vaso-dbarrio__escena--3d {
+  background:
+    radial-gradient(ellipse at 50% 18%, #d1795378, transparent 53%),
+    radial-gradient(ellipse at 14% 20%, #7d29466b, transparent 35%),
+    linear-gradient(156deg, #204f49 0%, #1d2220 39%, #472c27 64%, #113c43 65%, #106474 100%);
+}
+.vaso-dbarrio__escena--3d::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  inset: 66% 0 0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 28px, #c0ac7777 29px 30px),
+    repeating-linear-gradient(105deg, #0e58621f 0 52px, #ccd19f55 53px 54px);
+  pointer-events: none;
+}
