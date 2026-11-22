@@ -35,7 +35,7 @@ function crearEscena(T, local) {
     : crearRenderCanvas(T);
   render.setPixelRatio(Math.min(devicePixelRatio, 1.65));
   render.toneMapping = T.ACESFilmicToneMapping;
-  render.toneMappingExposure = 1.16;
+  render.toneMappingExposure = 1.02;
   const escena = new T.Scene();
   const camara = new T.PerspectiveCamera(34, 1, 0.1, 40);
   camara.position.set(0, 4.05, 6.5);
@@ -44,11 +44,11 @@ function crearEscena(T, local) {
   let reflejos;
   if (contexto) {
     const estudio = new T.Scene();
-    estudio.background = new T.Color("#262330");
+    estudio.background = new T.Color("#353232");
     const paneles = [
       { p: [-3, 3, 4], s: [2.3, 5], c: "#ffffff", i: 5 },
-      { p: [3, 2, -2], s: [1.8, 4], c: "#ee65bd", i: 4 },
-      { p: [0, 5, -1], s: [4, 3], c: "#e8f6ff", i: 5 },
+      { p: [3, 2, -2], s: [1.8, 4], c: "#c6b6b1", i: 2.8 },
+      { p: [0, 5, -1], s: [4, 3], c: "#fff0dc", i: 4 },
       { p: [3, 1, 4], s: [.7, 4], c: "#f4ffdc", i: 3 },
     ];
     paneles.forEach(({ p, s, c, i }) => {
@@ -65,17 +65,17 @@ function crearEscena(T, local) {
     pmrem.dispose();
   }
 
-  const ambiente = new T.HemisphereLight("#e7eaff", "#362136", 1.55);
-  const principal = new T.DirectionalLight("#fff5ed", 2.9);
+  const ambiente = new T.HemisphereLight("#f5eee8", "#493c32", 1.15);
+  const principal = new T.DirectionalLight("#fff4e5", 2.45);
   principal.position.set(-3, 5, 4);
-  const borde = new T.DirectionalLight("#e088ff", 1.25);
+  const borde = new T.DirectionalLight("#e4d4c9", .8);
   borde.position.set(2, 3, -3);
   escena.add(ambiente, principal, borde);
 
   const vaso = new T.Group();
   escena.add(vaso);
   const blancoVaso = new T.MeshPhysicalMaterial({
-    color: "#f7f4f1", roughness: .76, envMapIntensity: .29, clearcoat: .12,
+    color: "#f2ede4", roughness: .91, envMapIntensity: .29, clearcoat: .04,
   });
   const plasticoTapa = new T.MeshPhysicalMaterial({
     color: "#fff5ff", roughness: .18, transparent: true, opacity: .27,
@@ -94,7 +94,7 @@ function crearEscena(T, local) {
     semilla = (Math.imul(1664525, semilla) + 1013904223) >>> 0;
     return semilla / 4294967296;
   };
-  const azucar = new T.InstancedMesh(new T.IcosahedronGeometry(1, contexto ? 1 : 0),
+  const azucar = new T.InstancedMesh(new T.SphereGeometry(1, contexto ? 10 : 5, contexto ? 7 : 4),
     new T.MeshPhysicalMaterial({ roughness: .37, clearcoat: .5 }), contexto ? 420 : 250);
   const chispas = ["#ff2737", "#fff7e3", "#ffdc33", "#2386ff", "#ff72a1", "#44c54f", "#ff8c2e"];
   const gragea = new T.Object3D();
@@ -167,7 +167,7 @@ function crearEscena(T, local) {
   base.geometry.setAttribute("color", colores);
   granizado.add(base);
   const cubos = new T.InstancedMesh(new T.IcosahedronGeometry(1, 0),
-    new T.MeshPhysicalMaterial({ roughness: .27, clearcoat: .95, envMapIntensity: 1.05 }), contexto ? 330 : 126);
+    new T.MeshPhysicalMaterial({ roughness: .27, clearcoat: .95, envMapIntensity: 1.05 }), contexto ? 490 : 250);
   const matriz = new T.Object3D();
   const sitios = [];
   for (let i = 0; i < cubos.count; i++) {
@@ -176,7 +176,7 @@ function crearEscena(T, local) {
     const y = 1.995 + .115 * (1 - radio / .64) + (azar() - .5) * .055;
     const x = Math.cos(angulo) * radio;
     matriz.position.set(x, y, Math.sin(angulo) * radio);
-    const tam = .025 + azar() * .052;
+    const tam = .012 + azar() * .042;
     matriz.scale.set(tam, tam * (.53 + azar() * .48), tam * (.62 + azar() * .7));
     matriz.rotation.set(azar() * 7, azar() * 7, azar() * 7);
     matriz.updateMatrix();
@@ -193,13 +193,13 @@ function crearEscena(T, local) {
     chorroMaterial.color.copy(tonoA).lerp(tonoB, .18);
     for (let i = 0; i < posiciones.count; i++) {
       const lado = T.MathUtils.smoothstep(posiciones.getX(i), -.19, .19);
-      brillo.copy(tonoA).lerp(tonoB, lado).multiplyScalar(.77 + posiciones.getY(i) * .13);
+      brillo.copy(tonoA).lerp(tonoB, lado).multiplyScalar(.59 + posiciones.getY(i) * .15);
       colores.setXYZ(i, brillo.r, brillo.g, brillo.b);
     }
     colores.needsUpdate = true;
     sitios.forEach(({x, brillo: intensidad}, i) => {
       brillo.copy(tonoA).lerp(tonoB, T.MathUtils.smoothstep(x, -.17, .17));
-      brillo.lerp(blanco, .14).multiplyScalar(intensidad);
+      brillo.lerp(blanco, .11).multiplyScalar(intensidad);
       cubos.setColorAt(i, brillo);
     });
     cubos.instanceColor.needsUpdate = true;
@@ -274,7 +274,7 @@ function crearEscena(T, local) {
   vaso.add(gomitas);
   const gomitaGeo = new T.SphereGeometry(1, contexto ? 16 : 8, contexto ? 11 : 5);
   const materialGoma = (color) => new T.MeshPhysicalMaterial({
-    color, roughness: .36, clearcoat: .84, envMapIntensity: .82,
+    color, roughness: .42, clearcoat: .62, envMapIntensity: .7,
   });
   const esferaGoma = (grupo, material, x, y, z, sx, sy, sz) => {
     const malla = new T.Mesh(gomitaGeo, material);
@@ -527,6 +527,8 @@ function crearRenderCanvas(T) {
   const proyeccion = new T.Matrix4();
   const instancia = new T.Matrix4();
   const matriz = new T.Matrix4();
+  const matrizNormal = new T.Matrix3();
+  const normalSuave = new T.Vector3(), normalVertice = new T.Vector3(), medio = new T.Vector3();
   const a = new T.Vector3(), b = new T.Vector3(), c = new T.Vector3();
   const normal = new T.Vector3(), arista = new T.Vector3(), vista = new T.Vector3();
   const proyectado = new T.Vector3();
@@ -563,10 +565,10 @@ function crearRenderCanvas(T) {
           const haciaCamara = new T.Vector3().subVectors(camara.position, origen).normalize();
           const angulo = frente.dot(haciaCamara);
           if (angulo > .15) {
-            const centro = punto(origen.addScaledVector(frente, .64));
-            const izq = punto(new T.Vector3(-.53, 0, .54).applyMatrix4(malla.matrixWorld));
-            const der = punto(new T.Vector3(.53, 0, .54).applyMatrix4(malla.matrixWorld));
-            const base = punto(new T.Vector3(0, .37, .64).applyMatrix4(malla.matrixWorld));
+            const centro = punto(origen.addScaledVector(frente, .60));
+            const izq = punto(new T.Vector3(-.45, 0, .54).applyMatrix4(malla.matrixWorld));
+            const der = punto(new T.Vector3(.45, 0, .54).applyMatrix4(malla.matrixWorld));
+            const base = punto(new T.Vector3(0, .31, .60).applyMatrix4(malla.matrixWorld));
             logo = { imagen: malla.userData.etiqueta, centro, w: Math.abs(der[0] - izq[0]),
               h: 2 * Math.abs(base[1] - centro[1]) };
           }
@@ -575,6 +577,7 @@ function crearRenderCanvas(T) {
         const { geometry, material } = malla;
         const vertices = geometry.getAttribute("position");
         const colores = geometry.getAttribute("color");
+        const normales = geometry.getAttribute("normal");
         const indices = geometry.index;
         const limite = indices ? indices.count : vertices.count;
         const numero = malla.isInstancedMesh ? malla.count : 1;
@@ -586,6 +589,7 @@ function crearRenderCanvas(T) {
             matriz.multiply(instancia);
             if (malla.instanceColor) malla.getColorAt(n, colorInstancia);
           }
+          if (normales) matrizNormal.getNormalMatrix(matriz);
           for (let i = 0; i < limite; i += 3) {
             const ia = indices ? indices.getX(i) : i;
             const ib = indices ? indices.getX(i + 1) : i + 1;
@@ -603,12 +607,18 @@ function crearRenderCanvas(T) {
               color.g *= (colores.getY(ia) + colores.getY(ib) + colores.getY(ic)) / 3;
               color.b *= (colores.getZ(ia) + colores.getZ(ib) + colores.getZ(ic)) / 3;
             }
-            const brillo = .60 + Math.max(0, normal.dot(luz)) * .45 + Math.max(0, frente) ** 12 * .20;
-            color.multiplyScalar(brillo);
-            if (material.roughness > .7) {
-              color.r *= .95 + .035 * normal.x;
-              color.g *= .88 + .04 * normal.x;
-              color.b *= 1.04;
+            const n = normales ? normalSuave.fromBufferAttribute(normales, ia)
+              .add(normalVertice.fromBufferAttribute(normales, ib))
+              .add(normalVertice.fromBufferAttribute(normales, ic)).applyNormalMatrix(matrizNormal) : normal;
+            const difusa = Math.max(0, n.dot(luz));
+            const reflejo = Math.max(0, n.dot(medio.addVectors(luz, vista).normalize()));
+            const mate = material.roughness > .7;
+            color.multiplyScalar(.42 + difusa * (mate ? .49 : .56));
+            if (!mate) {
+              const brillo = reflejo ** 22 * .13 * (1 - material.roughness);
+              color.r += brillo;
+              color.g += brillo;
+              color.b += brillo;
             }
             const sombra = material.transparent
               ? material.opacity * (.48 + .73 * (1 - frente) + .35 * Math.max(0, normal.dot(luz)) ** 4)
@@ -623,7 +633,7 @@ function crearRenderCanvas(T) {
       caras.sort((a, b) => a.orden - b.orden || b.profundidad - a.profundidad);
       ctx.clearRect(0, 0, ancho, alto);
       ctx.lineJoin = "round";
-      ctx.lineWidth = .65;
+      ctx.lineWidth = .42;
       const dibujarLogo = () => {
         if (!logo || logo.w <= .1 || logo.h <= .1) return;
         const { imagen, centro, w, h } = logo;

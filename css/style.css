@@ -2372,3 +2372,27 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
   .vaso-dbarrio__presentacion { min-height: clamp(284px, 73vw, 410px); }
   .vaso-dbarrio--pedido .vaso-dbarrio__controles { border-inline-start: 0; border-top: 1px solid #453249; }
 }
+
+.vaso-dbarrio--pedido .vaso-dbarrio__escena {
+  background:
+    radial-gradient(ellipse at 30% 14%, #a8997f43, transparent 64%),
+    radial-gradient(ellipse at 79% 36%, color-mix(in srgb, var(--granizado-a, #826443) 10%, transparent), transparent 60%),
+    linear-gradient(153deg, #3a302b, #1c191b 68%, #26211d);
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__escena--3d::before {
+  inset: 67% 0 0;
+  background: linear-gradient(180deg, #d7bd8c15, #d7bd8c30);
+  mask-image: linear-gradient(transparent 2%, #000 68%);
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__escena--3d::after {
+  inset: auto 22% 6% 23%;
+  height: 13%;
+  transform: rotate(-5deg);
+  border: 0;
+  box-shadow: none;
+  background: radial-gradient(ellipse, #080605dc 0%, #0b080680 38%, transparent 71%);
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__giro {
+  inset: auto 14px 14px auto;
+  transform: none;
+}

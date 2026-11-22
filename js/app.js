@@ -879,7 +879,7 @@
         vaso.querySelector("[data-vaso-empaque]").checked = seleccionVaso.empaque;
       }
       actualizarVasoDbarrio(vaso);
-      import("./vaso-dbarrio-3d.js?v=7").catch(function (error) {
+      import("./vaso-dbarrio-3d.js?v=8").catch(function (error) {
         console.warn("Vista 3D de D’Barrio no disponible", error);
       });
     }
