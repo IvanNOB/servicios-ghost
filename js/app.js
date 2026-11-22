@@ -797,6 +797,7 @@
       sabor: (vasoAnterior.querySelector('[data-vaso-sabor][aria-pressed="true"]') || {}).dataset?.vasoSabor,
       gomas: !!vasoAnterior.querySelector("[data-vaso-gomas]:checked"),
       empaque: !!vasoAnterior.querySelector("[data-vaso-empaque]:checked"),
+      foto: vasoAnterior.dataset.vasoVista !== "modelo",
     } : null;
     vistaActual = restId;
 
@@ -877,6 +878,7 @@
         var gomasVaso = vaso.querySelector("[data-vaso-gomas]");
         if (gomasVaso) gomasVaso.checked = seleccionVaso.gomas;
         vaso.querySelector("[data-vaso-empaque]").checked = seleccionVaso.empaque;
+        cambiarVistaVasoDbarrio(vaso, seleccionVaso.foto ? "foto" : "modelo");
       }
       actualizarVasoDbarrio(vaso);
       import("./vaso-dbarrio-3d.js?v=8").catch(function (error) {
@@ -1170,8 +1172,14 @@
     var busqueda = productos.map(function (it) { return it.n; }).concat(
       sabores.map(function (sabor) { return sabor.n; })
     ).join(" ");
-    return '<div class="vaso-dbarrio vaso-dbarrio--pedido" data-vaso-dbarrio data-dish data-busqueda="' + esc(busqueda) + '">' +
+    return '<div class="vaso-dbarrio vaso-dbarrio--pedido" data-vaso-dbarrio data-vaso-vista="foto" data-dish data-busqueda="' + esc(busqueda) + '">' +
       '<div class="vaso-dbarrio__presentacion">' +
+        '<figure class="vaso-dbarrio__foto-referencia">' +
+          '<img src="assets/granizados-dbarrio/eclipse-gomitas-referencia.webp" alt="Vaso blanco de Granizados D’Barrio con hielo de fresa y uva, borde escarchado, gomitas y pitillo rojo" width="840" height="840" decoding="async">' +
+          '<figcaption>Eclipse con gomitas · Imagen ilustrativa</figcaption></figure>' +
+        '<div class="vaso-dbarrio__vistas" role="group" aria-label="Vista del granizado">' +
+          '<button type="button" data-vaso-ver="foto" aria-pressed="true">Referencia</button>' +
+          '<button type="button" data-vaso-ver="modelo" aria-pressed="false">Vista interactiva</button></div>' +
         '<div class="vaso-dbarrio__escena" aria-hidden="true"><div class="vaso-dbarrio__vaso">' +
           '<div class="vaso-dbarrio__cuerpo"><div class="vaso-dbarrio__liquido"></div>' +
           '<div class="vaso-dbarrio__gomas"><i></i><i></i><i></i><i></i><i></i></div>' +
@@ -1207,6 +1215,13 @@
             (habilitado ? "" : ' data-vaso-cerrado') + ' disabled>' +
             (habilitado ? "Elige un sabor" : "Pedidos no disponibles") + '</button></div>' +
         '<p data-vaso-estado role="status"></p></div></div>';
+  }
+
+  function cambiarVistaVasoDbarrio(box, vista) {
+    box.dataset.vasoVista = vista;
+    box.querySelectorAll("[data-vaso-ver]").forEach(function (boton) {
+      boton.setAttribute("aria-pressed", String(boton.dataset.vasoVer === vista));
+    });
   }
 
   function actualizarVasoDbarrio(box) {
@@ -2499,6 +2514,11 @@
     }
 
     // --- Agregar plato con opciones (ej. alitas + salsa) ---
+    var vistaVaso = t.closest("[data-vaso-ver]");
+    if (vistaVaso) {
+      cambiarVistaVasoDbarrio(vistaVaso.closest("[data-vaso-dbarrio]"), vistaVaso.dataset.vasoVer);
+      return;
+    }
     var saborVaso = t.closest("[data-vaso-sabor]");
     if (saborVaso) {
       var cajaVaso = saborVaso.closest("[data-vaso-dbarrio]");
