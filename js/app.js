@@ -858,7 +858,7 @@
     elVistaInicio.hidden = true;
     elVistaCarta.hidden = false;
     if (r.id === "granizados-dbarrio" && elVistaCarta.querySelector("[data-vaso-dbarrio]")) {
-      import("./vaso-dbarrio-3d.js?v=5").catch(function (error) {
+      import("./vaso-dbarrio-3d.js?v=6").catch(function (error) {
         console.warn("Vista 3D de D’Barrio no disponible", error);
       });
     }
