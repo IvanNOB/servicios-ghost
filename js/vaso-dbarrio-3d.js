@@ -82,10 +82,11 @@ function crearEscena(T, local) {
   });
   const lathe = (puntos, material) =>
     new T.Mesh(new T.LatheGeometry(puntos.map(([x, y]) => new T.Vector2(x, y)), contexto ? 72 : 48), material);
-  const pared = lathe([[0,.045],[.415,.045],[.466,.064],[.489,.109],[.506,.19],
-    [.720,2.03],[.733,2.066],[.730,2.095],[.712,2.106],[.693,2.097],[.685,2.066],
-    [.675,2.02],[.462,.19],[.440,.13],[0,.13]], blancoVaso);
-  vaso.add(pared);
+  const exterior = lathe([[0,.045],[.415,.045],[.466,.064],[.489,.109],[.506,.19],
+    [.720,2.03],[.733,2.066],[.730,2.095],[.712,2.106],[.693,2.097],[.685,2.066]], blancoVaso);
+  const interior = lathe([[.685,2.066],[.675,2.02],[.462,.19],[.440,.13],[0,.13]], blancoVaso);
+  exterior.renderOrder = 4;
+  vaso.add(exterior, interior);
 
   let semilla = 4385;
   const azar = () => {
@@ -493,8 +494,9 @@ function crearRenderCanvas(T) {
               ? material.opacity * (.48 + .73 * (1 - frente) + .35 * Math.max(0, normal.dot(luz)) ** 4)
               : 1;
             const p = punto(a), q = punto(b), r = punto(c);
+            const orden = malla.renderOrder === 4 && normal.y > .3 ? 0 : malla.renderOrder;
             caras.push({ p, q, r, profundidad: (p[2] + q[2] + r[2]) / 3,
-              orden: malla.renderOrder, color: "#" + color.getHexString(), sombra });
+              orden, color: "#" + color.getHexString(), sombra });
           }
         }
       });
