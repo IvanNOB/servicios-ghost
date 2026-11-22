@@ -2563,6 +2563,14 @@ body:has(#vistaCarta:not([hidden])) .carta-count:not([hidden]) {
 .carta-rest-head { display: block; text-align: center; margin: 20px auto 14px; }
 .carta-rest-head .rest-head__name { font-size: clamp(1.8rem, 7vw, 3.25rem); margin: 0; }
 .carta-rest-head .rest-head__meta { justify-content: center; }
+.carta-rest-logo {
+  display: block;
+  width: min(128px, 38vw);
+  height: 96px;
+  object-fit: contain;
+  margin: 0 auto 10px;
+  border-radius: var(--radius);
+}
 #vistaCarta .carta-nav { margin-inline: 0; padding-inline: 0; border-bottom: 0; }
 #vistaCarta .carta-nav__buscar input { min-height: 44px; font-size: 1rem; }
 .carta-categorias { margin: 14px 0 10px; font: 800 1.3rem var(--font-title); }

@@ -845,6 +845,7 @@
             '<button type="button" class="btn-primary-sm" data-volver-panel>← Volver a mi panel</button></div>'
         : "") +
       '<div class="rest-head carta-rest-head">' +
+        (r.logo ? '<img class="carta-rest-logo" src="' + esc(r.logo) + '" alt="" width="128" height="96" decoding="async" />' : "") +
         "<div>" +
           '<h1 class="rest-head__name">' + esc(r.nombre) + "</h1>" +
           (r.cat || r.desc ? '<p class="rest-head__desc">' + esc(r.cat || r.desc) + "</p>" : "") +
