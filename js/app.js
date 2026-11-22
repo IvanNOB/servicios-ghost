@@ -791,6 +791,13 @@
   function abrirCarta(restId) {
     var r = findRest(restId);
     if (!r) return;
+    var vasoAnterior = vistaActual === restId && elVistaCarta.querySelector("[data-vaso-dbarrio]");
+    var seleccionVaso = vasoAnterior ? {
+      tamano: (vasoAnterior.querySelector("[data-vaso-tamano]:checked") || {}).value,
+      sabor: (vasoAnterior.querySelector('[data-vaso-sabor][aria-pressed="true"]') || {}).dataset?.vasoSabor,
+      gomas: !!vasoAnterior.querySelector("[data-vaso-gomas]:checked"),
+      empaque: !!vasoAnterior.querySelector("[data-vaso-empaque]:checked"),
+    } : null;
     vistaActual = restId;
 
     var cover = r.logo
@@ -857,8 +864,22 @@
 
     elVistaInicio.hidden = true;
     elVistaCarta.hidden = false;
-    if (r.id === "granizados-dbarrio" && elVistaCarta.querySelector("[data-vaso-dbarrio]")) {
-      import("./vaso-dbarrio-3d.js?v=6").catch(function (error) {
+    var vaso = elVistaCarta.querySelector("[data-vaso-dbarrio]");
+    if (vaso) {
+      if (seleccionVaso) {
+        var tamanoVaso = Array.from(vaso.querySelectorAll("[data-vaso-tamano]")).find(function (opcion) {
+          return opcion.value === seleccionVaso.tamano;
+        });
+        if (tamanoVaso) tamanoVaso.checked = true;
+        vaso.querySelectorAll("[data-vaso-sabor]").forEach(function (opcion) {
+          opcion.setAttribute("aria-pressed", String(opcion.dataset.vasoSabor === seleccionVaso.sabor));
+        });
+        var gomasVaso = vaso.querySelector("[data-vaso-gomas]");
+        if (gomasVaso) gomasVaso.checked = seleccionVaso.gomas;
+        vaso.querySelector("[data-vaso-empaque]").checked = seleccionVaso.empaque;
+      }
+      actualizarVasoDbarrio(vaso);
+      import("./vaso-dbarrio-3d.js?v=7").catch(function (error) {
         console.warn("Vista 3D de D’Barrio no disponible", error);
       });
     }
@@ -1143,36 +1164,53 @@
     var finDeSemana = dia === 0 || dia === 6;
     var gomas = findItem(r.id, "gd-gomas");
     var habilitado = abiertoAhora(r) && !MODO_PANEL;
+    var disponibles = productos.filter(function (it) { return !it.agotado; });
+    var sabores = finDeSemana ? SABORES_DBARRIO : [{ n: SABOR_DBARRIO_POR_CONFIRMAR, color: "#78d5ee" }];
+    var inicial = disponibles.find(function (it) { return it.id === "gd-12"; }) || disponibles[0];
     var busqueda = productos.map(function (it) { return it.n; }).concat(
-      SABORES_DBARRIO.map(function (sabor) { return sabor.n; })
+      sabores.map(function (sabor) { return sabor.n; })
     ).join(" ");
-    return '<div class="vaso-dbarrio" data-vaso-dbarrio data-dish data-busqueda="' + esc(busqueda) + '">' +
-      '<div class="vaso-dbarrio__escena" aria-hidden="true"><div class="vaso-dbarrio__vaso">' +
-        '<div class="vaso-dbarrio__cuerpo"><div class="vaso-dbarrio__liquido"></div>' +
-        '<div class="vaso-dbarrio__gomas"><i></i><i></i><i></i><i></i><i></i></div>' +
-        '<b>D’Barrio</b></div><div class="vaso-dbarrio__tapa"></div></div></div>' +
-      '<div class="vaso-dbarrio__controles"><h4 class="dish__name">Arma tu granizado</h4>' +
-      '<label>Tamaño o presentación<select data-vaso-tamano><option value="">Selecciona tu vaso</option>' +
-      productos.filter(function (it) { return !it.agotado; }).map(function (it) {
-        var nombre = it.id === "gd-fruta" ? "Con fruta" : it.id.slice(3) + " onzas";
-        return '<option value="' + esc(it.id) + '">' + esc(nombre + " · " + money(it.p)) + '</option>';
-      }).join("") + '</select></label>' +
-      '<p class="dish__desc">' + (finDeSemana ? "Elige tu sabor." :
-        "Entre semana preparan tres sabores. El local confirma la disponibilidad al recibir el pedido.") + '</p>' +
-      '<div class="vaso-dbarrio__sabores" role="group" aria-label="Sabor" data-vaso-sabores>' +
-      (finDeSemana ? SABORES_DBARRIO : [{ n: SABOR_DBARRIO_POR_CONFIRMAR }]).map(function (sabor) {
-        return '<button type="button" aria-pressed="false" data-vaso-sabor="' + esc(sabor.n) + '">' + esc(sabor.n) + '</button>';
-      }).join("") + '</div>' +
-      (gomas && !gomas.agotado ? '<label class="vaso-dbarrio__extra"><input type="checkbox" data-vaso-gomas> Agregar porción de gomas · ' + esc(money(gomas.p)) + '</label>' : "") +
-      '<label class="vaso-dbarrio__extra"><input type="checkbox" data-vaso-empaque checked> Para llevar (tapa y bolsa)</label>' +
-      '<p data-vaso-estado role="status"></p>' +
-      '<button type="button" class="add-btn vaso-dbarrio__listo" data-vaso-listo' +
-      (habilitado ? "" : ' data-vaso-cerrado') + ' disabled>' +
-      (habilitado ? "Agregar al pedido" : "Pedidos no disponibles") + '</button></div></div>';
+    return '<div class="vaso-dbarrio vaso-dbarrio--pedido" data-vaso-dbarrio data-dish data-busqueda="' + esc(busqueda) + '">' +
+      '<div class="vaso-dbarrio__presentacion">' +
+        '<div class="vaso-dbarrio__escena" aria-hidden="true"><div class="vaso-dbarrio__vaso">' +
+          '<div class="vaso-dbarrio__cuerpo"><div class="vaso-dbarrio__liquido"></div>' +
+          '<div class="vaso-dbarrio__gomas"><i></i><i></i><i></i><i></i><i></i></div>' +
+          '<b>D’Barrio</b></div><div class="vaso-dbarrio__tapa"></div></div></div>' +
+        '<div class="vaso-dbarrio__ficha"><span data-vaso-ficha></span><strong data-vaso-nombre></strong></div>' +
+      '</div>' +
+      '<div class="vaso-dbarrio__controles">' +
+        '<h4 class="dish__name">Arma tu <em>vaso</em></h4>' +
+        '<fieldset class="vaso-dbarrio__grupo"><legend>Tamaño o presentación</legend>' +
+          '<div class="vaso-dbarrio__medidas">' +
+          disponibles.map(function (it) {
+            var nombre = it.id === "gd-fruta" ? "Con fruta" : it.id.slice(3) + " oz";
+            return '<label><input type="radio" name="tamano-dbarrio" data-vaso-tamano value="' + esc(it.id) + '"' +
+              (it === inicial ? " checked" : "") + '><span><strong>' + esc(nombre) + '</strong><small>' +
+              esc(money(it.p)) + '</small></span></label>';
+          }).join("") + '</div></fieldset>' +
+        '<fieldset class="vaso-dbarrio__grupo"><legend>Sabor</legend>' +
+          (!finDeSemana ? '<p class="dish__desc">Entre semana preparan tres sabores. El local confirma cuáles están disponibles.</p>' : '') +
+          '<div class="vaso-dbarrio__sabores" data-vaso-sabores>' +
+          sabores.map(function (sabor) {
+            return '<button type="button" aria-pressed="false" data-vaso-sabor="' + esc(sabor.n) +
+              '" style="--sabor-a:' + esc(sabor.color) + ';--sabor-b:' + esc(sabor.color2 || sabor.color) +
+              '"><span aria-hidden="true"></span><strong>' + esc(sabor.n) + '</strong></button>';
+          }).join("") + '</div></fieldset>' +
+        '<fieldset class="vaso-dbarrio__grupo"><legend>Extras</legend><div class="vaso-dbarrio__extras">' +
+          (gomas && !gomas.agotado ? '<label class="vaso-dbarrio__extra"><input type="checkbox" data-vaso-gomas>' +
+            '<span><strong>Gomitas</strong><small>Porción surtida</small></span><b>+' + esc(money(gomas.p)) + '</b></label>' : "") +
+          '<label class="vaso-dbarrio__extra"><input type="checkbox" data-vaso-empaque checked>' +
+            '<span><strong>Para llevar</strong><small>Tapa y bolsa</small></span><b data-vaso-empaque-precio></b></label>' +
+        '</div></fieldset>' +
+        '<div class="vaso-dbarrio__compra"><div><span>Total del vaso</span><output data-vaso-total aria-live="polite"></output></div>' +
+          '<button type="button" class="add-btn vaso-dbarrio__listo" data-vaso-listo' +
+            (habilitado ? "" : ' data-vaso-cerrado') + ' disabled>' +
+            (habilitado ? "Elige un sabor" : "Pedidos no disponibles") + '</button></div>' +
+        '<p data-vaso-estado role="status"></p></div></div>';
   }
 
   function actualizarVasoDbarrio(box) {
-    var tamano = box.querySelector("[data-vaso-tamano]").value;
+    var tamano = (box.querySelector("[data-vaso-tamano]:checked") || {}).value || "";
     var marcado = box.querySelector('[data-vaso-sabor][aria-pressed="true"]');
     var sabor = marcado && SABORES_DBARRIO.find(function (s) { return s.n === marcado.dataset.vasoSabor; });
     var gomas = box.querySelector("[data-vaso-gomas]:checked");
@@ -1186,17 +1224,21 @@
     box.classList.remove("vaso-dbarrio--sellado");
     box.style.setProperty("--granizado-a", sabor ? sabor.color : "#78d5ee");
     box.style.setProperty("--granizado-b", sabor ? sabor.color2 || sabor.color : "#78d5ee");
+    var empaquePrecio = it ? Number(it.opciones[0].opciones[1].precio) || 0 : 0;
+    var total = it ? it.p + (empaque ? empaquePrecio : 0) + (porcion ? porcion.p : 0) : 0;
+    box.querySelector("[data-vaso-empaque-precio]").textContent = empaquePrecio ? "+" + money(empaquePrecio) : "";
+    box.querySelector("[data-vaso-total]").textContent = it ? money(total) : "—";
+    box.querySelector("[data-vaso-ficha]").textContent = !it ? "" : tamano === "gd-fruta" ? "Con fruta" : tamano.slice(3) + " oz";
+    box.querySelector("[data-vaso-nombre]").textContent = marcado ? marcado.dataset.vasoSabor : "Elige un sabor";
     if (boton.hasAttribute("data-vaso-cerrado")) return;
     boton.disabled = !it || !marcado;
-    var empaquePrecio = it ? Number(it.opciones[0].opciones[empaque ? 1 : 0].precio) || 0 : 0;
-    var total = it ? it.p + empaquePrecio + (porcion ? porcion.p : 0) : 0;
-    boton.textContent = "Agregar al pedido" + (total ? " · " + money(total) : "");
+    boton.textContent = !it ? "Elige un vaso" : !marcado ? "Elige un sabor" : "Agregar al pedido";
     box.querySelector("[data-vaso-estado]").textContent = "";
   }
 
   function terminarVasoDbarrio(box) {
     var r = findRest("granizados-dbarrio");
-    var it = findItem(r.id, box.querySelector("[data-vaso-tamano]").value);
+    var it = findItem(r.id, (box.querySelector("[data-vaso-tamano]:checked") || {}).value);
     var sabor = box.querySelector('[data-vaso-sabor][aria-pressed="true"]');
     var boton = box.querySelector("[data-vaso-listo]");
     if (!it || it.agotado || !sabor || boton.disabled || MODO_PANEL || !abiertoAhora(r)) return;
@@ -1217,15 +1259,16 @@
     controles.forEach(function (control) { control.disabled = true; });
     box.classList.add("vaso-dbarrio--sellado");
     box.querySelector("[data-vaso-estado]").textContent = "Agregado a tu pedido.";
+    boton.textContent = "¡Vaso agregado!";
     window.setTimeout(function () {
       if (!box.isConnected || vistaActual !== r.id) return;
       controles.forEach(function (control) { control.disabled = false; });
       openSheet();
       if (porcion) {
         box.querySelector("[data-vaso-gomas]").checked = false;
-        actualizarVasoDbarrio(box);
       }
-    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450);
+      actualizarVasoDbarrio(box);
+    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 630);
   }
 
   // Lee las opciones elegidas de un plato y lo agrega al carrito como línea única.

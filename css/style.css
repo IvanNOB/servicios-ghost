@@ -2167,3 +2167,208 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
     repeating-linear-gradient(105deg, #0e58621f 0 52px, #ccd19f55 53px 54px);
   pointer-events: none;
 }
+
+/* Configurador de Granizados D’Barrio */
+.vaso-dbarrio--pedido {
+  --vaso-acento: #ddfc61;
+  --vaso-tinta: #faf6fc;
+  --vaso-secundario: #cbbbd1;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 1fr);
+  color: var(--vaso-tinta);
+  background: #130e1b;
+  border: 1px solid #4b3651;
+  border-radius: 24px;
+  box-shadow: 0 18px 50px #0005;
+}
+.vaso-dbarrio__presentacion {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 420px;
+  isolation: isolate;
+  background: #100d17;
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__escena {
+  min-height: 100%;
+  padding-bottom: 95px;
+  background:
+    radial-gradient(ellipse at 49% 50%, color-mix(in srgb, var(--granizado-a, #b328e0) 25%, transparent), transparent 57%),
+    radial-gradient(ellipse at 79% 3%, #9f266a79, transparent 53%),
+    radial-gradient(ellipse at 4% 91%, #65743255, transparent 49%),
+    linear-gradient(150deg, #241129, #120d19 62%, #1d1328);
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__escena--3d { padding: 0; }
+.vaso-dbarrio--pedido .vaso-dbarrio__escena--3d::before {
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 74%, #05030899, transparent 30%),
+    repeating-linear-gradient(153deg, #eeb0ed0b 0 1px, transparent 1px 34px);
+  mask-image: linear-gradient(transparent 10%, #000 46%);
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__escena--3d::after {
+  inset: 14% 10% 15%;
+  border: 1px solid #e5b5f52b;
+  border-radius: 50%;
+  background: transparent;
+  transform: rotate(-22deg);
+  box-shadow: 0 0 35px #da8eff19, inset 0 0 36px #da8eff12;
+}
+.vaso-dbarrio__ficha {
+  position: absolute;
+  z-index: 2;
+  top: 20px;
+  left: 20px;
+  display: grid;
+  justify-items: start;
+  max-width: calc(100% - 40px);
+  gap: 5px;
+  pointer-events: none;
+}
+.vaso-dbarrio__ficha span {
+  padding: 5px 9px;
+  border: 1px solid #f6dfff55;
+  border-radius: 7px;
+  color: #f9edf9;
+  background: #24162bbd;
+  font-size: .74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.vaso-dbarrio__ficha span:empty { display: none; }
+.vaso-dbarrio__ficha strong {
+  color: #fff4fc;
+  text-shadow: 0 1px 9px #08040d;
+  font-size: clamp(.9rem, 2vw, 1.12rem);
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__giro {
+  pointer-events: auto;
+  inset: auto auto 16px 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  min-height: 44px;
+  padding: 4px 14px;
+  border: 1px solid #f5cfff55;
+  border-radius: 30px;
+  background: #190e22e6;
+  color: #fff3fc;
+  cursor: pointer;
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__giro::before { content: "↻ "; font-size: 1rem; }
+.vaso-dbarrio--pedido .vaso-dbarrio__controles {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  padding: clamp(16px, 3vw, 32px);
+  border-inline-start: 1px solid #453249;
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__controles h4 {
+  font-size: clamp(2rem, 4.7vw, 3.55rem);
+  color: #fff5fc;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.065em;
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__controles h4 em { color: var(--vaso-acento); }
+.vaso-dbarrio__grupo { min-width: 0; margin: 0; padding: 0; border: 0; }
+.vaso-dbarrio__grupo legend { margin-bottom: 8px; padding: 0; font-size: .88rem; font-weight: 800; color: #f6ecfa; }
+.vaso-dbarrio--pedido .vaso-dbarrio__grupo p { margin: 0 0 8px; color: var(--vaso-secundario); font-size: .82rem; }
+.vaso-dbarrio__medidas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.vaso-dbarrio--pedido .vaso-dbarrio__medidas label { position: relative; cursor: pointer; }
+.vaso-dbarrio__medidas input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.vaso-dbarrio__medidas span {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  gap: 2px;
+  min-height: 54px;
+  padding: 6px 3px;
+  border: 1px solid #57445e;
+  border-radius: 10px;
+  background: #211829;
+  font-size: .84rem;
+}
+.vaso-dbarrio__medidas small { color: var(--vaso-secundario); font-size: .74rem; }
+.vaso-dbarrio__medidas input:checked + span {
+  border-color: var(--vaso-acento);
+  color: var(--vaso-acento);
+  background: #282d19;
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__sabores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.vaso-dbarrio--pedido .vaso-dbarrio__sabores button {
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 8px;
+  min-height: 47px;
+  border-color: #57445e;
+  border-radius: 11px;
+  color: #fcf5ff;
+  background: #211829;
+  cursor: pointer;
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__sabores button span {
+  flex: 0 0 23px;
+  height: 23px;
+  border: 1px solid #ffffff75;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 25%, #ffffffaa, transparent 46%),
+    linear-gradient(125deg, var(--sabor-a) 32%, var(--sabor-b) 72%);
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__sabores button strong { font-size: .82rem; line-height: 1.15; }
+.vaso-dbarrio--pedido .vaso-dbarrio__sabores button[aria-pressed="true"] {
+  border-color: var(--sabor-a);
+  color: #fff;
+  background: color-mix(in srgb, var(--sabor-a) 24%, #211829);
+  box-shadow: inset 0 0 0 1px var(--sabor-a);
+}
+.vaso-dbarrio__extras { display: grid; gap: 6px; }
+.vaso-dbarrio--pedido .vaso-dbarrio__extra {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  min-height: 45px;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 9px;
+  background: #211829;
+  cursor: pointer;
+}
+.vaso-dbarrio__extra span { display: grid; gap: 1px; }
+.vaso-dbarrio__extra small { color: var(--vaso-secundario); font-size: .74rem; }
+.vaso-dbarrio__extra b { color: #f2e2f8; font-size: .82rem; }
+.vaso-dbarrio__compra {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #453249;
+}
+.vaso-dbarrio__compra div { display: grid; gap: 2px; }
+.vaso-dbarrio__compra span { color: var(--vaso-secundario); font-size: .76rem; }
+.vaso-dbarrio__compra output { white-space: nowrap; color: #fff; font-size: 1.24rem; font-weight: 850; }
+.vaso-dbarrio--pedido .vaso-dbarrio__listo {
+  min-height: 49px;
+  border: 0;
+  border-radius: 11px;
+  color: #141909;
+  background: var(--vaso-acento);
+  font-size: .9rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+.vaso-dbarrio--pedido .vaso-dbarrio__listo:disabled { cursor: default; }
+.vaso-dbarrio--pedido button:focus-visible, .vaso-dbarrio__medidas input:focus-visible + span {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+@media (hover: hover) {
+  .vaso-dbarrio__medidas label:hover span,
+  .vaso-dbarrio--pedido .vaso-dbarrio__sabores button:hover { border-color: #f5d9f6; }
+}
+@media (max-width: 760px) {
+  .vaso-dbarrio--pedido { grid-template-columns: minmax(0, 1fr); }
+  .vaso-dbarrio__presentacion { min-height: clamp(284px, 73vw, 410px); }
+  .vaso-dbarrio--pedido .vaso-dbarrio__controles { border-inline-start: 0; border-top: 1px solid #453249; }
+}
