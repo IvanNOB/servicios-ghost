@@ -65,10 +65,12 @@ export function abrirBarra(box, pasoInicial) {
     boton.style.setProperty('--foto-sabor', 'url("../' + boton.dataset.foto + '")');
   }
   function mostrarFoto(boton) {
-    const foto = boton?.dataset.foto;
+    const baseFoto = boton?.dataset.foto;
+    const conGomas = box.querySelector('[data-vaso-gomas]')?.checked;
+    const foto = baseFoto && conGomas ? baseFoto.replace('.webp','-gomitas.webp') : baseFoto;
     box.classList.toggle('barra-con-foto', Boolean(foto));
     imagen.src = foto || original;
-    base.alt = foto ? 'Granizado ' + boton.dataset.vasoSabor : descripcionInicial;
+    base.alt = foto ? 'Granizado ' + boton.dataset.vasoSabor + (conGomas ? ' con gomitas' : '') : descripcionInicial;
     if (foto) box.style.setProperty('--fondo-sabor','url("../' + foto + '")');
   }
   mostrarFoto(botones.find(b => b.getAttribute('aria-pressed') === 'true'));
@@ -157,6 +159,13 @@ export function abrirBarra(box, pasoInicial) {
   }
   function empaque() { box.classList.toggle('barra-para-llevar',box.querySelector('[data-vaso-empaque]').checked); }
   box.addEventListener('change',empaque);
+  const opcionGomas = box.querySelector('[data-vaso-gomas]');
+  let ultimoExtra = opcionGomas?.checked;
+  new MutationObserver(() => {
+    if (ultimoExtra === opcionGomas?.checked) return;
+    ultimoExtra = opcionGomas.checked;
+    mostrarFoto(botones.find(b => b.getAttribute('aria-pressed') === 'true'));
+  }).observe(box,{attributes:true,attributeFilter:['class']});
   empaque();
   box.classList.add('barra');
   mostrar(pasoInicial || 0);
