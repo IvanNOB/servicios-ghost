@@ -1155,8 +1155,8 @@
               '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>' +
           '<figcaption><span data-vaso-vista-resumen></span><small>Vista ilustrativa</small></figcaption></figure>' +
         '<div class="vaso-dbarrio__vistas" role="group" aria-label="Vista del granizado">' +
-          '<button type="button" data-vaso-ver="foto" aria-pressed="true">Preparación</button>' +
-          '<button type="button" data-vaso-ver="modelo" aria-pressed="false">Vista interactiva</button></div>' +
+          '<button type="button" data-vaso-ver="foto" aria-pressed="true">Vista interactiva</button>' +
+          '<button type="button" data-vaso-ver="modelo" aria-pressed="false">Giro 3D</button></div>' +
         '<div class="vaso-dbarrio__escena" aria-hidden="true"><div class="vaso-dbarrio__vaso">' +
           '<div class="vaso-dbarrio__cuerpo"><div class="vaso-dbarrio__liquido"></div>' +
           '<div class="vaso-dbarrio__gomas"><i></i><i></i><i></i><i></i><i></i></div>' +
