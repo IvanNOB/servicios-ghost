@@ -1175,10 +1175,16 @@
     return '<div class="vaso-dbarrio vaso-dbarrio--pedido" data-vaso-dbarrio data-vaso-vista="foto" data-dish data-busqueda="' + esc(busqueda) + '">' +
       '<div class="vaso-dbarrio__presentacion">' +
         '<figure class="vaso-dbarrio__foto-referencia">' +
-          '<img src="assets/granizados-dbarrio/eclipse-gomitas-referencia.webp" alt="Vaso blanco de Granizados D’Barrio con hielo de fresa y uva, borde escarchado, gomitas y pitillo rojo" width="840" height="840" decoding="async">' +
-          '<figcaption>Eclipse con gomitas · Imagen ilustrativa</figcaption></figure>' +
+          '<div class="vaso-dbarrio__toma">' +
+            '<img src="assets/granizados-dbarrio/vaso-escarchado.webp" alt="Vaso blanco de Granizados D’Barrio con borde escarchado" width="840" height="840" decoding="async">' +
+            '<div class="vaso-dbarrio__llenado" aria-hidden="true">' +
+              '<img src="assets/granizados-dbarrio/vaso-con-hielo.webp" alt="" width="840" height="840" decoding="async">' +
+              '<span class="vaso-dbarrio__tinte"></span></div>' +
+            '<div class="vaso-dbarrio__caida" aria-hidden="true">' +
+              '<i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>' +
+          '<figcaption><span data-vaso-vista-resumen></span><small>Vista ilustrativa</small></figcaption></figure>' +
         '<div class="vaso-dbarrio__vistas" role="group" aria-label="Vista del granizado">' +
-          '<button type="button" data-vaso-ver="foto" aria-pressed="true">Referencia</button>' +
+          '<button type="button" data-vaso-ver="foto" aria-pressed="true">Preparación</button>' +
           '<button type="button" data-vaso-ver="modelo" aria-pressed="false">Vista interactiva</button></div>' +
         '<div class="vaso-dbarrio__escena" aria-hidden="true"><div class="vaso-dbarrio__vaso">' +
           '<div class="vaso-dbarrio__cuerpo"><div class="vaso-dbarrio__liquido"></div>' +
@@ -1239,6 +1245,18 @@
     box.classList.remove("vaso-dbarrio--sellado");
     box.style.setProperty("--granizado-a", sabor ? sabor.color : "#78d5ee");
     box.style.setProperty("--granizado-b", sabor ? sabor.color2 || sabor.color : "#78d5ee");
+    var elegido = marcado ? marcado.dataset.vasoSabor : "";
+    var repetirLlenado = box.dataset.vasoFotoSabor && box.dataset.vasoFotoSabor !== elegido;
+    box.dataset.vasoFotoSabor = elegido;
+    box.dataset.vasoFotoColor = sabor && !sabor.color2 ? "tinte" : "original";
+    box.querySelector("[data-vaso-vista-resumen]").textContent = elegido
+      ? elegido + (porcion ? " + gomitas" : "") : "Vaso escarchado";
+    var llenado = box.querySelector(".vaso-dbarrio__llenado");
+    if (repetirLlenado && elegido && llenado.animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      llenado.getAnimations().forEach(function (animacion) { animacion.cancel(); });
+      llenado.animate([{ clipPath: "inset(46% 0 0)" }, { clipPath: "inset(0)" }],
+        { duration: 800, easing: "cubic-bezier(.22,.72,.15,1)" });
+    }
     var empaquePrecio = it ? Number(it.opciones[0].opciones[1].precio) || 0 : 0;
     var total = it ? it.p + (empaque ? empaquePrecio : 0) + (porcion ? porcion.p : 0) : 0;
     box.querySelector("[data-vaso-empaque-precio]").textContent = empaquePrecio ? "+" + money(empaquePrecio) : "";
