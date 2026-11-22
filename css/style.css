@@ -2067,3 +2067,49 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 @media (prefers-reduced-motion: reduce) {
   .vaso-dbarrio__vaso, .vaso-dbarrio__liquido, .vaso-dbarrio__gomas, .vaso-dbarrio__tapa { transition: none; }
 }
+
+.vaso-dbarrio__escena--3d {
+  position: relative;
+  display: block;
+  align-self: stretch;
+  min-height: 330px;
+  padding: 0;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 50% 72%, #91215f62 0%, transparent 53%),
+    radial-gradient(ellipse at 85% 30%, #27331388, transparent 52%),
+    repeating-linear-gradient(0deg, transparent 0 26px, #a278a516 27px 28px),
+    linear-gradient(142deg, #19101d 0%, #0b0910 60%);
+}
+.vaso-dbarrio__escena--3d::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 69% 8% 5%;
+  background: radial-gradient(ellipse, #000c, transparent 65%);
+  pointer-events: none;
+}
+.vaso-dbarrio__escena--3d .vaso-dbarrio__vaso { display: none; }
+.vaso-dbarrio__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.vaso-dbarrio__canvas:active { cursor: grabbing; }
+.vaso-dbarrio__canvas:focus-visible { outline: 2px solid #b9ff36; outline-offset: -4px; }
+.vaso-dbarrio__giro {
+  position: absolute;
+  pointer-events: none;
+  inset: auto 8px 12px;
+  margin: 0;
+  color: #ead7e8;
+  text-align: center;
+  font-size: .78rem;
+}
+@media (max-width: 620px) {
+  .vaso-dbarrio__escena--3d { min-height: 285px; }
+}
