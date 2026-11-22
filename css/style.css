@@ -2444,3 +2444,78 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 @media (max-width: 760px) {
   .vaso-dbarrio[data-vaso-vista="foto"] .vaso-dbarrio__presentacion { min-height: 0; aspect-ratio: 1 / 1; }
 }
+
+.vaso-dbarrio__toma {
+  position: absolute;
+  inset: auto;
+  width: 100%;
+  aspect-ratio: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  isolation: isolate;
+}
+.vaso-dbarrio__toma > img,
+.vaso-dbarrio__llenado,
+.vaso-dbarrio__caida,
+.vaso-dbarrio__caida i {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.vaso-dbarrio__llenado {
+  clip-path: inset(46% 0 0);
+  opacity: 0;
+  mask-image: linear-gradient(#000 0 42%, transparent 48%);
+  isolation: isolate;
+}
+.vaso-dbarrio--lleno .vaso-dbarrio__llenado {
+  opacity: 1;
+  clip-path: inset(0);
+  animation: vaso-dbarrio-subir .8s cubic-bezier(.22,.72,.15,1) both;
+}
+@keyframes vaso-dbarrio-subir {
+  from { clip-path: inset(43% 0 0); }
+  to { clip-path: inset(0); }
+}
+.vaso-dbarrio__tinte {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: var(--granizado-a);
+  opacity: .85;
+  mix-blend-mode: color;
+  clip-path: polygon(25% 32%, 29% 23%, 36% 18%, 46% 17%, 56% 18%, 64% 22%, 68% 28%, 72% 35%, 69% 39%, 61% 41%, 36% 40%, 27% 37%);
+}
+[data-vaso-foto-color="tinte"] .vaso-dbarrio__tinte { display: block; }
+.vaso-dbarrio__caida { pointer-events: none; visibility: hidden; }
+.vaso-dbarrio--lleno.vaso-dbarrio--gomas .vaso-dbarrio__caida { visibility: visible; }
+.vaso-dbarrio__caida i {
+  background: url("../assets/granizados-dbarrio/eclipse-gomitas-referencia.webp") center / 100% 100% no-repeat;
+  clip-path: var(--corte);
+}
+.vaso-dbarrio--lleno.vaso-dbarrio--gomas .vaso-dbarrio__caida i {
+  animation: vaso-dbarrio-caer .58s cubic-bezier(.24,.68,.38,1) backwards;
+  animation-delay: var(--demora, .46s);
+}
+.vaso-dbarrio__caida i:nth-child(1) { --corte: polygon(32% 12%, 36% 10%, 39% 11%, 42% 20%, 40% 22%, 34% 19%); }
+.vaso-dbarrio__caida i:nth-child(2) { --demora: .55s; --corte: polygon(48% 11%, 53% 10%, 56% 11%, 56% 17%, 54% 21%, 48% 19%); }
+.vaso-dbarrio__caida i:nth-child(3) { --demora: .61s; --corte: polygon(25% 22%, 29% 19%, 34% 18%, 37% 19%, 37% 22%, 33% 25%, 29% 29%, 25% 29%, 24% 26%); }
+.vaso-dbarrio__caida i:nth-child(4) { --demora: .64s; --corte: polygon(53% 21%, 57% 21%, 62% 24%, 66% 27%, 66% 31%, 63% 31%, 58% 27%, 53% 25%); }
+.vaso-dbarrio__caida i:nth-child(5) { --demora: .72s; --corte: polygon(30% 29%, 35% 25%, 38% 25%, 43% 32%, 42% 35%, 37% 35%, 30% 33%); }
+.vaso-dbarrio__caida i:nth-child(6) { --demora: .77s; --corte: polygon(56% 30%, 60% 29%, 63% 31%, 62% 36%, 60% 38%, 56% 36%, 55% 33%); }
+.vaso-dbarrio__caida i:nth-child(7) { --demora: .68s; --corte: polygon(56% 16%, 61% 15%, 66% 17%, 69% 23%, 66% 24%, 64% 21%, 60% 20%, 56% 18%); }
+@keyframes vaso-dbarrio-caer {
+  0% { transform: translateY(-34%); opacity: 0; }
+  24% { opacity: 1; }
+  85% { transform: translateY(1%); }
+  100% { transform: none; }
+}
+.vaso-dbarrio__foto-referencia figcaption { display: grid; gap: 2px; }
+.vaso-dbarrio__foto-referencia figcaption span { font-weight: 800; }
+.vaso-dbarrio__foto-referencia figcaption small { opacity: .88; }
+@media (prefers-reduced-motion: reduce) {
+  .vaso-dbarrio--lleno .vaso-dbarrio__llenado,
+  .vaso-dbarrio--lleno.vaso-dbarrio--gomas .vaso-dbarrio__caida i { animation: none; }
+}
