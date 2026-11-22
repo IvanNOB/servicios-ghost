@@ -355,9 +355,11 @@ function crearEscena(T, local) {
   canvas.className = "vaso-dbarrio__canvas";
   canvas.setAttribute("role", "img");
   canvas.setAttribute("aria-label", "Vaso de granizado en 3D. Usa las flechas izquierda y derecha para girarlo.");
-  const pista = document.createElement("p");
+  const pista = document.createElement("button");
+  pista.type = "button";
+  pista.setAttribute("aria-label", "Girar vaso en 3D");
   pista.className = "vaso-dbarrio__giro";
-  pista.textContent = "Arrastra para girar el vaso";
+  pista.textContent = "Girar vaso";
   const acciones = new AbortController();
   const escuchar = { signal: acciones.signal };
   let arrastre;
@@ -457,6 +459,10 @@ function crearEscena(T, local) {
   }
 
   try {
+    pista.addEventListener("click", () => {
+      angulo += Math.PI / 2;
+      solicitar();
+    }, escuchar);
     canvas.addEventListener("pointerdown", (e) => {
       if (!meta.visible || (e.pointerType === "mouse" && e.button !== 0)) return;
       arrastre = { id: e.pointerId, x: e.clientX, angulo };
@@ -483,7 +489,7 @@ function crearEscena(T, local) {
       if (!width || !height) return;
       render.setSize(width, height, false);
       camara.aspect = width / height;
-      camara.fov = camara.aspect < .8 ? 39 : 34;
+      camara.fov = camara.aspect < .8 ? 37 : 30;
       camara.updateProjectionMatrix();
       solicitar();
     });
