@@ -1,0 +1,30 @@
+#vistaInicio .bloque {padding-block:clamp(24px,4vw,46px)}
+#vistaInicio .bloque__head {margin-bottom:18px}
+#vistaInicio .bloque__title {font-size:clamp(1.4rem,3vw,2.1rem);line-height:1.2}
+#vistaInicio .buscador-fijo {position:static;margin:0;padding:20px 0 0;background:transparent;border:0}
+.filtros-inicio {margin:8px 0}
+.filtros-inicio summary,.ayuda-inicio summary {cursor:pointer;width:fit-content;padding:10px 0;font-weight:650;color:var(--text-2)}
+#vistaInicio .filtros-inicio .chips {display:flex;flex-wrap:wrap;margin:0;gap:8px}
+.ayuda-inicio[open] .pasos {margin-top:16px}
+#vistaInicio #gridRestaurantes {grid-template-columns:repeat(auto-fit,minmax(min(100%,255px),1fr));gap:22px}
+#gridRestaurantes .card__body {padding:16px;gap:7px}
+#gridRestaurantes .card__info {line-height:1.45}
+#vistaCarta .carta-grupo.section {border-inline:0;border-radius:0;background:transparent;margin:0;border-bottom:0}
+#vistaCarta .carta-grupo:last-of-type {border-bottom:1px solid var(--border)}
+#vistaCarta .carta-grupo__titulo {min-height:60px;align-items:center;padding-inline:4px}
+#vistaCarta .carta-grupo > .dishes {padding-inline:0;border:0}
+#vistaCarta .dish__info {line-height:1.45}
+@media(max-width:600px){
+ #vistaInicio #gridRestaurantes {grid-template-columns:minmax(0,1fr);gap:0}
+ #gridRestaurantes .card {display:grid;grid-template-columns:clamp(96px,31vw,152px) minmax(0,1fr);align-items:center;gap:16px;text-align:left;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;box-shadow:none;padding:17px 0}
+ #gridRestaurantes .card__cover {width:100%;height:auto;aspect-ratio:1;border-radius:12px}
+ #gridRestaurantes .card__body {padding:0;min-width:0}
+ #gridRestaurantes .card__name {font-size:1.1rem;line-height:1.25}
+ #gridRestaurantes .card__ver {display:none}
+ #gridRestaurantes .card__promo,#gridRestaurantes .card__menu {position:static;grid-column:2;grid-row:auto;justify-self:start}
+ #gridRestaurantes .card__body {grid-column:2;grid-row:1}
+ #vistaInicio .bloque__head--menu {align-items:flex-start;flex-direction:column}
+ #vistaCarta .carta-nav {position:static}
+ #vistaCarta .carta-rest-head {margin-bottom:24px}
+ #vistaCarta .barra .vaso-dbarrio__controles {padding:18px 12px 22px;gap:20px}
+}
