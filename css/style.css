@@ -2565,11 +2565,12 @@ body:has(#vistaCarta:not([hidden])) .carta-count:not([hidden]) {
 .carta-rest-head .rest-head__meta { justify-content: center; }
 .carta-rest-logo {
   display: block;
-  width: min(128px, 38vw);
-  height: 96px;
+  width: 100%;
+  height: auto;
+  max-height: 440px;
   object-fit: contain;
-  margin: 0 auto 10px;
-  border-radius: var(--radius);
+  margin: 0 auto 18px;
+  border-radius: var(--radius-lg);
 }
 #vistaCarta .carta-nav { margin-inline: 0; padding-inline: 0; border-bottom: 0; }
 #vistaCarta .carta-nav__buscar input { min-height: 44px; font-size: 1rem; }
