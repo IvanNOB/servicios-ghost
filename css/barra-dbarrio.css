@@ -254,3 +254,21 @@ html[data-arranque="carta"] .carga-carta,html[data-arranque="inicio"] .carga-ini
 }
 .barra-agregado__acciones [data-vaso-otro] {background:#e4ff53;color:#161710;border-color:transparent}
 .barra-agregado__acciones [data-vaso-igual] {grid-column:1/-1;background:transparent}
+
+.barra-panorama {display:none}
+.vaso-dbarrio[data-vaso-vista="panorama"] .vaso-dbarrio__foto-referencia {
+  display:block;position:absolute;inset:0 0 78px;margin:0;overflow:hidden;
+  touch-action:pan-y;cursor:grab;user-select:none;
+}
+.vaso-dbarrio[data-vaso-vista="panorama"] .vaso-dbarrio__foto-referencia:active {cursor:grabbing}
+.barra[data-vaso-vista="panorama"] .vaso-dbarrio__toma {
+  width:min(100%,125cqh);transform:translate(calc(-50% + var(--pan-x,0px)),-50%) scale(1.24);
+  transition:none;pointer-events:none;
+}
+.barra[data-vaso-vista="panorama"] .barra-tapa,
+.barra[data-vaso-vista="panorama"] .barra-dulces img {pointer-events:none}
+.vaso-dbarrio[data-vaso-vista="panorama"] .barra-panorama {
+  position:absolute;inset:auto 0 41px;display:flex;justify-content:center;align-items:center;gap:10px;
+  height:37px;background:#18141b;color:#eee;font-size:.84rem;
+}
+.barra-panorama button {width:44px;height:36px;border:0;background:transparent;color:#e4ff53;font-size:1.4rem;cursor:pointer}

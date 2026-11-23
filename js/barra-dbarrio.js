@@ -5,6 +5,26 @@ export function abrirBarra(box, pasoInicial) {
   if (box.classList.contains('barra')) return;
   const panel = box.querySelector('.vaso-dbarrio__controles');
   const escena = box.querySelector('.vaso-dbarrio__toma');
+  const visor = escena.closest('figure');
+  let desplazamiento = 0;
+  let gestoPanorama;
+  function desplazar(x) {
+    const limite = visor.clientWidth * .32;
+    desplazamiento = Math.max(-limite,Math.min(limite,x));
+    escena.style.setProperty('--pan-x',desplazamiento+'px');
+  }
+  box.querySelectorAll('[data-pan]').forEach(boton => {
+    boton.addEventListener('click',() => desplazar(desplazamiento-Number(boton.dataset.pan)));
+  });
+  visor.addEventListener('pointerdown',e => {
+    if (box.dataset.vasoVista!=='panorama' || !e.isPrimary || e.button!==0) return;
+    gestoPanorama = {id:e.pointerId,inicio:e.clientX,base:desplazamiento};
+    visor.setPointerCapture(e.pointerId);
+  });
+  visor.addEventListener('pointermove',e => {
+    if (e.pointerId===gestoPanorama?.id) desplazar(gestoPanorama.base+e.clientX-gestoPanorama.inicio);
+  });
+  visor.addEventListener('lostpointercapture',() => { gestoPanorama = undefined; });
   const capa = escena.querySelector('.vaso-dbarrio__llenado');
   const grupos = [...panel.querySelectorAll('fieldset')];
   const botones = [...panel.querySelectorAll('[data-vaso-sabor]')];
@@ -332,7 +352,7 @@ export function abrirBarra(box, pasoInicial) {
     hielo.dirigir(((e.clientX-r.left)/r.width-.24)/.52);
   }
   escena.addEventListener('pointerdown',e => {
-    if(!hielo || paso!==1 || !marcado() || !e.isPrimary || e.button!==0) return;
+    if(box.dataset.vasoVista!=='foto' || !hielo || paso!==1 || !marcado() || !e.isPrimary || e.button!==0) return;
     dedo=e.pointerId;
     escena.setPointerCapture(dedo);
     if(!hielo.sirviendo) servir(marcado());
