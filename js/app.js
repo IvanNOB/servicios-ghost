@@ -880,7 +880,7 @@
         cambiarVistaVasoDbarrio(vaso, seleccionVaso.foto ? "foto" : "modelo");
       }
       actualizarVasoDbarrio(vaso);
-      import("./barra-dbarrio.js?v=4").then(function (modulo) {
+      import("./barra-dbarrio.js?v=5").then(function (modulo) {
         if (vaso.isConnected) modulo.abrirBarra(vaso, seleccionVaso && seleccionVaso.pasoBarra);
       }).catch(function (error) { console.warn("Barra interactiva", error); });
       import("./vaso-dbarrio-3d.js?v=8").catch(function (error) {
