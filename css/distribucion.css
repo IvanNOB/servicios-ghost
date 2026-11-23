@@ -35,3 +35,16 @@
 #sheetBody .personalizar[open] .cart-nota__campo {display:grid;gap:6px}
 #sheetBody .personalizar[open] {padding-bottom:8px}
 #sheetBody [data-bolsa] > [data-bolsa-paso] {display:block;width:100%;margin-top:18px;padding:14px;border:0;border-radius:12px;background:var(--primary);color:#17130a;font-weight:750}
+
+.dishes .fenix-combo {display:grid;gap:14px;padding:14px;border:1px solid #66352f;border-radius:14px;background:#201716}
+.fenix-combo__grupo {margin:0;min-width:0;padding:0;border:0}
+.fenix-combo__grupo legend {padding:0;margin-bottom:7px;color:#f2ddd2;font-size:.92rem;font-weight:750}
+.fenix-combo__opciones {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,84px),1fr));gap:7px}
+.fenix-combo__opciones label {position:relative;min-width:0}
+.fenix-combo__opciones input {position:absolute;width:1px;height:1px;clip-path:inset(50%)}
+.fenix-combo__opciones label > span {display:grid;align-content:center;gap:3px;min-height:48px;padding:8px;border:1px solid #64534d;border-radius:9px;background:#28201d;color:#f7e9e1;font-size:.9rem;overflow-wrap:anywhere;cursor:pointer}
+.fenix-combo__opciones strong {color:#ffd596;font-variant-numeric:tabular-nums}
+.fenix-combo__opciones input:checked + span {border-color:#ffc579;background:#3c281f}
+.fenix-combo__opciones input:focus-visible + span {outline:2px solid #ffc579;outline-offset:2px}
+.fenix-combo__opciones input:disabled + span {opacity:.62;cursor:default}
+.dishes .fenix-combo [data-opc-add] {width:100%;min-height:44px;margin:0}
