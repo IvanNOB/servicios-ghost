@@ -74,8 +74,20 @@
   width:100%;
   height:auto;
   aspect-ratio:4/3;
-  object-fit:contain;
+  object-fit:cover;
+  object-position:center;
   align-self:start;
+}
+#vistaCarta .dish__foto.producto-ilustrado {
+  position:relative;
+  overflow:hidden;
+}
+#vistaCarta .dish__foto .producto-ilustrado__logo {
+  position:absolute;
+  inset:0;
+  padding:0;
+  object-fit:cover;
+  object-position:center;
 }
 #vistaCarta .dishes .dish__info {min-width:0;overflow-wrap:anywhere}
 #vistaCarta .dishes .dish__pie {
