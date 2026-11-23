@@ -124,11 +124,12 @@
     { n: "Mango Biche sin licor", color: "#94e819" },
     { n: "Uva sin licor", color: "#a634de" },
   ];
+  const GOMITAS_DBARRIO = ["Gusanos", "Ositos", "Aros", "Sandías"];
   const SABOR_DBARRIO_POR_CONFIRMAR = "Sabor por confirmar";
 
   function prepararVasoDbarrio(r) {
     if (r.id !== "granizados-dbarrio") return r;
-    var grupoSabor = { nombre: "Sabor", opciones: [{ n: SABOR_DBARRIO_POR_CONFIRMAR }].concat(SABORES_DBARRIO) };
+    var grupoSabor = { nombre: "Sabor", opciones: [{ n: SABOR_DBARRIO_POR_CONFIRMAR }].concat(SABORES_DBARRIO, SABORES_DBARRIO.map(function (s) { return { n: s.n + " (por confirmar)" }; })) };
     return Object.assign({}, r, { carta: r.carta.map(function (seccion) {
       if (seccion.sec !== "Granizados") return seccion;
       return Object.assign({}, seccion, { items: seccion.items.map(function (it) {
@@ -396,7 +397,7 @@
       if (r && arm && arm._base) {
         // Combo (salsa, tamaño…): se rehace con los precios y agotados de HOY.
         var base = findItem(r.id, arm._base);
-        var nuevo = base && !base.agotado && armable(r, base) ? armarCombo(r, base, arm._elec || [], arm._adic || []) : null;
+        var nuevo = base && !base.agotado && armable(r, base) ? armarCombo(r, base, arm._elec || [], arm._adic || [], arm._surtido) : null;
         if (!nuevo) vencido = true;
         else if (nuevo.p !== arm.p || nuevo.n !== arm.n) { almuerzosArmados[p.itemId].item = nuevo; cambio = true; }
       }
@@ -798,6 +799,7 @@
       gomas: !!vasoAnterior.querySelector("[data-vaso-gomas]:checked"),
       empaque: !!vasoAnterior.querySelector("[data-vaso-empaque]:checked"),
       foto: vasoAnterior.dataset.vasoVista !== "modelo",
+      surtido: vasoAnterior.dataset.surtido || "",
       pasoBarra: Number(vasoAnterior.dataset.pasoBarra) || 0,
     } : null;
     vistaActual = restId;
@@ -871,13 +873,14 @@
         vaso.querySelectorAll("[data-vaso-sabor]").forEach(function (opcion) {
           opcion.setAttribute("aria-pressed", String(opcion.dataset.vasoSabor === seleccionVaso.sabor));
         });
+        vaso.dataset.surtido = seleccionVaso.surtido;
         var gomasVaso = vaso.querySelector("[data-vaso-gomas]");
         if (gomasVaso) gomasVaso.checked = seleccionVaso.gomas;
         vaso.querySelector("[data-vaso-empaque]").checked = seleccionVaso.empaque;
         cambiarVistaVasoDbarrio(vaso, seleccionVaso.foto ? "foto" : "modelo");
       }
       actualizarVasoDbarrio(vaso);
-      import("./barra-dbarrio.js?v=3").then(function (modulo) {
+      import("./barra-dbarrio.js?v=4").then(function (modulo) {
         if (vaso.isConnected) modulo.abrirBarra(vaso, seleccionVaso && seleccionVaso.pasoBarra);
       }).catch(function (error) { console.warn("Barra interactiva", error); });
       import("./vaso-dbarrio-3d.js?v=8").catch(function (error) {
@@ -1097,7 +1100,7 @@
   // Construye la línea "plato + opciones elegidas" con el precio ACTUAL.
   // elecciones = valor elegido por cada grupo (en orden). Devuelve null si
   // alguna opción ya no existe o está agotada (ej. al repetir un pedido viejo).
-  function armarCombo(r, it, elecciones, adiciones) {
+  function armarCombo(r, it, elecciones, adiciones, surtido) {
     var extra = 0, valores = [], grupos = it.opciones || [];
     for (var gi = 0; gi < grupos.length; gi++) {
       var g = grupos[gi] || {}, val = elecciones[gi];
@@ -1118,14 +1121,23 @@
     }
     var sufijo = valores.join(", ");
     var conAdic = elegidas.length ? " + " + elegidas.join(" + ") : "";
+    var mezcla = r.id === "granizados-dbarrio" && Array.isArray(surtido)
+      ? GOMITAS_DBARRIO.filter(function (g) { return surtido.includes(g); }) : [];
+    if (mezcla.length) {
+      var porcion = findItem(r.id, "gd-gomas");
+      if (!porcion || porcion.agotado) return null;
+      extra += porcion.p;
+      conAdic += " + porción de gomitas (" + mezcla.join(", ") + ", según disponibilidad)";
+    }
     // id único por combinación: así "4 alitas BBQ" y "4 alitas Maracuyá" no se mezclan.
     return {
-      id: it.id + "--" + slug(sufijo + (elegidas.length ? " mas " + elegidas.join(" ") : "")),
+      id: it.id + "--" + slug(sufijo + (elegidas.length ? " mas " + elegidas.join(" ") : "") + (mezcla.length ? " gomitas " + mezcla.join(" ") : "")),
       n: it.n + (sufijo ? " (" + sufijo + ")" : "") + conAdic,
       d: it.d || "",
       p: it.p + extra,
       _combo: true,
       _base: it.id,
+      _surtido: mezcla,
       _elec: valores,
       _adic: elegidas,
     };
@@ -1143,7 +1155,7 @@
     var gomas = findItem(r.id, "gd-gomas");
     var habilitado = abiertoAhora(r) && !MODO_PANEL;
     var disponibles = productos.filter(function (it) { return !it.agotado; });
-    var sabores = finDeSemana ? SABORES_DBARRIO : [{ n: SABOR_DBARRIO_POR_CONFIRMAR, color: "#78d5ee" }];
+    var sabores = SABORES_DBARRIO;
     var inicial = disponibles.find(function (it) { return it.id === "gd-12"; }) || disponibles[0];
     var busqueda = productos.map(function (it) { return it.n; }).concat(
       sabores.map(function (sabor) { return sabor.n; })
@@ -1179,10 +1191,10 @@
               esc(money(it.p)) + '</small></span></label>';
           }).join("") + '</div></fieldset>' +
         '<fieldset class="vaso-dbarrio__grupo"><legend>Sabor</legend>' +
-          (!finDeSemana ? '<p class="dish__desc">Entre semana preparan tres sabores. El local confirma cuáles están disponibles.</p>' : '') +
+          (!finDeSemana ? '<p class="dish__desc">Elige tu sabor preferido. Entre semana el local confirma cuáles tres preparó hoy.</p>' : '') +
           '<div class="vaso-dbarrio__sabores" data-vaso-sabores>' +
           sabores.map(function (sabor) {
-            return '<button type="button" aria-pressed="false" data-vaso-sabor="' + esc(sabor.n) +
+            return '<button type="button" aria-pressed="false" data-vaso-confirmar="' + (finDeSemana ? "no" : "si") + '" data-vaso-sabor="' + esc(sabor.n) +
               '" style="--sabor-a:' + esc(sabor.color) + ';--sabor-b:' + esc(sabor.color2 || sabor.color) +
               '"><span aria-hidden="true"></span><strong>' + esc(sabor.n) + '</strong></button>';
           }).join("") + '</div></fieldset>' +
@@ -1254,13 +1266,14 @@
     var empaque = box.querySelector("[data-vaso-empaque]").checked;
     var porcion = box.querySelector("[data-vaso-gomas]:checked") && findItem(r.id, "gd-gomas");
     var elecciones = it.opciones.map(function (g) {
-      return g.nombre === "Sabor" ? sabor.dataset.vasoSabor : g.opciones[empaque ? 1 : 0].n;
+      return g.nombre === "Sabor" ? sabor.dataset.vasoSabor + (sabor.dataset.vasoConfirmar === "si" ? " (por confirmar)" : "") : g.opciones[empaque ? 1 : 0].n;
     });
-    var combo = armarCombo(r, it, elecciones, []);
+    var mezcla = porcion && box.dataset.surtido ? box.dataset.surtido.split("|") : [];
+    var combo = armarCombo(r, it, elecciones, [], mezcla);
     if (!combo || (porcion && porcion.agotado)) return;
     almuerzosArmados[combo.id] = { restId: r.id, item: combo };
     setQty(r.id, combo.id, getQty(r.id, combo.id) + 1);
-    if (porcion) setQty(r.id, porcion.id, getQty(r.id, porcion.id) + 1);
+    if (porcion && !mezcla.length) setQty(r.id, porcion.id, getQty(r.id, porcion.id) + 1);
     refreshCart();
     if (porcion) repintarPlato(r.id, porcion.id);
 
@@ -1275,6 +1288,7 @@
       openSheet();
       if (porcion) {
         box.querySelector("[data-vaso-gomas]").checked = false;
+        box.dispatchEvent(new Event("vaso-reiniciar"));
       }
       actualizarVasoDbarrio(box);
     }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 630);
@@ -3018,7 +3032,7 @@
       if (!abiertoAhora(r)) { cerrados[r.nombre] = true; return; }
       if (l.armado) {
         var base = l.armado._base ? findItem(r.id, l.armado._base) : null;
-        var combo = base && !base.agotado && armable(r, base) ? armarCombo(r, base, l.armado._elec || [], l.armado._adic || []) : null;
+        var combo = base && !base.agotado && armable(r, base) ? armarCombo(r, base, l.armado._elec || [], l.armado._adic || [], l.armado._surtido) : null;
         if (!combo) { faltan++; return; }
         almuerzosArmados[combo.id] = { restId: r.id, item: combo };
         setQty(r.id, combo.id, getQty(r.id, combo.id) + l.qty);
