@@ -189,6 +189,7 @@
     elAdminUser.textContent = (sesion.user && sesion.user.email ? sesion.user.email : "Admin") +
       (esAliado() ? " · aliado" : "");
     aplicarRol();
+    cambiarTab(inicioPanel());
     mostrar("panel");
     await recargarLista();
     if (!esAliado()) { cargarVitrinaPrincipal(); revisarSql(); }
@@ -202,18 +203,20 @@
     document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado && el.getAttribute("data-tab") !== "pedidos"; });
     var tag = document.querySelector(".admin-header .logo__tag"); if (tag) tag.textContent = aliado ? "Mi negocio" : "Admin";
     var tabP0 = document.querySelector("[data-tab=pedidos]"); if (tabP0) tabP0.hidden = false;
-    var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR && aliado) tabR.textContent = "🏪 Mi negocio";
-    var titR = document.querySelector("#tabRestaurantes .panel__title"); if (titR) titR.textContent = aliado ? "Mi negocio" : "Restaurantes";
+    var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR) tabR.textContent = aliado ? "Mi negocio" : "Cartas";
+    var titR = document.querySelector("#tabRestaurantes .panel__title"); if (titR) titR.textContent = aliado ? "Mi negocio" : "Cartas de los locales";
     ["#btnNuevo", "#btnNuevoLugarAlm"].forEach(function (s) { var el = $(s); if (el) el.hidden = aliado; });
   }
 
   async function recargarLista() {
+    var anterior = restaurantes.map(function (r) { return [r.id, r.nombre, r.visible]; });
     restaurantes = await window.Store.listar();
     if (esAliado()) {
       restaurantes = restaurantes.filter(function (r) { return r.id === perfil.restaurante_id; });
     }
     pintarLista();
     pintarAlmuerzos();
+    if (!esAliado() && $("#ajVitrina") && JSON.stringify(anterior) !== JSON.stringify(restaurantes.map(function (r) { return [r.id, r.nombre, r.visible]; }))) cargarVitrinaPrincipal();
   }
 
   // Avisa si falta ejecutar el SQL de mejoras (y qué se activa al hacerlo).
@@ -244,6 +247,11 @@
       "Luego recarga esta página.";
   }
 
+  function textoBusquedaAdmin(texto) {
+    return String(texto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  }
+  $("#buscarCartaAdmin").addEventListener("input", pintarLista);
+
   function pintarLista() {
     if (!restaurantes.length) {
       elListaRest.innerHTML = '<p class="muted">Aún no hay restaurantes. Toca “+ Nuevo restaurante”.</p>';
@@ -257,8 +265,13 @@
         '. La tienda muestra la copia guardada en el panel. Toca <strong>“Revisar carta nueva”</strong> para ver qué cambia en cada una; si la diferencia son correcciones que hiciste tú en el panel, toca Cancelar y no pasa nada.</div>';
     }
     if (esAliado()) { elListaRest.innerHTML = html; return; }
-    for (var i = 0; i < restaurantes.length; i++) {
-      var r = restaurantes[i];
+    var consulta = textoBusquedaAdmin($("#buscarCartaAdmin").value);
+    var visibles = restaurantes.filter(function (local) {
+      return textoBusquedaAdmin(local.nombre + " " + (local.cat || "")).includes(consulta);
+    });
+    if (!visibles.length) html += '<p class="muted">No se encontraron cartas.</p>';
+    for (var i = 0; i < visibles.length; i++) {
+      var r = visibles[i];
       var cover = estiloPortada(r);
       html +=
         '<div class="admin-card' + (r.visible === false ? " admin-card--oculto" : "") + '">' +
@@ -2230,7 +2243,7 @@
 
     // Pestañas
     var tab = t.closest("[data-tab]");
-    if (tab) { cambiarTab(tab.getAttribute("data-tab")); return; }
+    if (tab) { cambiarTab(tab.getAttribute("data-tab")); window.scrollTo(0, 0); return; }
 
     // Pedidos: refrescar
     if (t.closest("#btnRefrescarPedidos")) { recargarPedidos(); return; }
@@ -2575,9 +2588,10 @@
     if (!elEditorSheet.hidden) return "editor";
     return null;
   }
+  function inicioPanel() { return esAliado() ? "restaurantes" : "vitrina"; }
   function tabActual() {
     var t = document.querySelector(".tab.tab--active");
-    return t ? t.getAttribute("data-tab") : "restaurantes";
+    return t ? t.getAttribute("data-tab") : inicioPanel();
   }
   // Cierra lo que esté abierto y vuelve a la primera pestaña.
   function irAlInicioPanel() {
@@ -2587,7 +2601,7 @@
     else if (c === "ali") cerrarAli();
     else if (c === "editor") cerrarEditor();
     if (!elVistaPanel || elVistaPanel.hidden) return; // aún en la pantalla de entrar
-    cambiarTab("restaurantes");
+    cambiarTab(inicioPanel());
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   var elLogoPanel = document.getElementById("logoPanel");
@@ -2608,16 +2622,27 @@
       if (confirm("¿Salir sin guardar los cambios de este restaurante?")) cerrarEditor();
       return;
     }
-    if (elVistaPanel && !elVistaPanel.hidden && tabActual() !== "restaurantes") { cambiarTab("restaurantes"); window.scrollTo(0, 0); return; }
+    if (elVistaPanel && !elVistaPanel.hidden && tabActual() !== inicioPanel()) { cambiarTab(inicioPanel()); window.scrollTo(0, 0); return; }
     toast("Estás en tu panel 👻 Para salir, toca “Cerrar sesión”.");
   });
 
   /* ------------------------- Pestañas ----------------------------- */
   function cambiarTab(cual) {
-    document.querySelectorAll(".tab").forEach(function (t) {
-      t.classList.toggle("tab--active", t.getAttribute("data-tab") === cual);
+    var activo = document.querySelector('.panel-nav [data-tab="' + cual + '"]');
+    if (!activo || activo.hidden || (esAliado() && activo.closest("[data-solo-admin]"))) return;
+    document.querySelectorAll(".panel-nav [data-tab]").forEach(function (t) {
+      t.classList.toggle("tab--active", t === activo);
+      if (t === activo) t.setAttribute("aria-current", "page");
+      else t.removeAttribute("aria-current");
     });
-    var paneles = { restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
+    var mas = document.querySelector(".panel-nav__mas");
+    var secundaria = mas.contains(activo);
+    var resumen = mas.querySelector("summary");
+    var focoEnMenu = mas.contains(document.activeElement);
+    mas.open = false;
+    resumen.textContent = secundaria ? activo.textContent.trim() + " · Más" : "Más opciones";
+    if (secundaria && focoEnMenu) resumen.focus();
+    var paneles = { vitrina: "tabVitrina", restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
       ventas: "tabVentas", visitas: "tabVisitas", ajustes: "tabAjustes" };
     Object.keys(paneles).forEach(function (k) {
       var el = document.getElementById(paneles[k]);
@@ -3813,7 +3838,7 @@
     var est = vitrinaEstado(v);
     var desde = partesCol(v.desde), hasta = partesCol(v.hasta);
     return '<section class="aj-card aj-vitrina" id="ajVitrina">' +
-      '<h2>Modo vitrina</h2>' +
+      '<h2 class="panel__title">Vitrina</h2>' +
       '<p class="muted">Marca las cartas que quieres mostrar y usa las flechas para ordenar la portada. Deja el fin vacío para mantener la selección activa.</p>' +
       '<p class="vit-estado vit-estado--' + est.cls + '" id="ajVitEstado" role="status">' + esc(est.txt) + '</p>' +
       '<label class="vit-on"><input type="checkbox" id="ajVitOn"' + (v.activo ? ' checked' : '') + '> Usar selección de vitrina</label>' +
