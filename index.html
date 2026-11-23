@@ -73,7 +73,7 @@
   </script>
   <link rel="stylesheet" href="css/style.css?v=45">
   <link rel="stylesheet" href="css/barra-dbarrio.css?v=9">
-  <link rel="stylesheet" href="css/distribucion.css?v=9">
+  <link rel="stylesheet" href="css/distribucion.css?v=10">
   <link rel="stylesheet" href="css/estados.css?v=1">
 </head>
 <body>
@@ -111,7 +111,7 @@
 
       <button type="button" class="header__cart" id="cartBtnTop" aria-label="Ver mi pedido">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-        <span class="header__cart-text">Mi pedido</span><span id="cartaCount" class="carta-count" aria-hidden="true" hidden></span>
+        <span class="header__cart-text">Mi pedido</span><span class="header__importe" id="pedidoInicioTotal"></span><span id="cartaCount" class="carta-count" aria-hidden="true" hidden></span>
       </button>
     </div>
   </header>
@@ -129,43 +129,42 @@
         <div class="repetir-box" id="repetirBox" hidden></div>
       </div>
 
+      <section id="restaurantes" class="bloque bloque--compacto" aria-labelledby="tituloRestaurantes">
+        <div class="bloque__head directorio__head">
+          <h1 class="bloque__title" id="tituloRestaurantes">Elige un local</h1>
+          <span class="locales__resumen" id="resumenAbiertos" hidden></span>
+        </div>
+        <div class="directorio__buscar" id="buscadorFijo" role="search" aria-label="Locales y platos">
+          <div class="search__box">
+            <svg class="search__icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="buscador" class="search__input" placeholder="Buscar local o plato" aria-label="Buscar local o plato" autocomplete="off" enterkeyhint="search" />
+            <button type="button" class="search__limpiar" id="buscadorLimpiar" hidden aria-label="Borrar búsqueda">✕</button>
+          </div>
+          <button type="button" class="directorio__filtro" id="filtrosBoton" aria-expanded="false" aria-controls="chips">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 7h8m4 0h6M3 17h3m4 0h11"/><circle cx="13" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+            Filtros
+          </button>
+          <nav class="chips" id="chips" aria-label="Filtrar por categoría" hidden></nav>
+        </div>
+        <div class="directorio__seleccion" id="filtrosResumen" hidden>
+          <span id="filtroActual"></span>
+          <button type="button" class="btn-link" id="btnQuitarFiltros" data-quitar-categoria>Quitar filtro</button>
+        </div>
+        <section id="resultados" class="directorio__resultados" hidden>
+          <h2 id="resultadosTitulo">Platos</h2>
+          <div class="res-lista" id="resultadosPlatos" aria-live="polite"></div>
+        </section>
+        <h2 id="tituloCoincidencias" hidden></h2>
+        <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
+        <p class="empty" id="sinResultados" hidden>
+          No encontramos locales. Prueba con otra palabra o
+          <button type="button" class="btn-link" data-limpiar-filtros>mira todos los locales</button>.
+        </p>
+      </section>
+
       <section id="estadosLocales" aria-labelledby="estadosTitulo" hidden>
         <h2 id="estadosTitulo">Estados de los locales</h2>
         <div id="estadosLista"></div>
-      </section>
-
-      <!-- Buscador y categorías: quedan fijos arriba al bajar -->
-      <div class="buscador-fijo" id="buscadorFijo">
-        <div class="search__box">
-          <svg class="search__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="search" id="buscador" class="search__input"
-                 placeholder="Busca un local o un plato"
-                 aria-label="Buscar plato o restaurante" autocomplete="off" enterkeyhint="search" />
-          <button type="button" class="search__limpiar" id="buscadorLimpiar" hidden aria-label="Borrar búsqueda">✕</button>
-        </div>
-        <details class="filtros-inicio"><summary>Filtrar por categoría</summary><nav class="chips" id="chips" aria-label="Categorías"></nav></details>
-      </div>
-
-      <!-- Resultados de búsqueda: platos de todos los restaurantes -->
-      <section id="resultados" class="bloque bloque--compacto" hidden>
-        <div class="bloque__head">
-          <h2 class="bloque__title" id="resultadosTitulo">Platos</h2>
-        </div>
-        <div class="res-lista" id="resultadosPlatos" aria-live="polite"></div>
-      </section>
-
-      <!-- ===================== RESTAURANTES ===================== -->
-      <section id="restaurantes" class="bloque bloque--compacto">
-        <div class="bloque__head">
-          <h1 class="bloque__title" id="tituloRestaurantes">Locales</h1>
-          <button type="button" class="btn-link" id="btnQuitarFiltros" data-limpiar-filtros hidden>✕ Quitar filtros</button>
-        </div>
-        <p class="inicio__sub locales__resumen" id="resumenAbiertos"></p>
-        <div class="grid" id="gridRestaurantes" aria-live="polite"></div>
-        <p class="empty" id="sinResultados" hidden>
-          No encontramos nada. Prueba con otra palabra o
-          <button type="button" class="btn-link" data-limpiar-filtros>mira todos los locales</button>.
-        </p>
       </section>
 
       <section id="recomendado" class="bloque bloque--compacto" aria-labelledby="tituloRecomendados" hidden data-portada>
@@ -190,12 +189,10 @@
       </section>
 
       <!-- ======================== LO MÁS PEDIDO ======================== -->
-      <section id="populares" class="bloque bloque--compacto" hidden data-portada>
-        <div class="bloque__head">
-          <h2 class="bloque__title">🔥 Lo más pedido</h2>
-        </div>
+      <details id="populares" class="bloque bloque--compacto populares-inicio" hidden data-portada>
+        <summary><h2 class="bloque__title">Lo más pedido</h2></summary>
         <div class="pop-grid" id="gridPopulares"></div>
-      </section>
+      </details>
 
       <!-- ===================== CÓMO FUNCIONA ===================== -->
       <details id="como-funciona" class="bloque ayuda-inicio">
@@ -332,6 +329,6 @@
   <script defer src="js/logo.js?v=45"></script>
   <script defer src="js/store.js?v=48"></script>
   <script defer src="js/visitas.js?v=45"></script>
-  <script defer src="js/app.js?v=57" onerror="document.documentElement.dataset.arranque='error'"></script>
+  <script defer src="js/app.js?v=58" onerror="document.documentElement.dataset.arranque='error'"></script>
 </body>
 </html>
