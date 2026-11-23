@@ -982,8 +982,11 @@
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
+    var comboFenix = r.id === "chino-el-fenix" && it.id === "fx-co-arroz-chino" &&
+      Array.isArray(it.opciones) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; });
+    var sePuedePedir = !it.agotado && abiertoAhora(r);
     // Plato con opciones a elegir (ej. salsa de las alitas) o con adiciones.
-    if (armable(r, it) && !it.agotado && abiertoAhora(r)) {
+    if (comboFenix || (armable(r, it) && sePuedePedir)) {
       // "desde $X" si algún grupo cambia el precio (hay tamaños/variantes).
       var variaPrecio = (it.opciones || []).some(grupoTienePrecios);
       var precioMostrar = it.p > 0 ? (variaPrecio ? "desde " : "") + money(it.p) : precioTxt(0);
@@ -992,11 +995,11 @@
           fotoHTML(it, r, seccion) +
           '<div class="dish__info">' +
             msgHTML(it) +
-            '<div class="dish__name">' + esc(it.n) + "</div>" +
+            '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
-            '<div class="dish__price">' + esc(precioMostrar) + "</div>" +
+            (comboFenix ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
           "</div>" +
-          opcionesPlatoHTML(r, it) +
+          opcionesPlatoHTML(r, it, comboFenix, sePuedePedir) +
         "</div>"
       );
     }
@@ -1090,12 +1093,33 @@
   }
 
   // Selector de opciones + botón "Agregar" para un plato (ej. salsa o tamaño).
-  function opcionesPlatoHTML(r, it) {
-    var html = '<div class="dish-opc" data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">';
+  function opcionesPlatoHTML(r, it, comboFenix, sePuedePedir) {
+    var html = '<div class="dish-opc' + (comboFenix ? " fenix-combo" : "") + '" data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">';
     var gruposOpc = it.opciones || [];
+    var montoInicial = it.p + (comboFenix ? gruposOpc.reduce(function (total, grupo) {
+      var primera = (grupo.opciones || []).find(function (op) { return !op.agotado; });
+      return total + (Number(primera?.precio) || 0);
+    },0) : 0);
+    var faltanOpciones = false;
     for (var gi = 0; gi < gruposOpc.length; gi++) {
       var g = gruposOpc[gi];
       var ops = Array.isArray(g.opciones) ? g.opciones : [];
+      if (comboFenix) {
+        var esTamano = norm(g.nombre) === "tamano";
+        var primeraDisponible = ops.findIndex(function (op) { return !op.agotado; });
+        faltanOpciones = faltanOpciones || primeraDisponible < 0;
+        html += '<fieldset class="fenix-combo__grupo"' + (sePuedePedir ? "" : " disabled") + '><legend>' +
+          esc(esTamano ? "Tamaño del combo" : g.nombre || "Opción") + '</legend><div class="fenix-combo__opciones">' +
+          ops.map(function (op, oi) {
+            var extra = Number(op.precio) || 0;
+            var precio = esTamano ? '<strong data-precio-tamano>' + esc(precioTxt(montoInicial - (Number(ops[primeraDisponible]?.precio) || 0) + extra)) + '</strong>'
+              : extra ? '<strong>' + esc((extra > 0 ? "+" : "") + money(extra)) + '</strong>' : '';
+            return '<label><input type="radio" name="fenix-combo-' + gi + '" data-opc="' + gi + '" value="' + esc(op.n) + '"' +
+              (oi === primeraDisponible ? " checked" : "") + (op.agotado ? " disabled" : "") + '><span>' + esc(op.n) + precio +
+              (op.agotado ? '<small>Agotado</small>' : '') + '</span></label>';
+          }).join("") + '</div></fieldset>';
+        continue;
+      }
       // Si el grupo cambia el precio, mostramos el PRECIO TOTAL de cada opción
       // (base + extra); si no, solo el nombre (ej. salsa, proteína).
       var conPrecio = grupoTienePrecios(g);
@@ -1110,7 +1134,7 @@
       html += "</select>";
     }
     // Adiciones (opcionales, se pueden marcar varias): cada una suma su precio.
-    var adic = adicionesDe(r, it);
+    var adic = comboFenix && !sePuedePedir ? [] : adicionesDe(r, it);
     if (adic.length) {
       html += '<details class="dish-adic" data-adic-box>' +
         '<summary>➕ Agregar adiciones <span class="dish-adic__n" data-adic-n></span></summary>' +
@@ -1123,7 +1147,9 @@
         "</div></details>";
     }
     html += '<button type="button" class="add-btn dish-opc__add" data-opc-add ' +
-      'data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">Agregar</button>';
+      'data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '"' +
+      (comboFenix && (!sePuedePedir || faltanOpciones) ? ' disabled' : '') + '>' +
+      (comboFenix ? !sePuedePedir || faltanOpciones ? 'Combo no disponible' : 'Agregar · ' + esc(precioTxt(montoInicial)) : 'Agregar') + '</button>';
     return html + "</div>";
   }
 
@@ -1351,12 +1377,12 @@
   function agregarPlatoConOpciones(restId, itemId) {
     var r = findRest(restId);
     var it = r ? findItem(restId, itemId) : null;
-    if (!r || !it || !armable(r, it)) return;
+    if (!r || !it || it.agotado || !abiertoAhora(r) || !armable(r, it)) return;
     var cont = elVistaCarta.querySelector('.dish-opc[data-item="' + cssId(itemId) + '"]');
     if (!cont) return;
 
     var elecciones = [];
-    cont.querySelectorAll("[data-opc]").forEach(function (sel) {
+    cont.querySelectorAll("select[data-opc], input[data-opc]:checked").forEach(function (sel) {
       elecciones[Number(sel.getAttribute("data-opc"))] = sel.value;
     });
     var adic = [].map.call(cont.querySelectorAll("[data-adic]:checked"), function (c) { return c.value; });
@@ -1397,15 +1423,27 @@
     var marcadas = cont.querySelectorAll("[data-adic]:checked");
     var n = cont.querySelector("[data-adic-n]");
     if (n) n.textContent = marcadas.length ? "(" + marcadas.length + ")" : "";
-    if (!marcadas.length) { btn.textContent = "Agregar"; return; }
+    var fenix = cont.classList.contains("fenix-combo");
+    if (btn.disabled) return;
+    if (!marcadas.length && !fenix) { btn.textContent = "Agregar"; return; }
     var total = it.p;
-    cont.querySelectorAll("[data-opc]").forEach(function (sel) {
+    cont.querySelectorAll("select[data-opc], input[data-opc]:checked").forEach(function (sel) {
       var g = (it.opciones || [])[Number(sel.getAttribute("data-opc"))] || {};
       var op = (g.opciones || []).filter(function (o) { return o.n === sel.value; })[0];
       total += op ? Number(op.precio) || 0 : 0;
     });
+    if (fenix) {
+      var indice = it.opciones.findIndex(function (g) { return norm(g.nombre) === "tamano"; });
+      var tamanos = it.opciones[indice].opciones;
+      var control = cont.querySelector('[data-opc="' + indice + '"]:checked');
+      var elegido = tamanos.find(function (op) { return op.n === control?.value; });
+      var sinTamano = total - (Number(elegido?.precio) || 0);
+      cont.querySelectorAll("[data-precio-tamano]").forEach(function (precio, i) {
+        precio.textContent = precioTxt(sinTamano + (Number(tamanos[i].precio) || 0));
+      });
+    }
     marcadas.forEach(function (c) { total += Number(c.getAttribute("data-precio")) || 0; });
-    btn.textContent = "Agregar · " + money(total);
+    btn.textContent = "Agregar · " + (fenix ? precioTxt(total) : money(total));
   }
   document.addEventListener("change", function (e) {
     var t = e.target;
