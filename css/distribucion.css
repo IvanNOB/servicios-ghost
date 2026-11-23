@@ -48,3 +48,44 @@
 .fenix-combo__opciones input:focus-visible + span {outline:2px solid #ffc579;outline-offset:2px}
 .fenix-combo__opciones input:disabled + span {opacity:.62;cursor:default}
 .dishes .fenix-combo [data-opc-add] {width:100%;min-height:44px;margin:0}
+
+/* Cada categoría presenta dos productos por fila. */
+#vistaCarta .carta-grupo > .dishes {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(8px,2vw,16px);
+  padding-block:4px 14px;
+}
+#vistaCarta .dishes > .dish:not(.vaso-dbarrio) {
+  min-width:0;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"foto" "info" "pie";
+  grid-template-rows:auto 1fr auto;
+  align-content:start;
+  gap:9px;
+  padding:clamp(8px,1.8vw,13px);
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--surface);
+}
+#vistaCarta .dishes > .dish--opciones:not(.vaso-dbarrio) {
+  grid-template-areas:"foto" "info" "opc";
+}
+#vistaCarta .dishes .dish__foto {
+  width:100%;
+  height:auto;
+  aspect-ratio:4/3;
+  object-fit:contain;
+  align-self:start;
+}
+#vistaCarta .dishes .dish__info {min-width:0;overflow-wrap:anywhere}
+#vistaCarta .dishes .dish__pie {
+  display:flex;
+  flex-wrap:wrap;
+  align-self:end;
+  gap:6px;
+}
+#vistaCarta .dishes .dish__action {max-width:100%}
+#vistaCarta .dishes .dish-opc {min-width:0;align-self:end}
+#vistaCarta .dish-opc :is(select,.dish-adic,.dish-opc__add) {width:100%;min-width:0;max-width:100%}
+#vistaCarta .dishes .dish-opc__add {min-height:44px;padding-inline:6px}
+#vistaCarta .dishes .fenix-combo {padding:8px}
