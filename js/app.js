@@ -897,7 +897,7 @@
         finally { quitarEspera(); }
       }
       if (barraLista) montarBarra(barraLista);
-      else import("./barra-dbarrio.js?v=7").then(function (modulo) {
+      else import("./barra-dbarrio.js?v=8").then(function (modulo) {
         barraLista = modulo.abrirBarra;
         montarBarra(barraLista);
       }).catch(function (error) {
@@ -1230,7 +1230,15 @@
           '<button type="button" class="add-btn vaso-dbarrio__listo" data-vaso-listo' +
             (habilitado ? "" : ' data-vaso-cerrado') + ' disabled>' +
             (habilitado ? "Elige un sabor" : "Pedidos no disponibles") + '</button></div>' +
-        '<p data-vaso-estado role="status"></p></div></div>';
+        '<p data-vaso-estado role="status"></p></div>' +
+      '<div class="barra-agregado" data-vaso-agregado hidden>' +
+        '<strong data-vaso-confirmacion tabindex="-1"></strong>' +
+        '<p data-vaso-agregado-detalle></p>' +
+        '<div class="barra-agregado__acciones">' +
+          '<button type="button" data-vaso-otro>Armar otro granizado</button>' +
+          '<button type="button" data-vaso-ver-pedido>Ver mi pedido</button>' +
+          '<button type="button" data-vaso-igual>Agregar otro igual</button>' +
+        '</div></div></div>';
   }
 
   function cambiarVistaVasoDbarrio(box, vista) {
@@ -1299,21 +1307,35 @@
     refreshCart();
     if (porcion) repintarPlato(r.id, porcion.id);
 
-    var controles = box.querySelectorAll("button, input, select");
-    controles.forEach(function (control) { control.disabled = true; });
+    var confirmacion = box.querySelector("[data-vaso-agregado]");
+    var cantidad = getQty(r.id, combo.id);
+    var mensaje = confirmacion.querySelector("[data-vaso-confirmacion]");
+    mensaje.textContent = cantidad === 1 ? "Granizado agregado" : cantidad + " granizados iguales en tu pedido";
+    confirmacion.querySelector("[data-vaso-agregado-detalle]").textContent = combo.n;
     box.classList.add("vaso-dbarrio--sellado");
-    box.querySelector("[data-vaso-estado]").textContent = "Agregado a tu pedido.";
-    boton.textContent = "¡Vaso agregado!";
-    window.setTimeout(function () {
-      if (!box.isConnected || vistaActual !== r.id) return;
-      controles.forEach(function (control) { control.disabled = false; });
-      openSheet();
-      if (porcion) {
-        box.querySelector("[data-vaso-gomas]").checked = false;
-        box.dispatchEvent(new Event("vaso-reiniciar"));
-      }
-      actualizarVasoDbarrio(box);
-    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 630);
+    box.dispatchEvent(new Event("vaso-agregado"));
+    confirmacion.hidden = false;
+    box.querySelector(".vaso-dbarrio__controles").hidden = true;
+    var pasos = box.querySelector(".barra-pasos");
+    if (pasos) pasos.hidden = true;
+    mensaje.focus({preventScroll:true});
+    confirmacion.scrollIntoView({block:"nearest"});
+  }
+
+  function prepararOtroVaso(box) {
+    var gomas = box.querySelector("[data-vaso-gomas]");
+    if (gomas) gomas.checked = false;
+    box.querySelectorAll("[data-vaso-sabor]").forEach(function (sabor) {
+      sabor.setAttribute("aria-pressed", "false");
+    });
+    box.querySelector("[data-vaso-agregado]").hidden = true;
+    box.querySelector(".vaso-dbarrio__controles").hidden = false;
+    var pasos = box.querySelector(".barra-pasos");
+    if (pasos) pasos.hidden = false;
+    cambiarVistaVasoDbarrio(box, "foto");
+    actualizarVasoDbarrio(box);
+    box.dispatchEvent(new Event("vaso-reiniciar"));
+    if (pasos) pasos.querySelector("button").focus();
   }
 
   // Lee las opciones elegidas de un plato y lo agrega al carrito como línea única.
@@ -2589,6 +2611,14 @@
         liquido.animate([{ transform: "translateY(106%)" }, { transform: "none" }],
           { duration: 660, easing: "cubic-bezier(.22,.72,.15,1)" });
       }
+      return;
+    }
+    var accionVaso = t.closest("[data-vaso-otro],[data-vaso-ver-pedido],[data-vaso-igual]");
+    if (accionVaso) {
+      var cajaVaso = accionVaso.closest("[data-vaso-dbarrio]");
+      if (accionVaso.hasAttribute("data-vaso-otro")) prepararOtroVaso(cajaVaso);
+      else if (accionVaso.hasAttribute("data-vaso-igual")) terminarVasoDbarrio(cajaVaso);
+      else openSheet();
       return;
     }
     var listoVaso = t.closest("[data-vaso-listo]");

@@ -241,3 +241,16 @@ html[data-arranque="carta"] .carga-carta,html[data-arranque="inicio"] .carga-ini
   .barra .barra-bandeja {grid-template-columns:repeat(2,minmax(0,1fr))}
   .barra .barra-bandeja button {grid-template:60px / minmax(42px,.9fr) minmax(0,1fr);gap:5px;padding:2px 8px 2px 5px;justify-items:start;text-align:left}
 }
+
+.barra-agregado {
+  grid-column:1/-1;padding:18px;color:var(--text);background:#17151a;
+}
+.barra-agregado > strong {font-size:1.15rem}
+.barra-agregado p {margin:6px 0 14px;color:#d2cdd2;line-height:1.4}
+.barra-agregado__acciones {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.barra-agregado__acciones button {
+  min-height:44px;padding:8px;border:1px solid #575159;border-radius:10px;
+  background:#252128;color:#fff;font:inherit;font-weight:700;cursor:pointer;
+}
+.barra-agregado__acciones [data-vaso-otro] {background:#e4ff53;color:#161710;border-color:transparent}
+.barra-agregado__acciones [data-vaso-igual] {grid-column:1/-1;background:transparent}
