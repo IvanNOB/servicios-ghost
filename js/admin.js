@@ -275,6 +275,7 @@
           "</div>" +
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
+            (!esAliado() ? '<button type="button" class="btn-copy btn-sm" data-ali-estado="' + esc(r.id) + '">Estado</button>' : "") +
             '<button type="button" class="btn-copy btn-sm" data-ali-disp="' + esc(r.id) + '" title="Marcar agotados y cambiar precios rápido">⚡ Disponibilidad</button>' +
             (!esAliado() && cartaNueva(r) ? '<button type="button" class="btn-primary btn-sm" data-sincronizar="' + esc(r.id) + '" title="La carta que me pasaste por el chat es distinta a la guardada. Toca para ver qué cambia antes de aplicarla.">🆕 Revisar carta nueva</button>' : "") +
             (esAliado() ? "" : '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>') +
@@ -1811,6 +1812,7 @@
           '<h4 class="tablero__rotulo">Tu carta</h4>' +
           '<div class="tablero__grid">' +
             tile("⚡", "Disponibilidad rápida", agotados ? agotados + " agotado(s) · toca para cambiar" : "Marca agotados y ajusta precios en segundos", "data-ali-disp", r.id, agotados > 0) +
+            tile("📷", "Mi estado", "Publica una foto durante 24 horas", "data-ali-estado", r.id, false) +
             tile("🔥", "Mi promoción", promoVigente(r) ? "“" + r.promo.texto + "”" + (r.promo.hasta ? " · hasta " + fechaBonita(r.promo.hasta) : "") : "Destaca una oferta en tu tarjeta", "data-ali-promo", r.id, promoVigente(r)) +
             tile("🍽️", "Menú del día", hoyMenu ? hoyMenu + "publicado hoy" : "Publica tu desayuno o almuerzo de hoy", "data-tab-ir", "almuerzos", !!hoyMenu) +
             tile("✏️", "Editar mi carta", platos + " productos · fotos, precios y horario", "data-editar", r.id) +
@@ -1931,22 +1933,56 @@
     var texto = quitar ? "" : (($("#promoTexto") || {}).value || "").trim();
     if (!quitar && !texto) { toast("Escribe el texto de la promoción", true); return; }
     var copia = JSON.parse(JSON.stringify(r));
-    copia.promo = texto ? { texto: texto, hasta: ($("#promoHasta") || {}).value || "" } : null;
     boton.disabled = true;
-    boton.innerHTML = '<span class="spinner"></span>Guardando…';
+    boton.textContent = "Guardando…";
     try {
-      await window.Store.guardar(copia, { soloActualizar: esAliado() });
-      if (window.Store.columnasRechazadas().indexOf("promo") !== -1) {
-        toast("Aún no se puede guardar la promoción: falta un paso de configuración (avísale a Servicios Ghost).", true);
-      } else {
-        reemplazarEnMemoria(copia);
-        toast(texto ? "🔥 Promoción publicada ✓" : "Promoción quitada");
-      }
+      copia.promo = await window.Store.actualizarPromoParcial(id, {texto:texto, hasta:($("#promoHasta") || {}).value || ""});
+      reemplazarEnMemoria(copia);
+      toast(texto ? "Promoción publicada" : "Promoción quitada");
       cerrarAli();
     } catch (ex) {
       toast(mensajeErrorGuardar(ex), true);
       boton.disabled = false;
       boton.textContent = quitar ? "Quitar promoción" : "💾 Guardar promoción";
+    }
+  }
+
+  function abrirEstado(id) {
+    var local = restPorId(id);
+    if (!local) return;
+    var estado = local.promo && local.promo.estado;
+    var activo = estado && Date.parse(estado.hasta) > Date.now();
+    abrirAli("Mi estado · " + local.nombre,
+      (activo ? '<img src="' + esc(estado.foto) + '" alt="Estado publicado" style="max-width:100%;max-height:240px;border-radius:12px;object-fit:contain">' : "") +
+      '<p class="muted">La foto aparecerá en la portada durante 24 horas. Si publicas otra, reemplaza la anterior.</p>' +
+      '<div class="field"><label for="estadoFoto">Foto del estado</label><input class="field__input" type="file" id="estadoFoto" accept="image/*"></div>' +
+      '<div class="field"><label for="estadoTexto">Descripción (opcional)</label><input class="field__input" id="estadoTexto" maxlength="120"></div>' +
+      '<button class="btn-primary" type="button" data-estado-publicar="' + esc(id) + '">Publicar estado</button>' +
+      (activo ? '<button class="btn-danger" type="button" data-estado-quitar="' + esc(id) + '">Retirar estado</button>' : ""));
+  }
+
+  async function guardarEstado(boton, quitar) {
+    var id = boton.getAttribute(quitar ? "data-estado-quitar" : "data-estado-publicar");
+    var local = restPorId(id);
+    if (!local) return;
+    var foto = $("#estadoFoto")?.files[0];
+    if (!quitar && (!foto || !foto.type.startsWith("image/"))) { toast("Elige una foto", true); return; }
+    var texto = $("#estadoTexto")?.value || "";
+    var controles = Array.from(elAliBody.querySelectorAll("button"));
+    controles.forEach(function (control) { control.disabled = true; });
+    try {
+      var estado = quitar ? null : {
+        foto: await subirFotoComprimida(foto, "estados", 1440),
+        texto: texto,
+        hasta: new Date(Date.now() + 86400000).toISOString()
+      };
+      local.promo = await window.Store.actualizarPromoParcial(id, {estado:estado});
+      toast(quitar ? "Estado retirado" : "Estado publicado por 24 horas");
+      if (boton.isConnected) cerrarAli();
+      else pintarLista();
+    } catch (error) {
+      toast(mensajeErrorGuardar(error), true);
+      controles.forEach(function (control) { control.disabled = false; });
     }
   }
 
@@ -2037,6 +2073,8 @@
     var x;
     if ((x = t.closest("[data-ali-abrir]"))) { alternarAbierto(x.getAttribute("data-ali-abrir"), x); return; }
     if ((x = t.closest("[data-ali-disp]"))) { abrirDisponibilidad(x.getAttribute("data-ali-disp")); return; }
+    if ((x = t.closest("[data-ali-estado]"))) { abrirEstado(x.getAttribute("data-ali-estado")); return; }
+    if ((x = t.closest("[data-estado-publicar],[data-estado-quitar]"))) { guardarEstado(x, x.hasAttribute("data-estado-quitar")); return; }
     if ((x = t.closest("[data-ali-promo]"))) { abrirPromo(x.getAttribute("data-ali-promo")); return; }
     if ((x = t.closest("[data-ali-ventas]"))) { abrirVentasAliado(x.getAttribute("data-ali-ventas")); return; }
     if ((x = t.closest("[data-ali-compartir]"))) { abrirCompartir(x.getAttribute("data-ali-compartir")); return; }
