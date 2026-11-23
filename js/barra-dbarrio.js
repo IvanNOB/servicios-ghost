@@ -7,8 +7,8 @@ export function abrirBarra(box, pasoInicial) {
   const grupos = [...panel.querySelectorAll('fieldset')];
   const botones = [...panel.querySelectorAll('[data-vaso-sabor]')];
   const reducido = matchMedia('(prefers-reduced-motion: reduce)');
-  const pasos = ['Vaso', 'Sabor', 'Extras'];
-  const titulos = ['Escoge tu vaso', 'Sirve tu sabor', 'Dale tu toque'];
+  const pasos = ['Vaso', 'Sabor', 'Gomitas', 'Resumen'];
+  const titulos = ['Elige tu vaso', 'Sirve tu sabor', 'Añade gomitas', 'Tu granizado'];
   const nav = document.createElement('nav');
   nav.className = 'barra-pasos';
   nav.setAttribute('aria-label','Preparación del granizado');
@@ -28,6 +28,8 @@ export function abrirBarra(box, pasoInicial) {
   pie.append(avanzar);
   const listo = pie.querySelector('[data-vaso-listo]');
   const marco = box.querySelector('.vaso-dbarrio__presentacion');
+  marco.before(nav,titulo);
+  titulo.classList.add('barra-titulo');
   const firma = document.createElement('div');
   firma.className = 'barra-firma';
   firma.textContent = 'La barra D’Barrio';
@@ -54,28 +56,94 @@ export function abrirBarra(box, pasoInicial) {
     ['Mango Biche sin licor','mango-biche'], ['Uva sin licor','uva']
   ]);
   const imagen = capa.querySelector('img');
-  const original = imagen.getAttribute('src');
+  const ruta = 'assets/granizados-dbarrio/barra/';
+  const original = ruta + 'vacio.webp';
   const base = escena.querySelector(':scope > img');
-  const descripcionInicial = base.alt;
+  base.src = original;
+  const descripcionInicial = 'Vaso transparente de Granizados D’Barrio sobre hielo';
+  base.alt = descripcionInicial;
   for (const boton of botones) {
     const archivo = fotos.get(boton.dataset.vasoSabor);
     if (!archivo) continue;
-    boton.dataset.foto = 'assets/granizados-dbarrio/' + archivo + '.webp';
+    boton.dataset.foto = ruta + archivo + '.webp';
     boton.classList.add('barra-sabor');
     boton.style.setProperty('--foto-sabor', 'url("../' + boton.dataset.foto + '")');
   }
   function mostrarFoto(boton) {
     const baseFoto = boton?.dataset.foto;
     const conGomas = box.querySelector('[data-vaso-gomas]')?.checked;
-    const foto = baseFoto && conGomas ? baseFoto.replace('.webp','-gomitas.webp') : baseFoto;
+    const foto = baseFoto;
     box.classList.toggle('barra-con-foto', Boolean(foto));
     imagen.src = foto || original;
     base.alt = foto ? 'Granizado ' + boton.dataset.vasoSabor + (conGomas ? ' con gomitas' : '') : descripcionInicial;
     if (foto) box.style.setProperty('--fondo-sabor','url("../' + foto + '")');
   }
   mostrarFoto(botones.find(b => b.getAttribute('aria-pressed') === 'true'));
+  const opcionGomas = box.querySelector('[data-vaso-gomas]');
+  const empaqueControl = box.querySelector('[data-vaso-empaque]');
+  const resumen = document.createElement('fieldset');
+  resumen.className = 'barra-resumen';
+  const detalle = document.createElement('p');
+  detalle.setAttribute('aria-live','polite');
+  resumen.append(detalle, empaqueControl.closest('label'));
+  grupos[2].after(resumen);
+  grupos.push(resumen);
+  const tipos = [['Gusanos','gusanos'],['Ositos','ositos'],['Aros','aros'],['Sandías','sandias']];
+  const dulces = document.createElement('div');
+  dulces.className = 'barra-dulces';
+  escena.insertBefore(dulces,tapa);
+  const bandeja = document.createElement('div');
+  bandeja.className = 'barra-bandeja';
+  grupos[2].append(bandeja);
+  const info = document.createElement('p');
+  const precio = opcionGomas?.closest('label').querySelector('b').textContent;
+  info.textContent = opcionGomas ? 'Una porción ' + precio + '. Elige tu mezcla según disponibilidad.' : 'Las gomitas están agotadas.';
+  grupos[2].append(info);
+  if (opcionGomas) opcionGomas.closest('label').hidden = true;
+  function tiposElegidos() {
+    return tipos.filter(([nombre]) => (box.dataset.surtido || '').split('|').includes(nombre));
+  }
+  function sincronia() {
+    const elegidos = tiposElegidos();
+    const sabor = botones.find(b => b.getAttribute('aria-pressed') === 'true');
+    const medida = box.querySelector('[data-vaso-tamano]:checked')?.nextElementSibling?.querySelector('strong')?.textContent;
+    detalle.textContent = [medida,sabor?.dataset.vasoSabor,elegidos.map(([n]) => n).join(' + ') || 'Sin gomitas'].filter(Boolean).join(' · ');
+    for (const b of bandeja.children) b.setAttribute('aria-pressed',String(elegidos.some(([n]) => n === b.value)));
+    for (const grupo of dulces.children) grupo.hidden = !elegidos.some(([n]) => n === grupo.dataset.tipo);
+  }
+  if (opcionGomas) tipos.forEach(([nombre,id],i) => {
+    const elegir = document.createElement('button');
+    elegir.type = 'button';
+    elegir.value = nombre;
+    const icono = new Image();
+    icono.src = ruta + id + '.webp';
+    icono.alt = '';
+    elegir.append(icono,nombre);
+    bandeja.append(elegir);
+    const piezas = document.createElement('span');
+    piezas.dataset.tipo = nombre;
+    for(let j=0;j<2;j++) {
+      const pieza = icono.cloneNode();
+      pieza.style.left = (29 + i*8 + j*3) + '%';
+      pieza.style.top = (12 - Math.sin(i)*4 + j*5) + '%';
+      pieza.style.setProperty('--giro',(i*17-22+j*14)+'deg');
+      piezas.append(pieza);
+    }
+    dulces.append(piezas);
+    elegir.onclick = () => {
+      const activos = new Set(tiposElegidos().map(([n]) => n));
+      if (activos.has(nombre)) activos.delete(nombre); else activos.add(nombre);
+      box.dataset.surtido = [...activos].join('|');
+      opcionGomas.checked = activos.size > 0;
+      opcionGomas.dispatchEvent(new Event('change',{bubbles:true}));
+      sincronia();
+    };
+  });
+  box.addEventListener('vaso-reiniciar',() => { box.dataset.surtido = ''; mostrar(0); });
   let paso, fotograma = 0, sosteniendo = false, dedo = null;
   function mostrar(i) {
+    if (i > 1 && !botones.some(b => b.getAttribute('aria-pressed') === 'true')) i = 1;
+    sincronia();
     paso = i;
     box.dataset.pasoBarra = i;
     grupos.forEach((g,j) => { g.hidden = j !== i; });
@@ -84,12 +152,12 @@ export function abrirBarra(box, pasoInicial) {
       else b.removeAttribute('aria-current');
     });
     titulo.textContent = titulos[i];
-    listo.hidden = i !== 2;
-    avanzar.hidden = i === 2;
-    avanzar.textContent = i === 0 ? 'Elegir sabor' : 'Elegir extras';
+    listo.hidden = i !== 3;
+    avanzar.hidden = i === 3;
+    avanzar.textContent = ['Elegir sabor','Elegir gomitas','Revisar mi vaso'][i] || '';
     avanzar.disabled = i === 1 && !box.querySelector('[data-vaso-sabor][aria-pressed="true"]');
   }
-  avanzar.addEventListener('click', () => { mostrar(Math.min(paso+1,2)); nav.children[paso].focus({preventScroll:true}); });
+  avanzar.addEventListener('click', () => { mostrar(Math.min(paso+1,3)); nav.children[paso].focus({preventScroll:true}); });
   // Un chorro de cristales con caída parabólica conserva el detalle del hielo en el vaso.
   function dibujar(t, nivel, boton) {
     if (!ctx) return;
@@ -97,7 +165,7 @@ export function abrirBarra(box, pasoInicial) {
     const a = boton.style.getPropertyValue('--sabor-a').trim();
     const b = boton.style.getPropertyValue('--sabor-b').trim();
     const colores = [a,b,a,'#fcf1e6'];
-    const fin = 169 - 91*nivel;
+    const fin = 102 - 76*nivel;
     ctx.save();
     ctx.globalAlpha = Math.min(1,nivel*12,(1-nivel)*12);
     ctx.lineCap = 'round';
@@ -109,6 +177,12 @@ export function abrirBarra(box, pasoInicial) {
     ctx.beginPath();
     for(let k=0;k<=1.001;k+=.025) { if(!k) ctx.moveTo(x(k),y(k)); else ctx.lineTo(x(k),y(k)); }
     ctx.stroke();
+    if (a !== b) {
+      ctx.save(); ctx.translate(440,0); ctx.scale(-1,1); ctx.strokeStyle=b;
+      ctx.beginPath();
+      for(let k=0;k<=1.001;k+=.025) { if(!k) ctx.moveTo(x(k),y(k)); else ctx.lineTo(x(k),y(k)); }
+      ctx.stroke(); ctx.restore();
+    }
     for (let j=0;j<180;j++) {
       const k = (j*.618034+t*.0008)%1;
       const offset = Math.sin(j*87.3)*8;
@@ -129,7 +203,7 @@ export function abrirBarra(box, pasoInicial) {
       if (!box.isConnected) return;
       nivel = Math.min(1,nivel + Math.max(0,t-ultimo)/(sosteniendo?2400:950));
       ultimo = t;
-      capa.style.clipPath = 'inset(' + ((1-nivel)*43) + '% 0 0)';
+      capa.style.clipPath = 'inset(' + ((1-nivel)*92) + '% 0 0)';
       progreso.style.setProperty('--nivel',nivel);
       dibujar(t,nivel,boton);
       if (nivel < 1) fotograma = requestAnimationFrame(pintar);
@@ -159,13 +233,6 @@ export function abrirBarra(box, pasoInicial) {
   }
   function empaque() { box.classList.toggle('barra-para-llevar',box.querySelector('[data-vaso-empaque]').checked); }
   box.addEventListener('change',empaque);
-  const opcionGomas = box.querySelector('[data-vaso-gomas]');
-  let ultimoExtra = opcionGomas?.checked;
-  new MutationObserver(() => {
-    if (ultimoExtra === opcionGomas?.checked) return;
-    ultimoExtra = opcionGomas.checked;
-    mostrarFoto(botones.find(b => b.getAttribute('aria-pressed') === 'true'));
-  }).observe(box,{attributes:true,attributeFilter:['class']});
   empaque();
   box.classList.add('barra');
   mostrar(pasoInicial || 0);

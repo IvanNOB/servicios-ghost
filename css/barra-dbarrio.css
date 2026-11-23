@@ -142,3 +142,32 @@ body:has(#vistaCarta:not([hidden])) #cartBar {display:none}
 .barra[data-vaso-vista="modelo"] .vaso-dbarrio__giro {bottom:48px}
 
 .barra-con-foto :is(.vaso-dbarrio__caida,.barra-tapa) {display:none}
+/* La barra fotográfica mantiene un solo encuadre al cambiar de etapa. */
+.barra .barra-pasos button {min-width:0;font-size:.86rem}
+.barra .vaso-dbarrio__foto-referencia::before {background: url("../assets/granizados-dbarrio/barra/fondo.webp") center / cover;filter:blur(8px) brightness(.65)}
+.barra .vaso-dbarrio__foto-referencia .vaso-dbarrio__toma {mask-image:linear-gradient(90deg,transparent,#000 6% 94%,transparent);overflow:visible}
+.barra .vaso-dbarrio__foto-referencia .vaso-dbarrio__caida {display:none}
+.barra[data-paso-barra="0"] .vaso-dbarrio__llenado,.barra[data-paso-barra="0"] .barra-dulces {visibility:hidden}
+.barra .barra-dulces {position:absolute;inset:0;pointer-events:none}
+.barra .barra-dulces img {position:absolute;width:10%;height:10%;object-fit:contain;transform:rotate(var(--giro));animation:poner-goma .48s cubic-bezier(.3,.74,.4,1)}
+@keyframes poner-goma {from {translate:0 -170%;opacity:.2} 80% {translate:0 6%} to {translate:0 0;opacity:1}}
+.barra .barra-bandeja {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:4px;border:1px solid #a5a9ab;border-radius:14px;background:linear-gradient(145deg,#afafb0,#575758 45%,#b3b5b5)}
+.barra .barra-bandeja:empty {display:none}
+.barra .barra-bandeja button {display:grid;place-items:center;gap:4px;min-width:0;padding:8px 1px;color:white;border:1px solid #7c7c7d;background:linear-gradient(155deg,#423d41,#161417 70%);border-radius:9px;font-weight:700;cursor:pointer}
+.barra .barra-bandeja img {height:44px;width:90%;object-fit:contain}
+.barra .barra-bandeja button[aria-pressed=true] {outline:2px solid #ddfc61;outline-offset:-2px;color:#ddfc61}
+.barra .barra-resumen {margin:0;padding:0;border:0}
+.barra .barra-resumen p {margin:0 0 12px;color:#fff;line-height:1.55}
+.barra .barra-para-llevar .barra-tapa,.barra .barra-tapa {display:block;left:23%;width:54%;top:-1%;height:27%;border:0;background: url("../assets/granizados-dbarrio/barra/tapa.webp") center / 100% 100% no-repeat;mix-blend-mode:screen;box-shadow:none;border-radius:0}
+.barra.barra-para-llevar[data-paso-barra="3"] .barra-tapa {display:block;opacity:1;transform:none;transition:transform .45s ease-out,opacity .3s}
+.barra .vaso-dbarrio__medidas span::before {content:"";display:block;width:100%;height:45px;background:url("../assets/granizados-dbarrio/barra/vacio.webp") center 44% / auto 56px no-repeat}
+.barra .vaso-dbarrio__medidas label:nth-child(1) span::before {background-size:auto 43px}
+.barra .vaso-dbarrio__medidas label:nth-child(3) span::before {background-size:auto 65px}
+@media(prefers-reduced-motion:reduce){.barra .barra-dulces img,.barra .barra-tapa {animation:none!important;transition:none!important}}
+.vaso-dbarrio.barra {grid-template-columns:minmax(0,1fr);background:#0b090f}
+.barra > .barra-pasos {padding:12px 12px 0;gap:0;counter-reset:etapa}
+.barra > .barra-pasos button {counter-increment:etapa;position:relative;display:grid;justify-items:center;gap:3px;align-content:center;background:transparent;border:0;color:#c9c6cb;isolation:isolate}
+.barra > .barra-pasos button::before {content:counter(etapa);display:grid;place-items:center;border:1px solid #6a676e;border-radius:100%;background:#161219;width:21px;height:21px;font-size:.76rem}
+.barra > .barra-pasos button[aria-current]::before {color:#141414;background:#dcfb52;border-color:#dcfb52}
+.barra > .barra-pasos button:not(:last-child)::after {content:"";position:absolute;z-index:-1;top:11px;left:calc(50% + 13px);width:calc(100% - 26px);height:1px;background:#48414a}
+.barra > .barra-titulo {margin:8px 0 0;padding:0 8px 10px;text-align:center;font-size:clamp(1.5rem,5vw,2.3rem);line-height:1.1;font-weight:900;font-style:italic;color:#fff}
