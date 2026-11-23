@@ -118,3 +118,34 @@
   padding-inline:5px;
   font-size:clamp(.77rem,2.8vw,.93rem);
 }
+
+/* El selector abierto queda separado de la descripción y del botón de compra. */
+#vistaCarta .carta-elegir {
+  grid-area:opc;
+  min-width:0;
+  align-self:end;
+}
+#vistaCarta .carta-elegir summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  min-height:44px;
+  padding:8px;
+  border:1px solid var(--border-fuerte);
+  border-radius:9px;
+  color:var(--primary);
+  font-size:.82rem;
+  font-weight:700;
+  cursor:pointer;
+  list-style:none;
+}
+#vistaCarta .carta-elegir summary::-webkit-details-marker {display:none}
+#vistaCarta .carta-elegir summary::after {content:"+";font-size:1rem}
+#vistaCarta .carta-elegir[open] summary::after {content:"−"}
+#vistaCarta .carta-elegir[open] .opciones-tarjetas {margin-top:10px}
+#vistaCarta .dish--opciones-tarjetas .dish__desc {line-height:1.55}
+#vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas {padding:clamp(12px,3.3vw,22px);gap:16px}
+#vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas .opciones-tarjetas__opciones {gap:9px}
+#vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas legend {margin-bottom:9px}
+#vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas label > span {min-height:52px;padding:8px}
