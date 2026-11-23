@@ -75,8 +75,6 @@
 .barra .barra-siguiente:disabled {background:#45473d;color:#d7d8d2;cursor:default}
 .barra .vaso-dbarrio__compra {border-color:#43443b}
 .barra-chorro {position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.barra-nivel {position:absolute;bottom:0;left:0;width:100%;height:3px;background:var(--granizado-a);transform-origin:left;transform:scaleX(var(--nivel,0));opacity:0}
-.barra-sirviendo .barra-nivel {opacity:1}
 .barra.vaso-dbarrio--lleno .vaso-dbarrio__llenado {animation:none!important}
 .barra-tapa {
   position:absolute;left:23.6%;width:49%;height:26%;top:12%;pointer-events:none;
@@ -171,3 +169,30 @@ body:has(#vistaCarta:not([hidden])) #cartBar {display:none}
 .barra > .barra-pasos button[aria-current]::before {color:#141414;background:#dcfb52;border-color:#dcfb52}
 .barra > .barra-pasos button:not(:last-child)::after {content:"";position:absolute;z-index:-1;top:11px;left:calc(50% + 13px);width:calc(100% - 26px);height:1px;background:#48414a}
 .barra > .barra-titulo {margin:8px 0 0;padding:0 8px 10px;text-align:center;font-size:clamp(1.5rem,5vw,2.3rem);line-height:1.1;font-weight:900;font-style:italic;color:#fff}
+.barra-viva .vaso-dbarrio__llenado {visibility:hidden!important}
+.barra-viva[data-paso-barra="0"] .barra-chorro {visibility:hidden}
+.barra-viva[data-paso-barra="1"] .vaso-dbarrio__toma {touch-action:pan-y;cursor:ew-resize}
+.barra .barra-bandeja button {touch-action:none;user-select:none;-webkit-touch-callout:none}
+.barra .barra-bandeja button img {pointer-events:none}
+.barra-gomita-en-mano {position:fixed;z-index:150;pointer-events:none;width:52px;height:52px;object-fit:contain;transform:translate(-50%,-75%) rotate(-10deg);filter:drop-shadow(0 5px 5px #000a)}
+.barra-recibiendo .vaso-dbarrio__foto-referencia::after {content:"";position:absolute;inset:3px;border:2px solid #d8f869;pointer-events:none;border-radius:12px}
+
+@media (max-width:760px) and (min-height:560px) {
+  .vaso-dbarrio.barra .vaso-dbarrio__presentacion {height:clamp(226px,40svh,348px)}
+  .barra :is(button,input) {scroll-margin-top:calc(var(--alto-header,64px) + clamp(226px,40svh,348px) + 8px)}
+}
+
+.barra > .barra-pasos {scroll-margin-top:var(--alto-header,64px)}
+
+.barra .barra-tapa {display:none;padding:0}
+.barra.barra-para-llevar[data-paso-barra="3"] .barra-tapa {
+  --separacion:-32%;
+  pointer-events:auto;touch-action:none;cursor:grab;
+  transform:translateY(var(--separacion));
+  transition:transform .32s cubic-bezier(.18,.85,.22,1.16),opacity .2s;
+}
+.barra.barra-sellada[data-paso-barra="3"] .barra-tapa {--separacion:0%}
+.barra .barra-tapa:active {cursor:grabbing;transition:none}
+.barra .barra-tapa:focus-visible {outline:2px solid var(--vaso-acento);outline-offset:1px}
+.barra .barra-guia-tapa {display:block;color:#c6c3cb;font-size:.85rem;line-height:1.4;margin-top:8px}
+@media (prefers-reduced-motion:reduce) {.barra .barra-tapa {transition:none!important}}
