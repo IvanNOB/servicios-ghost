@@ -991,7 +991,7 @@
       Array.isArray(it.opciones) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; });
     var sePuedePedir = !it.agotado && abiertoAhora(r);
     var grupoCarta = selectorTarjetas && r.carta.find(function (grupo) { return grupo.sec === seccion; });
-    var opcionesPlegables = grupoCarta && grupoCarta.items.length > 1;
+    var opcionesEnVentana = grupoCarta && grupoCarta.items.length > 1;
 
     // Plato con opciones a elegir (ej. salsa de las alitas) o con adiciones.
     if (selectorTarjetas || (armable(r, it) && sePuedePedir)) {
@@ -1005,11 +1005,14 @@
             msgHTML(it) +
             '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
-            (selectorTarjetas && !opcionesPlegables ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
+            (selectorTarjetas && !opcionesEnVentana ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
           "</div>" +
-          (opcionesPlegables ? '<details class="carta-elegir"><summary>Ver tamaños y precios</summary>' : '') +
+          (opcionesEnVentana ? '<button type="button" class="carta-elegir" data-abrir-tamanos aria-haspopup="dialog">Elegir tamaño</button>' +
+            '<dialog class="carta-tamanos" aria-label="' + esc(it.n) + '">' +
+            '<div class="carta-tamanos__cabecera"><strong>' + esc(it.n) + '</strong>' +
+            '<button type="button" data-cerrar-tamanos aria-label="Cerrar tamaños" autofocus>×</button></div>' : '') +
           opcionesPlatoHTML(r, it, selectorTarjetas, sePuedePedir) +
-          (opcionesPlegables ? '</details>' : '') +
+          (opcionesEnVentana ? '</dialog>' : '') +
         "</div>"
       );
     }
@@ -1413,6 +1416,12 @@
     if (caja) caja.open = false;
     actualizarTotalPlato(cont);
 
+    var ventanaTamanos = cont.closest("dialog.carta-tamanos");
+    if (ventanaTamanos?.open) {
+      ventanaTamanos.close();
+      toast(it.n + " agregado al pedido");
+      return;
+    }
     // Feedback breve en el botón.
     var btn = cont.querySelector("[data-opc-add]");
     if (btn) {
@@ -2681,6 +2690,16 @@
     var listoVaso = t.closest("[data-vaso-listo]");
     if (listoVaso) {
       terminarVasoDbarrio(listoVaso.closest("[data-vaso-dbarrio]"));
+      return;
+    }
+    var abrirTamanos = t.closest("[data-abrir-tamanos]");
+    if (abrirTamanos) {
+      var ventana = abrirTamanos.closest("[data-dish]").querySelector(".carta-tamanos");
+      if (!ventana.open) ventana.showModal();
+      return;
+    }
+    if (t.closest("[data-cerrar-tamanos]") || t.matches("dialog.carta-tamanos")) {
+      t.closest("dialog.carta-tamanos").close();
       return;
     }
     var opcAdd = t.closest("[data-opc-add]");
