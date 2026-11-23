@@ -3849,6 +3849,14 @@
           '<button type="button" data-vit-mover="-1" aria-label="Subir ' + esc(r.nombre) + '">↑</button>' +
           '<button type="button" data-vit-mover="1" aria-label="Bajar ' + esc(r.nombre) + '">↓</button></li>';
       }).join("") + '</ol>' +
+      '<details class="vit-config"><summary>Mostrar tamaños y precios en tarjetas</summary>' +
+        '<p class="muted">Elige los locales que mostrarán cada tamaño y su precio como botones en la carta.</p>' +
+        '<div class="vit-rests" id="vitOpcionesEnTarjetas">' +
+        ordenVitrina(v).map(function (r) {
+          var marcado = Array.isArray(v.opcionesEnTarjetas) ? v.opcionesEnTarjetas.includes(r.id) : r.id === "chino-el-fenix";
+          return '<label class="vit-rest"><input type="checkbox" value="' + esc(r.id) + '"' +
+            (marcado ? ' checked' : '') + '> ' + esc(r.nombre) + '</label>';
+        }).join("") + '</div></details>' +
       '<details class="vit-config"><summary>Programar horario o agregar un aviso</summary><div class="vit-fechas">' +
         '<label class="vit-campo"><span class="vit-lbl">Empieza <small class="muted">(vacío = ya mismo)</small></span>' +
           '<span class="vit-fh"><input class="field__input" type="date" id="ajVitDesdeF" value="' + esc(desde.f) + '" /><input class="field__input" type="time" id="ajVitDesdeH" value="' + esc(desde.h) + '" /></span></label>' +
@@ -3859,7 +3867,7 @@
         '<input class="field__input" id="ajVitMsg" maxlength="100" value="' + esc(v.mensaje) + '" placeholder="' + esc(VIT_MSG_DEF) + '" /></label>' +
       '<p class="muted plato-opc__ayuda">Hora de Colombia. Tú (con sesión en el panel) sigues viendo todo con “Ver cómo se ve”.</p>' +
       '</details><div class="inline-actions">' +
-        '<button type="button" class="btn-primary btn-sm" data-aj="guardar-vitrina">Guardar orden y visibilidad</button>' +
+        '<button type="button" class="btn-primary btn-sm" data-aj="guardar-vitrina">Guardar vitrina</button>' +
         '<button type="button" class="btn-copy btn-sm" data-aj="apagar-vitrina">Apagar ya</button>' +
         '<a class="btn-copy btn-sm" href="index.html" target="_blank" rel="noopener">👀 Abrir la tienda</a>' +
       "</div>" +
@@ -3885,6 +3893,7 @@
       gestionarCartas: true,
       ids: cartas.filter(function (campo) { return campo.checked; }).map(function (campo) { return campo.value; }),
       orden: cartas.map(function (campo) { return campo.value; }),
+      opcionesEnTarjetas: Array.from(document.querySelectorAll("#vitOpcionesEnTarjetas input:checked"), function (campo) { return campo.value; }),
       desde: isoCol($("#ajVitDesdeF").value, $("#ajVitDesdeH").value) || null,
       hasta: isoCol($("#ajVitHastaF").value, $("#ajVitHastaH").value || "23:59") || null,
       mensaje: $("#ajVitMsg").value.trim().slice(0, 100)
