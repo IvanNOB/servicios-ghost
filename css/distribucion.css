@@ -89,3 +89,20 @@
 #vistaCarta .dish-opc :is(select,.dish-adic,.dish-opc__add) {width:100%;min-width:0;max-width:100%}
 #vistaCarta .dishes .dish-opc__add {min-height:44px;padding-inline:6px}
 #vistaCarta .dishes .opciones-tarjetas {padding:8px}
+
+/* Una categoría con un solo producto aprovecha ambas columnas. */
+#vistaCarta .dishes > .dish:nth-child(1 of .dish:not([hidden])):nth-last-child(1 of .dish:not([hidden])) {
+  grid-column:1/-1;
+}
+#vistaCarta .dishes > .dish--opciones.dish--foto:has(.opciones-tarjetas):nth-child(1 of .dish:not([hidden])):nth-last-child(1 of .dish:not([hidden])) {
+  grid-template-columns:clamp(60px,18vw,100px) minmax(0,1fr);
+  grid-template-areas:"foto info" "opc opc";
+  grid-template-rows:auto auto;
+}
+#vistaCarta .dishes .opciones-tarjetas__opciones {
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,62px),1fr));
+}
+#vistaCarta .dishes .opciones-tarjetas__opciones label > span {
+  padding-inline:5px;
+  font-size:clamp(.77rem,2.8vw,.93rem);
+}

@@ -12,7 +12,7 @@ var BASICOS = [
   "index.html",
   "css/style.css?v=45",
   "css/barra-dbarrio.css?v=9",
-  "css/distribucion.css?v=5",
+  "css/distribucion.css?v=6",
   "css/estados.css?v=1",
   "js/vendor/supabase-js.js?v=2.118.0",
   "js/data.js?v=45",
