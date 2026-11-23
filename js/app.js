@@ -354,7 +354,7 @@
   })();
   function recordarVitrina(v) {
     try {
-      if (v && (Array.isArray(v.orden) || (v.activo && (v.gestionarCartas || Date.parse(v.hasta) > Date.now())))) localStorage.setItem(LS_VITRINA, JSON.stringify(v));
+      if (v && (Array.isArray(v.orden) || Array.isArray(v.opcionesEnTarjetas) || (v.activo && (v.gestionarCartas || Date.parse(v.hasta) > Date.now())))) localStorage.setItem(LS_VITRINA, JSON.stringify(v));
       else localStorage.removeItem(LS_VITRINA);
     } catch (e) { /* sin almacenamiento */ }
   }
@@ -977,16 +977,21 @@
     if (vacia) vacia.hidden = visibles > 0;
   }
 
+  function opcionesEnTarjetas(restId) {
+    var locales = AJUSTES.vitrina?.opcionesEnTarjetas;
+    return Array.isArray(locales) ? locales.includes(restId) : restId === "chino-el-fenix";
+  }
+
   function dishHTML(r, it, seccion) {
     var imagenClase = it.foto ? " dish--foto" : " dish--foto dish--ilustrado";
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
-    var comboFenix = r.id === "chino-el-fenix" && it.id === "fx-co-arroz-chino" &&
+    var selectorTarjetas = opcionesEnTarjetas(r.id) &&
       Array.isArray(it.opciones) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; });
     var sePuedePedir = !it.agotado && abiertoAhora(r);
     // Plato con opciones a elegir (ej. salsa de las alitas) o con adiciones.
-    if (comboFenix || (armable(r, it) && sePuedePedir)) {
+    if (selectorTarjetas || (armable(r, it) && sePuedePedir)) {
       // "desde $X" si algún grupo cambia el precio (hay tamaños/variantes).
       var variaPrecio = (it.opciones || []).some(grupoTienePrecios);
       var precioMostrar = it.p > 0 ? (variaPrecio ? "desde " : "") + money(it.p) : precioTxt(0);
@@ -997,9 +1002,9 @@
             msgHTML(it) +
             '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
-            (comboFenix ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
+            (selectorTarjetas ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
           "</div>" +
-          opcionesPlatoHTML(r, it, comboFenix, sePuedePedir) +
+          opcionesPlatoHTML(r, it, selectorTarjetas, sePuedePedir) +
         "</div>"
       );
     }
@@ -1093,10 +1098,10 @@
   }
 
   // Selector de opciones + botón "Agregar" para un plato (ej. salsa o tamaño).
-  function opcionesPlatoHTML(r, it, comboFenix, sePuedePedir) {
-    var html = '<div class="dish-opc' + (comboFenix ? " fenix-combo" : "") + '" data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">';
+  function opcionesPlatoHTML(r, it, selectorTarjetas, sePuedePedir) {
+    var html = '<div class="dish-opc' + (selectorTarjetas ? " opciones-tarjetas" : "") + '" data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">';
     var gruposOpc = it.opciones || [];
-    var montoInicial = it.p + (comboFenix ? gruposOpc.reduce(function (total, grupo) {
+    var montoInicial = it.p + (selectorTarjetas ? gruposOpc.reduce(function (total, grupo) {
       var primera = (grupo.opciones || []).find(function (op) { return !op.agotado; });
       return total + (Number(primera?.precio) || 0);
     },0) : 0);
@@ -1104,17 +1109,17 @@
     for (var gi = 0; gi < gruposOpc.length; gi++) {
       var g = gruposOpc[gi];
       var ops = Array.isArray(g.opciones) ? g.opciones : [];
-      if (comboFenix) {
+      if (selectorTarjetas) {
         var esTamano = norm(g.nombre) === "tamano";
         var primeraDisponible = ops.findIndex(function (op) { return !op.agotado; });
         faltanOpciones = faltanOpciones || primeraDisponible < 0;
-        html += '<fieldset class="fenix-combo__grupo"' + (sePuedePedir ? "" : " disabled") + '><legend>' +
-          esc(esTamano ? "Tamaño del combo" : g.nombre || "Opción") + '</legend><div class="fenix-combo__opciones">' +
+        html += '<fieldset class="opciones-tarjetas__grupo"' + (sePuedePedir ? "" : " disabled") + '><legend>' +
+          esc(g.nombre || "Opción") + '</legend><div class="opciones-tarjetas__opciones">' +
           ops.map(function (op, oi) {
             var extra = Number(op.precio) || 0;
             var precio = esTamano ? '<strong data-precio-tamano>' + esc(precioTxt(montoInicial - (Number(ops[primeraDisponible]?.precio) || 0) + extra)) + '</strong>'
               : extra ? '<strong>' + esc((extra > 0 ? "+" : "") + money(extra)) + '</strong>' : '';
-            return '<label><input type="radio" name="fenix-combo-' + gi + '" data-opc="' + gi + '" value="' + esc(op.n) + '"' +
+            return '<label><input type="radio" name="opciones-tarjetas-' + esc(it.id) + '-' + gi + '" data-opc="' + gi + '" value="' + esc(op.n) + '"' +
               (oi === primeraDisponible ? " checked" : "") + (op.agotado ? " disabled" : "") + '><span>' + esc(op.n) + precio +
               (op.agotado ? '<small>Agotado</small>' : '') + '</span></label>';
           }).join("") + '</div></fieldset>';
@@ -1134,7 +1139,7 @@
       html += "</select>";
     }
     // Adiciones (opcionales, se pueden marcar varias): cada una suma su precio.
-    var adic = comboFenix && !sePuedePedir ? [] : adicionesDe(r, it);
+    var adic = selectorTarjetas && !sePuedePedir ? [] : adicionesDe(r, it);
     if (adic.length) {
       html += '<details class="dish-adic" data-adic-box>' +
         '<summary>➕ Agregar adiciones <span class="dish-adic__n" data-adic-n></span></summary>' +
@@ -1148,8 +1153,8 @@
     }
     html += '<button type="button" class="add-btn dish-opc__add" data-opc-add ' +
       'data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '"' +
-      (comboFenix && (!sePuedePedir || faltanOpciones) ? ' disabled' : '') + '>' +
-      (comboFenix ? !sePuedePedir || faltanOpciones ? 'Combo no disponible' : 'Agregar · ' + esc(precioTxt(montoInicial)) : 'Agregar') + '</button>';
+      (selectorTarjetas && (!sePuedePedir || faltanOpciones) ? ' disabled' : '') + '>' +
+      (selectorTarjetas ? !sePuedePedir || faltanOpciones ? 'Producto no disponible' : 'Agregar · ' + esc(precioTxt(montoInicial)) : 'Agregar') + '</button>';
     return html + "</div>";
   }
 
@@ -1423,16 +1428,16 @@
     var marcadas = cont.querySelectorAll("[data-adic]:checked");
     var n = cont.querySelector("[data-adic-n]");
     if (n) n.textContent = marcadas.length ? "(" + marcadas.length + ")" : "";
-    var fenix = cont.classList.contains("fenix-combo");
+    var selectorTarjetas = cont.classList.contains("opciones-tarjetas");
     if (btn.disabled) return;
-    if (!marcadas.length && !fenix) { btn.textContent = "Agregar"; return; }
+    if (!marcadas.length && !selectorTarjetas) { btn.textContent = "Agregar"; return; }
     var total = it.p;
     cont.querySelectorAll("select[data-opc], input[data-opc]:checked").forEach(function (sel) {
       var g = (it.opciones || [])[Number(sel.getAttribute("data-opc"))] || {};
       var op = (g.opciones || []).filter(function (o) { return o.n === sel.value; })[0];
       total += op ? Number(op.precio) || 0 : 0;
     });
-    if (fenix) {
+    if (selectorTarjetas) {
       var indice = it.opciones.findIndex(function (g) { return norm(g.nombre) === "tamano"; });
       var tamanos = it.opciones[indice].opciones;
       var control = cont.querySelector('[data-opc="' + indice + '"]:checked');
@@ -1443,7 +1448,7 @@
       });
     }
     marcadas.forEach(function (c) { total += Number(c.getAttribute("data-precio")) || 0; });
-    btn.textContent = "Agregar · " + (fenix ? precioTxt(total) : money(total));
+    btn.textContent = "Agregar · " + (selectorTarjetas ? precioTxt(total) : money(total));
   }
   document.addEventListener("change", function (e) {
     var t = e.target;
@@ -3834,9 +3839,16 @@
     window.Store.leerAjustes()
       .then(function (a) {
         if (!a) { nubeLista("aj"); return; }
+        var cartaAbierta = vistaActual;
+        var estiloPrevio = cartaAbierta && opcionesEnTarjetas(cartaAbierta);
         AJUSTES = a;
         recordarVitrina(a.vitrina);
         aplicarVitrina();
+        if (cartaAbierta && vistaActual === cartaAbierta && estiloPrevio !== opcionesEnTarjetas(cartaAbierta)) {
+          var posicionCarta = window.scrollY;
+          abrirCarta(cartaAbierta);
+          window.scrollTo(0,posicionCarta);
+        }
         if (!vistaActual && /^#r=/.test(location.hash)) revisarHash();
         renderPromos();
         renderPopulares();
