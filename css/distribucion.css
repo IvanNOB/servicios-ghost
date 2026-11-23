@@ -1,28 +1,103 @@
-#vistaInicio .bloque {padding-block:clamp(24px,4vw,46px)}
-#vistaInicio .bloque__head {margin-bottom:18px}
-#vistaInicio .bloque__title {font-size:clamp(1.4rem,3vw,2.1rem);line-height:1.2}
-#vistaInicio .buscador-fijo {position:static;margin:0;padding:20px 0 0;background:transparent;border:0}
-.filtros-inicio {margin:8px 0}
-.filtros-inicio summary,.ayuda-inicio summary {cursor:pointer;width:fit-content;padding:10px 0;font-weight:650;color:var(--text-2)}
-#vistaInicio .filtros-inicio .chips {display:flex;flex-wrap:wrap;margin:0;gap:8px}
+/* Portada: directorio, búsqueda y platos recomendados. */
+#vistaInicio {max-width:1060px;margin-inline:auto}
+#vistaInicio .bloque {padding:clamp(18px,3.2vw,32px) 0}
+#vistaInicio .bloque__head {margin-bottom:14px;gap:12px}
+#vistaInicio .bloque__title {font-size:clamp(1.35rem,2.6vw,1.8rem);line-height:1.15;letter-spacing:-.025em}
+#vistaInicio #restaurantes {padding-top:clamp(6px,1.4vw,18px)}
+#vistaInicio .directorio__head {align-items:center;flex-wrap:wrap;gap:7px 14px}
+#vistaInicio #tituloRestaurantes {font-size:clamp(1.65rem,3.3vw,2.3rem);letter-spacing:-.04em}
+.locales__resumen {
+  display:inline-flex;align-items:center;gap:6px;margin:0;
+  color:var(--text-2);font-size:.82rem;font-weight:600;
+}
+.locales__resumen::before {content:"";width:7px;height:7px;border-radius:50%;background:var(--silver-soft)}
+.locales__resumen--abiertos::before {background:var(--success)}
+.directorio__buscar {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-bottom:16px}
+.directorio__buscar :is(.search__input,.directorio__filtro) {
+  min-height:46px;border:1px solid #393731;border-radius:12px;background:var(--surface-2);font:inherit;
+}
+.directorio__buscar .search__input {padding:10px 36px 10px 39px;min-width:0}
+.directorio__buscar .search__input::-webkit-search-cancel-button {display:none}
+.directorio__buscar .search__icon {left:13px;color:var(--text-2)}
+.directorio__buscar .search__limpiar {right:4px}
+.directorio__buscar .directorio__filtro {display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 13px;color:var(--text);font-size:.9rem;font-weight:700;cursor:pointer}
+.directorio__filtro svg {color:var(--gold-soft)}
+.directorio__filtro[aria-expanded="true"],.inicio--filtrado .directorio__filtro {border-color:#a98f43}
+.directorio__buscar .chips {grid-column:1/-1;flex-wrap:wrap;padding:8px 0 2px;gap:7px;overflow:visible}
+.directorio__buscar .chip {min-height:44px;padding:7px 12px}
+.directorio__seleccion {display:flex;align-items:center;justify-content:space-between;gap:12px;overflow-wrap:anywhere;margin-bottom:12px}
+.directorio__seleccion span {min-width:0;color:var(--text-2)}
+.directorio__seleccion button {flex-shrink:0;min-height:44px}
+.directorio__resultados {margin-bottom:20px}
+.directorio__resultados h2,#tituloCoincidencias {font-size:1.05rem;margin:0 0 10px;overflow-wrap:anywhere}
+#vistaInicio :is(#resultados,#gridRestaurantes,#almuerzos,#restaurantes) {scroll-margin-top:calc(var(--alto-header,64px) + 12px)}
+#vistaInicio #gridRestaurantes {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#gridRestaurantes .card {
+  display:grid;grid-template-columns:clamp(78px,20vw,108px) minmax(0,1fr);
+  align-items:center;gap:clamp(12px,2vw,18px);padding:10px;
+  border:1px solid var(--border);border-radius:16px;background:var(--surface-2);
+}
+#gridRestaurantes .card:hover {border-color:#766536}
+#gridRestaurantes .card__cover {width:100%;height:auto;aspect-ratio:1;border-radius:9px}
+#gridRestaurantes .card__body {display:grid;gap:4px;min-width:0;padding:0}
+#gridRestaurantes .card__name {display:block;font-size:clamp(1rem,2.3vw,1.15rem);line-height:1.2;overflow-wrap:anywhere}
+#gridRestaurantes .card__info {white-space:normal;line-height:1.35;font-size:.83rem}
+#gridRestaurantes .card__meta {margin:2px 0 0;padding:0;gap:6px 12px;justify-content:space-between}
+#gridRestaurantes .state {background:none;padding:0;font-size:.8rem}
+#gridRestaurantes .card__ver {background:none;padding:0;color:var(--gold-soft);font-size:.85rem}
+#gridRestaurantes .card__promo {position:static;justify-self:start;max-width:100%;color:var(--gold-soft);background:none;box-shadow:none;padding:0;white-space:normal}
+#vistaInicio #estadosLocales {padding:14px 0;border-top:1px solid var(--border)}
+#vistaInicio.inicio--filtrado #estadosLocales {display:none}
+#vistaInicio #recomendado {border-top:1px solid var(--border)}
+#vistaInicio .recomendados-grid {display:grid;grid-auto-flow:row;grid-auto-columns:auto;gap:12px;overflow:visible;padding:0}
+.recomendados-fotos,.recomendados-lista {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.recomendados-fotos .recomendado-card {background:var(--surface-2);border-radius:14px}
+.recomendados-fotos .recomendado-card__portada {aspect-ratio:1.65}
+.recomendados-fotos .recomendado-card__info {display:flex;flex-direction:column;align-items:stretch;gap:5px}
+.recomendado-card__pie {margin-top:auto;padding-top:4px}
+.recomendado-card__precio {font-size:1rem}
+.recomendado-card__accion {background:transparent;color:var(--text-2);padding:0;font-weight:500}
+.recomendados-lista .recomendado-card {display:grid;grid-template-columns:60px minmax(0,1fr);align-items:center;gap:12px;padding:9px;background:var(--surface-2)}
+.recomendados-lista .recomendado-card__portada {aspect-ratio:1;border-radius:8px}
+.recomendados-lista .recomendado-card__ilustracion .producto-ilustrado__logo {padding:0;object-fit:cover}
+.recomendados-lista .recomendado-card__info {padding:0}
+.recomendados-lista .recomendado-card__pie {margin:0;padding:0}
+.recomendados-lista .recomendado-card__accion {display:none}
+.populares-inicio {border-block:1px solid var(--border)}
+.populares-inicio summary {display:flex;align-items:center;justify-content:space-between;min-height:44px;gap:12px;cursor:pointer;list-style:none}
+.populares-inicio summary::-webkit-details-marker {display:none}
+.populares-inicio summary::after {content:"";width:9px;height:9px;margin-inline-end:4px;border:solid var(--gold-soft);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.populares-inicio[open] summary::after {transform:rotate(225deg)}
+.populares-inicio[open] summary {margin-bottom:12px}
+.ayuda-inicio summary {cursor:pointer;width:fit-content;padding:10px 0;font-weight:650;color:var(--text-2)}
 .ayuda-inicio[open] .pasos {margin-top:16px}
-#vistaInicio #gridRestaurantes {grid-template-columns:repeat(auto-fit,minmax(min(100%,255px),1fr));gap:22px}
-#gridRestaurantes .card__body {padding:16px;gap:7px}
-#gridRestaurantes .card__info {line-height:1.45}
+.header__importe {display:none}
+body:has(#vistaInicio:not([hidden])) #cartBar {display:none}
+body:has(#vistaInicio:not([hidden])) .header__cart {
+  position:relative;width:auto;min-width:44px;min-height:44px;height:auto;padding:8px 12px;border-radius:12px;
+}
+body:has(#vistaInicio:not([hidden])) .header__importe:not(:empty) {display:inline;font-weight:750;font-variant-numeric:tabular-nums}
+body:has(#vistaInicio:not([hidden])) .carta-count:not([hidden]) {
+  display:grid;position:absolute;top:-5px;right:-5px;place-items:center;background:var(--surface-2);color:var(--gold-soft);
+  border:1px solid #8a763d;border-radius:20px;min-width:19px;height:19px;padding:0 4px;font-size:.73rem;
+}
+body:has(#vistaInicio:not([hidden])) .logo-flotante {bottom:calc(12px + env(safe-area-inset-bottom,0px));width:44px;height:44px}
+body:has(#vistaInicio:not([hidden])) .fab__menu {bottom:calc(64px + env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 100px)}
+body:has(#vistaInicio:not([hidden])) :is(.fab__pista,.fab__badge) {display:none}
+@media(max-width:650px) {
+  #vistaInicio #gridRestaurantes,.recomendados-lista {grid-template-columns:minmax(0,1fr)}
+  #vistaInicio #gridRestaurantes {gap:9px}
+  .recomendados-fotos .recomendado-card__accion {display:none}
+}
+@media(min-width:760px) {
+  .recomendados-fotos {grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+}
 #vistaCarta .carta-grupo.section {border-inline:0;border-radius:0;background:transparent;margin:0;border-bottom:0}
 #vistaCarta .carta-grupo:last-of-type {border-bottom:1px solid var(--border)}
 #vistaCarta .carta-grupo__titulo {min-height:60px;align-items:center;padding-inline:4px}
 #vistaCarta .carta-grupo > .dishes {padding-inline:0;border:0}
 #vistaCarta .dish__info {line-height:1.45}
 @media(max-width:600px){
- #vistaInicio #gridRestaurantes {grid-template-columns:minmax(0,1fr);gap:0}
- #gridRestaurantes .card {display:grid;grid-template-columns:clamp(96px,31vw,152px) minmax(0,1fr);align-items:center;gap:16px;text-align:left;border:0;border-bottom:1px solid var(--border);border-radius:0;background:transparent;box-shadow:none;padding:17px 0}
- #gridRestaurantes .card__cover {width:100%;height:auto;aspect-ratio:1;border-radius:12px}
- #gridRestaurantes .card__body {padding:0;min-width:0}
- #gridRestaurantes .card__name {font-size:1.1rem;line-height:1.25}
- #gridRestaurantes .card__ver {display:none}
- #gridRestaurantes .card__promo,#gridRestaurantes .card__menu {position:static;grid-column:2;grid-row:auto;justify-self:start}
- #gridRestaurantes .card__body {grid-column:2;grid-row:1}
  #vistaInicio .bloque__head--menu {align-items:flex-start;flex-direction:column}
  #vistaCarta .carta-nav {position:static}
  #vistaCarta .carta-rest-head {margin-bottom:24px}

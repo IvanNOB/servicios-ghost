@@ -596,11 +596,6 @@
       return '<button type="button" class="chip" data-chip="' + esc(k) + '" aria-pressed="' + (k === filtroCategoria) + '">' +
         esc(etiquetaFiltro(k)) + (n ? ' <span class="chip__n">' + n + "</span>" : "") + "</button>";
     }).join("");
-    var activo = elChips.querySelector('[aria-pressed="true"]');
-    if (activo && activo.scrollIntoView && filtroCategoria !== "todos") {
-      var izq = activo.offsetLeft - (elChips.clientWidth - activo.offsetWidth) / 2;
-      elChips.scrollTo({ left: Math.max(0, izq), behavior: "smooth" });
-    }
   }
 
   /* --------------------- Lista de restaurantes -------------------- */
@@ -656,7 +651,7 @@
     var res = platosQueCoinciden(q, 24);
     sec.hidden = !res.total;
     document.getElementById("resultadosTitulo").textContent =
-      "🍽️ " + res.total + (res.total === 1 ? " plato" : " platos") + " con “" + termino.trim() + "”";
+      res.total + (res.total === 1 ? " plato" : " platos") + " con “" + termino.trim() + "”";
     cont.innerHTML = res.lista.map(function (x) {
       var img = x.it.foto
         ? '<img class="res__img" src="' + esc(x.it.foto) + '" alt="" loading="lazy" decoding="async" />'
@@ -676,7 +671,9 @@
   function enModoFiltro() { return !!termino.trim() || filtroCategoria !== "todos"; }
 
   function actualizarVista() {
+    renderChips();
     var filtrando = enModoFiltro();
+    elVistaInicio.classList.toggle("inicio--filtrado", filtrando);
     var esMenu = filtroCategoria === "desayuno" || filtroCategoria === "almuerzo";
     // Las secciones de portada se ocultan al buscar/filtrar; al volver, cada
     // una decide si se muestra según los datos disponibles.
@@ -688,18 +685,14 @@
     if (esMenu && tipoMenuDia !== filtroCategoria) { tipoMenuDia = filtroCategoria; renderMenuDia(); }
     if (!filtrando) { renderPromos(); renderPopulares(); }
     renderRecomendados();
-    renderChips();
     renderResultadosPlatos();
     renderGrid();
-    var titulo = document.getElementById("tituloRestaurantes");
     var n = restaurantesFiltrados().length;
-    if (titulo) {
-      titulo.textContent = !filtrando ? "Locales" :
-        (termino.trim() ? n + (n === 1 ? " local" : " locales") + " con “" + termino.trim() + "”"
-                        : etiquetaFiltro(filtroCategoria) + " · " + n);
-    }
-    var quitar = document.getElementById("btnQuitarFiltros");
-    if (quitar) quitar.hidden = !filtrando;
+    var coincidencias = $("#tituloCoincidencias");
+    coincidencias.textContent = n + (n === 1 ? " local" : " locales");
+    coincidencias.hidden = !filtrando;
+    $("#filtrosResumen").hidden = filtroCategoria === "todos";
+    $("#filtroActual").textContent = etiquetaFiltro(filtroCategoria);
     renderResumen();
   }
 
@@ -707,7 +700,7 @@
     filtroCategoria = filtroCategoria === k && k !== "todos" ? "todos" : k;
     if (vistaActual) irAInicio();
     actualizarVista();
-    if (enModoFiltro()) irAResultados();
+    if (filtroCategoria === "desayuno" || filtroCategoria === "almuerzo") irAResultados();
   }
   function limpiarFiltros() {
     filtroCategoria = "todos";
@@ -717,24 +710,19 @@
     if (l) l.hidden = true;
     actualizarVista();
   }
-  // Lleva la vista a los resultados, dejando visible el buscador fijo.
   function irAResultados() {
-    var destino = document.getElementById(
-      termino.trim().length >= 2 && !document.getElementById("resultados").hidden ? "resultados" :
-      (filtroCategoria === "desayuno" || filtroCategoria === "almuerzo") ? "almuerzos" : "restaurantes");
-    var fijo = document.getElementById("buscadorFijo");
-    var alto = (document.querySelector(".header") || {}).offsetHeight || 0;
-    alto += fijo ? fijo.offsetHeight : 0;
-    if (destino) window.scrollTo({ top: destino.getBoundingClientRect().top + window.scrollY - alto - 8, behavior: "smooth" });
+    var platos = $("#resultados");
+    var destino = !platos.hidden ? platos :
+      (filtroCategoria === "desayuno" || filtroCategoria === "almuerzo") ? $("#almuerzos") : $("#gridRestaurantes");
+    if (destino) destino.scrollIntoView({block: "start", behavior: "smooth"});
   }
 
-  // "🟢 12 de 20 abiertos ahora"
   function renderResumen() {
-    var el = document.getElementById("resumenAbiertos");
-    if (!el) return;
+    var el = $("#resumenAbiertos");
     var abiertos = DATA.filter(abiertoAhora).length;
     el.hidden = enModoFiltro() || !DATA.length;
-    el.textContent = abiertos === 1 ? "1 local abierto ahora" : abiertos + " locales abiertos ahora";
+    el.textContent = abiertos === 1 ? "1 abierto ahora" : abiertos + " abiertos ahora";
+    el.classList.toggle("locales__resumen--abiertos", abiertos > 0);
   }
 
   // Altura del encabezado (para que el buscador quede fijo justo debajo).
@@ -779,17 +767,17 @@
             : '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span>") + "</div>";
 
       var estado = estadoApertura(r);
-      var menuHoy = almuerzoVigente(r) ? "🍲" : menuVigente(r, "desayuno") ? "🍳" : "";
+      var menuHoy = almuerzoVigente(r) ? "Almuerzo de hoy" : menuVigente(r, "desayuno") ? "Desayuno de hoy" : "";
       html +=
         '<button type="button" class="card' + (estado.abierto ? "" : " card--cerrado") + '" data-rest="' + esc(r.id) +
         '" title="' + esc(r.nombre + " · " + r.cat + " · " + r.tiempo) + '"' +
         ' aria-label="Ver la carta de ' + esc(r.nombre + ". " + estado.texto + (estado.detalle ? ". " + estado.detalle : "")) + '">' +
           cover +
-          (promoVigente(r) ? '<span class="card__promo">🔥 ' + esc(r.promo.texto) + "</span>" : "") +
-          (menuHoy ? '<span class="card__menu" aria-hidden="true">' + menuHoy + "</span>" : "") +
           '<div class="card__body">' +
             '<div class="card__name">' + esc(r.nombre) + "</div>" +
-            '<div class="card__info">' + esc(r.cat) + " · " + esc(r.tiempo) + "</div>" +
+            '<div class="card__info">' + [r.cat, r.tiempo].filter(Boolean).map(esc).join(" · ") + "</div>" +
+            (promoVigente(r) ? '<div class="card__promo">' + esc(r.promo.texto) + "</div>" : "") +
+            (menuHoy ? '<div class="card__horario">' + menuHoy + "</div>" : "") +
             '<div class="card__meta">' + estadoHTML(r, false) + '<span class="card__ver">Ver carta</span></div>' +
             (!estado.abierto && estado.detalle ? '<div class="card__horario">' + esc(estado.detalle) + "</div>" : "") +
           "</div>" +
@@ -1707,13 +1695,17 @@
     var n = totalProductos();
     var insignia = $("#cartaCount");
     if (insignia) { insignia.textContent = n; insignia.hidden = n === 0; }
+    var cantidad = n === 1 ? "1 producto" : n + " productos";
+    var importe = n > 0 ? money(totalPesos()) : "";
+    $("#pedidoInicioTotal").textContent = importe;
+    $("#cartBtnTop").setAttribute("aria-label", n > 0 ? "Ver mi pedido, " + cantidad + ", " + importe : "Ver mi pedido");
     if (n <= 0) {
       elCartBar.hidden = true;
     } else {
       elCartBar.hidden = false;
       elCartBarCount.textContent = String(n);
-      elCartBarProductos.textContent = n === 1 ? "1 producto" : n + " productos";
-      elCartBarTotal.textContent = money(totalPesos());
+      elCartBarProductos.textContent = cantidad;
+      elCartBarTotal.textContent = importe;
     }
     actualizarFab();
     // No repintar si la hoja está mostrando la confirmación de envío.
@@ -2621,9 +2613,25 @@
     if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); if (vistaActual) conTransicion(irAInicio); else irAInicio(); return; }
 
     // --- Chips de categoría ---
-    if (t.closest("[data-limpiar-filtros]")) { limpiarFiltros(); return; }
+    if (t.closest("#filtrosBoton")) {
+      elChips.hidden = !elChips.hidden;
+      $("#filtrosBoton").setAttribute("aria-expanded", String(!elChips.hidden));
+      return;
+    }
+    if (t.closest("[data-quitar-categoria]")) {
+      aplicarFiltro("todos");
+      $("#filtrosBoton").focus();
+      return;
+    }
+    if (t.closest("[data-limpiar-filtros]")) { limpiarFiltros(); elBuscador.focus(); return; }
     var chip = t.closest("[data-chip]");
-    if (chip) { aplicarFiltro(chip.getAttribute("data-chip")); return; }
+    if (chip) {
+      elChips.hidden = true;
+      $("#filtrosBoton").setAttribute("aria-expanded", "false");
+      $("#filtrosBoton").focus();
+      aplicarFiltro(chip.getAttribute("data-chip"));
+      return;
+    }
 
     // --- Volver desde la carta ---
     if (t.closest("[data-back]")) { if (MODO_PANEL) volverAlPanel(); else conTransicion(irAInicio); return; }
@@ -3711,22 +3719,26 @@
     var lista = seleccionarRecomendados(abiertos.length ? abiertos : DATA, populares);
     sec.hidden = !lista.length;
     aviso.hidden = !!abiertos.length;
-    var html = lista.map(function (x) {
+    var conFoto = [], sinFoto = [];
+    lista.forEach(function (x) {
       var r = x.r, it = x.it;
       var imagen = it.foto
         ? '<img class="recomendado-card__foto" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
         : imagenProductoSinFoto(it, r, "recomendado-card__ilustracion");
       var estado = estadoApertura(r);
       var precio = (tieneOpciones(it) ? "Desde " : "") + money(it.p);
-      return '<button type="button" class="recomendado-card" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">' +
+      var tarjeta = '<button type="button" class="recomendado-card" data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(it.id) + '">' +
         '<span class="recomendado-card__portada">' + imagen + "</span>" +
-        '<span class="recomendado-card__info"><strong>' + esc(it.n) + "</strong>" +
+        '<span class="recomendado-card__info"><strong>' + esc(it.n).replace(/\//g, "/<wbr>") + "</strong>" +
         '<span class="recomendado-card__local">' + esc(r.nombre) + "</span>" +
         (!estado.abierto ? '<span class="recomendado-card__local">' + esc(estado.detalle || estado.texto) + "</span>" : "") +
         '<span class="recomendado-card__pie"><span class="recomendado-card__precio">' + esc(precio) +
         '</span><span class="recomendado-card__accion">' + (estado.abierto ? "Ver plato" : "Ver carta") +
         "</span></span></span></button>";
-    }).join("");
+      (it.foto ? conFoto : sinFoto).push(tarjeta);
+    });
+    var html = (conFoto.length ? '<div class="recomendados-fotos">' + conFoto.join("") + "</div>" : "") +
+      (sinFoto.length ? '<div class="recomendados-lista">' + sinFoto.join("") + "</div>" : "");
     if (_recomendadosHTML !== html) {
       grid.innerHTML = html;
       _recomendadosHTML = html;
@@ -3887,7 +3899,7 @@
   function refrescarHorarios() {
     aplicarVitrina();  // la vitrina empieza o termina sola a la hora fijada
     renderEstados();
-    if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); renderRecomendados(); }
+    if (!elVistaInicio.hidden) { renderMenuDia(); actualizarVista(); }
   }
   setInterval(refrescarHorarios, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) refrescarHorarios(); });
