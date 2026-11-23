@@ -271,8 +271,29 @@
 
   // Promoción propia del negocio: { texto, hasta: "YYYY-MM-DD" | "" } o null.
   function normalizarPromo(p) {
-    if (!p || typeof p !== "object" || !String(p.texto || "").trim()) return null;
-    return { texto: String(p.texto).trim().slice(0, 40), hasta: /^\d{4}-\d{2}-\d{2}$/.test(p.hasta || "") ? p.hasta : "" };
+    if (!p || typeof p !== "object") return null;
+    var texto = String(p.texto || "").trim().slice(0, 40);
+    var estado = p.estado;
+    var valido = estado && /^https:\/\//i.test(estado.foto || "") && Number.isFinite(Date.parse(estado.hasta));
+    if (!texto && !valido) return null;
+    var promo = { texto: texto, hasta: /^\d{4}-\d{2}-\d{2}$/.test(p.hasta || "") ? p.hasta : "" };
+    if (valido) promo.estado = { foto: estado.foto, texto: String(estado.texto || "").trim().slice(0, 120), hasta: estado.hasta };
+    return promo;
+  }
+
+  async function actualizarPromoParcial(id, cambios) {
+    var sb = client();
+    if (!sb) throw new Error("Supabase no está configurado.");
+    var consulta = await sb.from("restaurantes").select("promo").eq("id", id).single();
+    if (consulta.error) throw consulta.error;
+    var anterior = consulta.data.promo;
+    var promo = normalizarPromo(Object.assign({}, anterior, cambios));
+    var guardarPromo = sb.from("restaurantes").update({promo:promo}).eq("id", id);
+    guardarPromo = anterior == null ? guardarPromo.is("promo", null) : guardarPromo.eq("promo", JSON.stringify(anterior));
+    var resultado = await guardarPromo.select("id");
+    if (resultado.error) throw resultado.error;
+    if (!resultado.data.length) throw new Error("El local cambió o no tienes permiso. Vuelve a intentarlo.");
+    return promo;
   }
 
   // Almuerzo del día (o null).
@@ -685,6 +706,7 @@
     reenviarPedidoMap: reenviarPedidoMap,
     estadoEnviosMap: estadoEnviosMap,
     estadoPedido: estadoPedido,
+    actualizarPromoParcial: actualizarPromoParcial,
     subirFoto: subirFoto,
     urlPortadaEnlace: urlPortadaEnlace,
     subirPortadaEnlace: subirPortadaEnlace,

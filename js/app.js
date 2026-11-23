@@ -3654,8 +3654,75 @@
     }
   }
 
+  var estadosVisibles = [];
+  var estadoSeleccionado = 0;
+  var visorEstado = $("#estadoVisor");
+  var coloresEstado = {"granizados-dbarrio":"#ddfa65",atemporal:"#ffab59","obleas-y-mas":"#ff719a","croasan-bloom":"#8eafff"};
+  function colorEstado(local) {
+    return coloresEstado[local.id] || (/^#[0-9a-f]{6}$/i.test(local.color) ? local.color : "#d4af37");
+  }
+  function renderEstados() {
+    var lista = DATA.filter(function (local) {
+      var estado = local.promo && local.promo.estado;
+      return estado && Date.parse(estado.hasta) > Date.now();
+    });
+    var zona = $("#estadosLocales");
+    zona.hidden = !lista.length;
+    var contenedor = $("#estadosLista");
+    var html = lista.map(function (local) {
+      return '<button type="button" data-estado-local="' + esc(local.id) + '" style="--estado-color:' + colorEstado(local) + '">' +
+        '<span class="estado-aro">' + (local.logo
+          ? '<img src="' + esc(local.logo) + '" alt="" loading="lazy">'
+          : '<span aria-hidden="true">' + esc(iniciales(local.nombre)) + '</span>') +
+        '</span><span>' + esc(local.nombre) + '</span></button>';
+    }).join("");
+    if (contenedor.dataset.contenido !== html) {
+      contenedor.innerHTML = html;
+      contenedor.dataset.contenido = html;
+    }
+    var actual = estadosVisibles[estadoSeleccionado]?.id;
+    estadosVisibles = lista;
+    if (visorEstado.open) {
+      var indice = lista.findIndex(function (local) { return local.id === actual; });
+      if (indice < 0) visorEstado.close();
+      else mostrarEstado(indice);
+    }
+  }
+  function mostrarEstado(indice) {
+    var local = estadosVisibles[indice];
+    if (!local) return;
+    estadoSeleccionado = indice;
+    var estado = local.promo.estado;
+    $("#estadoLocal").textContent = local.nombre;
+    var imagen = $("#estadoImagen");
+    if (imagen.getAttribute("src") !== estado.foto) imagen.src = estado.foto;
+    imagen.alt = estado.texto ? "" : "Foto publicada por " + local.nombre;
+    $("#estadoDescripcion").textContent = estado.texto;
+    $("#estadoPosicion").textContent = (indice+1) + " de " + estadosVisibles.length;
+    visorEstado.style.setProperty("--estado-color",colorEstado(local));
+    visorEstado.querySelector('[data-estado-paso="-1"]').disabled = indice === 0;
+    visorEstado.querySelector('[data-estado-paso="1"]').disabled = indice === estadosVisibles.length-1;
+    if (!visorEstado.open) visorEstado.showModal();
+  }
+  $("#estadosLista").addEventListener("click",function (e) {
+    var boton = e.target.closest("[data-estado-local]");
+    if (!boton) return;
+    mostrarEstado(estadosVisibles.findIndex(function (local) { return local.id === boton.dataset.estadoLocal; }));
+  });
+  visorEstado.addEventListener("click",function (e) {
+    var paso = e.target.closest("[data-estado-paso]");
+    if (paso) mostrarEstado(estadoSeleccionado + Number(paso.dataset.estadoPaso));
+    if (e.target.closest("[data-estado-cerrar]") || e.target === visorEstado) visorEstado.close();
+    if (e.target.closest("[data-estado-carta]")) {
+      var local = estadosVisibles[estadoSeleccionado];
+      visorEstado.close();
+      if (local) irAPlato(local.id);
+    }
+  });
+
   function pintarTodo() {
     renderVitrina();
+    renderEstados();
     // actualizarVista pinta promos, recomendado, populares, chips y restaurantes
     // (o solo los resultados si el cliente está buscando o filtrando).
     renderMenuDia();
@@ -3732,6 +3799,7 @@
   // Los horarios cambian con la hora: repintamos cada minuto (y al volver a la pestaña).
   function refrescarHorarios() {
     aplicarVitrina();  // la vitrina empieza o termina sola a la hora fijada
+    renderEstados();
     if (!elVistaInicio.hidden) { renderMenuDia(); renderChips(); renderGrid(); renderResumen(); renderRecomendados(); }
   }
   setInterval(refrescarHorarios, 60000);
