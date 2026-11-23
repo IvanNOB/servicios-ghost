@@ -990,21 +990,26 @@
     var selectorTarjetas = opcionesEnTarjetas(r.id) &&
       Array.isArray(it.opciones) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; });
     var sePuedePedir = !it.agotado && abiertoAhora(r);
+    var grupoCarta = selectorTarjetas && r.carta.find(function (grupo) { return grupo.sec === seccion; });
+    var opcionesPlegables = grupoCarta && grupoCarta.items.length > 1;
+
     // Plato con opciones a elegir (ej. salsa de las alitas) o con adiciones.
     if (selectorTarjetas || (armable(r, it) && sePuedePedir)) {
       // "desde $X" si algún grupo cambia el precio (hay tamaños/variantes).
       var variaPrecio = (it.opciones || []).some(grupoTienePrecios);
       var precioMostrar = it.p > 0 ? (variaPrecio ? "desde " : "") + money(it.p) : precioTxt(0);
       return (
-        '<div class="dish dish--opciones' + imagenClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
+        '<div class="dish dish--opciones' + (selectorTarjetas ? ' dish--opciones-tarjetas' : '') + imagenClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
           fotoHTML(it, r, seccion) +
           '<div class="dish__info">' +
             msgHTML(it) +
             '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
-            (selectorTarjetas ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
+            (selectorTarjetas && !opcionesPlegables ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
           "</div>" +
+          (opcionesPlegables ? '<details class="carta-elegir"><summary>Ver tamaños y precios</summary>' : '') +
           opcionesPlatoHTML(r, it, selectorTarjetas, sePuedePedir) +
+          (opcionesPlegables ? '</details>' : '') +
         "</div>"
       );
     }
