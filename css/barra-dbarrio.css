@@ -147,13 +147,7 @@ body:has(#vistaCarta:not([hidden])) #cartBar {display:none}
 .barra .vaso-dbarrio__foto-referencia .vaso-dbarrio__caida {display:none}
 .barra[data-paso-barra="0"] .vaso-dbarrio__llenado,.barra[data-paso-barra="0"] .barra-dulces {visibility:hidden}
 .barra .barra-dulces {position:absolute;inset:0;pointer-events:none}
-.barra .barra-dulces img {position:absolute;width:10%;height:10%;object-fit:contain;transform:rotate(var(--giro));animation:poner-goma .48s cubic-bezier(.3,.74,.4,1)}
-@keyframes poner-goma {from {translate:0 -170%;opacity:.2} 80% {translate:0 6%} to {translate:0 0;opacity:1}}
-.barra .barra-bandeja {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;padding:4px;border:1px solid #a5a9ab;border-radius:14px;background:linear-gradient(145deg,#afafb0,#575758 45%,#b3b5b5)}
 .barra .barra-bandeja:empty {display:none}
-.barra .barra-bandeja button {display:grid;place-items:center;gap:4px;min-width:0;padding:8px 1px;color:white;border:1px solid #7c7c7d;background:linear-gradient(155deg,#423d41,#161417 70%);border-radius:9px;font-weight:700;cursor:pointer}
-.barra .barra-bandeja img {height:44px;width:90%;object-fit:contain}
-.barra .barra-bandeja button[aria-pressed=true] {outline:2px solid #ddfc61;outline-offset:-2px;color:#ddfc61}
 .barra .barra-resumen {margin:0;padding:0;border:0}
 .barra .barra-resumen p {margin:0 0 12px;color:#fff;line-height:1.55}
 .barra .barra-para-llevar .barra-tapa,.barra .barra-tapa {display:block;left:23%;width:54%;top:-1%;height:27%;border:0;background: url("../assets/granizados-dbarrio/barra/tapa.webp") center / 100% 100% no-repeat;mix-blend-mode:screen;box-shadow:none;border-radius:0}
@@ -172,10 +166,7 @@ body:has(#vistaCarta:not([hidden])) #cartBar {display:none}
 .barra-viva .vaso-dbarrio__llenado {visibility:hidden!important}
 .barra-viva[data-paso-barra="0"] .barra-chorro {visibility:hidden}
 .barra-viva[data-paso-barra="1"] .vaso-dbarrio__toma {touch-action:pan-y;cursor:ew-resize}
-.barra .barra-bandeja button {touch-action:none;user-select:none;-webkit-touch-callout:none}
-.barra .barra-bandeja button img {pointer-events:none}
 .barra-gomita-en-mano {position:fixed;z-index:150;pointer-events:none;width:52px;height:52px;object-fit:contain;transform:translate(-50%,-75%) rotate(-10deg);filter:drop-shadow(0 5px 5px #000a)}
-.barra-recibiendo .vaso-dbarrio__foto-referencia::after {content:"";position:absolute;inset:3px;border:2px solid #d8f869;pointer-events:none;border-radius:12px}
 
 @media (max-width:760px) and (min-height:560px) {
   .vaso-dbarrio.barra .vaso-dbarrio__presentacion {height:clamp(226px,40svh,348px)}
@@ -196,3 +187,57 @@ body:has(#vistaCarta:not([hidden])) #cartBar {display:none}
 .barra .barra-tapa:focus-visible {outline:2px solid var(--vaso-acento);outline-offset:1px}
 .barra .barra-guia-tapa {display:block;color:#c6c3cb;font-size:.85rem;line-height:1.4;margin-top:8px}
 @media (prefers-reduced-motion:reduce) {.barra .barra-tapa {transition:none!important}}
+
+/* El documento decide su destino antes de mostrar el contenido de la tienda. */
+#cargaPagina,.barra-espera {display:none}
+html[data-arranque] :is(#vistaInicio,#vistaCarta,#fab,#cartBar,footer),
+html[data-arranque="carta"] .header__nav {display:none!important}
+html[data-arranque] #cargaPagina {display:grid;place-content:center;min-height:45svh;color:var(--text-2,#ccc)}
+.carga-error,.carga-inicio,.carga-carta {display:none}
+html[data-arranque="carta"] .carga-carta,html[data-arranque="inicio"] .carga-inicio,html[data-arranque="error"] .carga-error {display:inline}
+.carga-error a {color:var(--primary)}
+.vaso-dbarrio[data-montando] {display:block;padding:0;border:0;background:#0b090f}
+.vaso-dbarrio[data-montando] > :not(.barra-espera) {display:none!important}
+.vaso-dbarrio[data-montando] .barra-espera {display:grid;justify-items:center;gap:8px;padding:20px;color:#dfdbe0}
+.barra-espera img {display:block;width:auto;height:clamp(150px,28svh,275px);max-width:100%;object-fit:contain}
+
+/* Durante la decoración la cámara se acerca al borde y deja espacio para la bandeja. */
+.barra[data-vaso-vista="foto"][data-paso-barra="2"] .vaso-dbarrio__toma {
+  transform-origin:50% 24%;
+  transform:translate(-50%,-50%) translateY(13%) scale(calc(var(--escala-vaso,1) * 1.55));
+}
+.barra .barra-dulces img {
+  position:absolute;height:auto;aspect-ratio:1;object-fit:contain;
+  translate:-50% -50%;transform:rotate(var(--giro));
+  filter:drop-shadow(0 1px 1px #230b1e94);user-select:none;-webkit-touch-callout:none;
+}
+.barra[data-paso-barra="2"] .barra-dulces img {pointer-events:auto;touch-action:none;cursor:grab}
+.barra-recibiendo .barra-dulces::before {
+  content:"";position:absolute;left:var(--sitio-x);top:var(--sitio-y);translate:-50% -50%;
+  width:16%;height:5.5%;border:1.5px dashed #fff9cd;border-radius:50%;
+  background:#f6f0d326;box-shadow:0 0 0 2px #2b161e70;
+}
+.barra .barra-porcion {display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:9px;color:#f4edf2}
+.barra .barra-porcion span {font-variant-numeric:tabular-nums;color:#dedadf;font-size:.88rem}
+.barra .barra-bandeja {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.barra .barra-bandeja button {
+  position:relative;display:grid;grid-template-rows:58px auto;justify-items:center;align-items:center;
+  gap:4px;min-width:0;padding:7px 4px;color:#f7f2f6;border:1px solid #494047;
+  background:#201c22;border-radius:13px;font:700 .94rem/1.15 var(--font-title,sans-serif);
+  user-select:none;-webkit-touch-callout:none;touch-action:pan-y;cursor:pointer;
+}
+.barra .barra-muestra {display:grid;place-items:center;width:100%;height:100%;touch-action:none;cursor:grab;
+  background:radial-gradient(ellipse at 50% 65%,color-mix(in srgb,var(--color-dulce) 19%,transparent),transparent 68%)}
+.barra .barra-muestra img {width:100%;height:100%;max-height:56px;object-fit:contain;pointer-events:none;filter:drop-shadow(0 3px 2px #100b0f99)}
+.barra .barra-bandeja button[aria-pressed="true"] {border-color:#dafa69;background:#292c20}
+.barra-goma-marcada {display:none}
+.barra .barra-bandeja button[aria-pressed="true"] .barra-goma-marcada {
+ position:absolute;right:5px;top:5px;display:grid;place-items:center;width:17px;height:17px;
+  background:#ddfa6d;color:#1c2112;font:800 12px/1 sans-serif;border-radius:50%;
+}
+.barra .barra-bandeja button:focus-visible {outline:2px solid #fff;outline-offset:2px}
+.barra .vaso-dbarrio__grupo .barra-ayuda-gomas {margin:9px 0 0;color:#d4cfd4;line-height:1.4;font-size:.85rem}
+@media(max-width:600px) {
+  .barra .barra-bandeja {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .barra .barra-bandeja button {grid-template:60px / minmax(42px,.9fr) minmax(0,1fr);gap:5px;padding:2px 8px 2px 5px;justify-items:start;text-align:left}
+}

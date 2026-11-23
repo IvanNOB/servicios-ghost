@@ -91,113 +91,208 @@ export function abrirBarra(box, pasoInicial) {
   resumen.append(detalle, empaqueControl.closest('label'), guiaTapa);
   grupos[2].after(resumen);
   grupos.push(resumen);
-  const tipos = [['Gusanos','gusanos'],['Ositos','ositos'],['Aros','aros'],['Sandías','sandias']];
+  const tipos = [
+    ['Gusanos','gusanos','#60d5c3'], ['Ositos','ositos','#ec8d47'],
+    ['Aros','aros','#f0b54c'], ['Sandías','sandias','#f57a93']
+  ];
   const dulces = document.createElement('div');
   dulces.className = 'barra-dulces';
+  dulces.setAttribute('aria-hidden','true');
   escena.insertBefore(dulces,tapa);
   const bandeja = document.createElement('div');
   bandeja.className = 'barra-bandeja';
-  grupos[2].append(bandeja);
-  const info = document.createElement('p');
+  const gomasInfo = document.createElement('div');
+  gomasInfo.className = 'barra-porcion';
+  const leyenda = document.createElement('strong');
   const precio = opcionGomas?.closest('label').querySelector('b').textContent;
-  info.textContent = opcionGomas ? 'Una porción ' + precio + '. Toca una gomita o arrástrala al vaso. Mezcla según disponibilidad.' : 'Las gomitas están agotadas.';
-  grupos[2].append(info);
-  if (opcionGomas) opcionGomas.closest('label').hidden = true;
-  function tiposElegidos() {
-    return tipos.filter(([nombre]) => (box.dataset.surtido || '').split('|').includes(nombre));
+  leyenda.textContent = opcionGomas ? 'Porción surtida' : 'Gomitas agotadas';
+  const importe = document.createElement('span');
+  importe.textContent = precio || '';
+  gomasInfo.append(leyenda, importe);
+  grupos[2].append(gomasInfo,bandeja);
+  if (opcionGomas) {
+    opcionGomas.closest('label').hidden = true;
+    const info = document.createElement('p');
+    info.className = 'barra-ayuda-gomas';
+    info.textContent = 'Mezcla por el mismo precio. Toca para elegir o quitar y arrastra cada gomita a su sitio.';
+    grupos[2].append(info);
   }
+  const limitar = (n,min,max) => Math.max(min,Math.min(max,n));
+  const nombres = () => opcionGomas ? tipos.map(t => t[0]).filter(n => (box.dataset.surtido || '').split('|').includes(n)) : [];
+  let posiciones = {};
+  try { posiciones = JSON.parse(box.dataset.gomitasPos || '{}') || {}; } catch { /* Una mezcla anterior usa las posiciones iniciales. */ }
+
   function sincronia() {
-    const elegidos = tiposElegidos();
-    const sabor = botones.find(b => b.getAttribute('aria-pressed') === 'true');
+    const elegidos = nombres();
+    const sabor = marcado();
     const medida = box.querySelector('[data-vaso-tamano]:checked')?.nextElementSibling?.querySelector('strong')?.textContent;
-    detalle.textContent = [medida,sabor?.dataset.vasoSabor,elegidos.map(([n]) => n).join(' + ') || 'Sin gomitas'].filter(Boolean).join(' · ');
-    if (sabor) base.alt = 'Granizado ' + sabor.dataset.vasoSabor + (elegidos.length ? ' con ' + elegidos.map(([n]) => n.toLowerCase()).join(' y ') : '');
-    for (const b of bandeja.children) b.setAttribute('aria-pressed',String(elegidos.some(([n]) => n === b.value)));
-    for (const grupo of dulces.children) grupo.hidden = !elegidos.some(([n]) => n === grupo.dataset.tipo);
+    detalle.textContent = [medida,sabor?.dataset.vasoSabor,elegidos.join(' + ') || 'Sin gomitas'].filter(Boolean).join(' · ');
+    if (sabor) base.alt = 'Granizado ' + sabor.dataset.vasoSabor + (elegidos.length ? ' con ' + elegidos.map(n => n.toLowerCase()).join(' y ') : '');
+    for (const boton of bandeja.children) boton.setAttribute('aria-pressed',String(elegidos.includes(boton.value)));
+    for (const grupo of dulces.children) grupo.hidden = !elegidos.includes(grupo.dataset.tipo);
   }
-  if (opcionGomas) tipos.forEach(([nombre,id],i) => {
+
+  if (opcionGomas) tipos.forEach(([nombre,id,color],i) => {
     const elegir = document.createElement('button');
     elegir.type = 'button';
     elegir.value = nombre;
+    elegir.setAttribute('aria-label',nombre);
+    elegir.style.setProperty('--color-dulce',color);
+    const foto = document.createElement('span');
+    foto.className = 'barra-muestra';
     const icono = new Image();
     icono.src = ruta + id + '.webp';
     icono.alt = '';
-    elegir.append(icono,nombre);
+    icono.draggable = false;
+    foto.append(icono);
+    const etiqueta = document.createElement('span');
+    etiqueta.textContent = nombre;
+    const marca = document.createElement('span');
+    marca.className = 'barra-goma-marcada';
+    marca.setAttribute('aria-hidden','true');
+    marca.textContent = '✓';
+    elegir.append(foto,etiqueta,marca);
     bandeja.append(elegir);
-    const piezas = document.createElement('span');
-    piezas.dataset.tipo = nombre;
-    for(let j=0;j<3;j++) {
+
+    const grupo = document.createElement('span');
+    grupo.dataset.tipo = nombre;
+    grupo.hidden = true;
+    dulces.append(grupo);
+    const piezas = Array.from({length:3},(_,j) => {
       const pieza = icono.cloneNode();
-      const u = (i*.265 + j*.31) % 1;
-      pieza.style.left = (27 + u*36) + '%';
-      pieza.style.top = (7 + 7*(2*u-1)**2 + 4*(j%2)) + '%';
-      pieza.style.setProperty('--giro',(i*17-22+j*14)+'deg');
-      piezas.append(pieza);
+      pieza.style.width = ([12,9,11][j] + (id==='gusanos' ? 1 : 0))+'%';
+      pieza.style.setProperty('--giro',([-32,19,-12][j]+i*13)+'deg');
+      grupo.append(pieza);
+      return pieza;
+    });
+
+    // El horizonte del hielo es curvo. Los bordes admiten menos profundidad que el centro.
+    function ubicar(punto) {
+      piezas.forEach((pieza,j) => {
+        const individual = punto?.piezas?.[j];
+        const enGrupo = Number.isFinite(punto?.x) && Number.isFinite(punto?.y);
+        const x = limitar(individual?.x ?? (enGrupo ? punto.x+[-4.4,3.9,.2][j] : 32+((i*3+j*5)%12)*3.15),32,68);
+        const borde = 7.4+.022*(x-50)**2;
+        const y = limitar(individual?.y ?? ((enGrupo ? punto.y : borde+4+(i%2)*2)+[-1.8,0,3.2][j]),borde,borde+8.5);
+        pieza.style.left = x+'%';
+        pieza.style.top = y+'%';
+        pieza.style.zIndex = String(Math.round(y*10));
+      });
     }
-    dulces.append(piezas);
-    function elegirTipo(sumar = false) {
-      const activos = new Set(tiposElegidos().map(([n]) => n));
-      if (activos.has(nombre) && !sumar) activos.delete(nombre); else activos.add(nombre);
-      box.dataset.surtido = [...activos].join('|');
-      opcionGomas.checked = activos.size > 0;
+    ubicar(posiciones[id]);
+    function seleccionar(activa) {
+      const seleccion = new Set(nombres());
+      if (activa) seleccion.add(nombre);
+      else seleccion.delete(nombre);
+      box.dataset.surtido = [...seleccion].join('|');
+      opcionGomas.checked = seleccion.size > 0;
       opcionGomas.dispatchEvent(new Event('change',{bubbles:true}));
       sincronia();
     }
-    // El mismo botón permite tocar, arrastrar y activar con teclado.
-    let arrastre = null, evitarClick = false;
-    function limpiarArrastre() {
-      arrastre?.fantasma?.remove();
+
+    function caer(desde, solo) {
+      if (reducido.matches || !piezas[0].animate) return;
+      piezas.forEach((pieza,j) => {
+        if (solo && pieza!==solo) return;
+        pieza.getAnimations().forEach(a => a.cancel());
+        const r = pieza.getBoundingClientRect();
+        const dx = desde ? desde.x-r.left-r.width/2 : (j-1)*14;
+        const dy = desde ? desde.y-r.top-r.height/2 : -r.height*(1.6+j*.35);
+        pieza.animate([
+          {transform:'translate('+dx+'px,'+dy+'px) rotate(-24deg) scale(1.12)',easing:'cubic-bezier(.5,0,.88,.56)'},
+          {offset:.65, transform:'translateY(1px) rotate(var(--giro)) scale(1.08,.91)',easing:'ease-out'},
+          {offset:.82, transform:'translateY(-3px) rotate(var(--giro))'},
+          {transform:'rotate(var(--giro))'}
+        ],{duration:420+j*38,delay:j*52,fill:'backwards'});
+      });
+    }
+    let arrastre = null;
+    let evitarClick = false;
+    function limpiar() {
+      if (!arrastre) return;
+      arrastre.fantasma?.remove();
+      arrastre.observador?.disconnect();
+      window.removeEventListener('blur',limpiar);
       box.classList.remove('barra-recibiendo');
       arrastre = null;
     }
-    elegir.addEventListener('pointerdown',e => {
-      if (!e.isPrimary || e.button !== 0) return;
-      evitarClick=false;
-      arrastre={ id:e.pointerId, x:e.clientX, y:e.clientY };
-      elegir.setPointerCapture(e.pointerId);
-    });
-    elegir.addEventListener('pointermove',e => {
-      if (arrastre?.id !== e.pointerId) return;
+    function puntoSobreVaso(e) {
+      const r = escena.getBoundingClientRect();
+      const x = (e.clientX-r.left)/r.width*100, y = (e.clientY-r.top)/r.height*100;
+      if (x<20 || x>80 || y<0 || y>76) return null;
+      return {x:limitar(x,32,68), y:limitar(y,8,22)};
+    }
+    function iniciar(e) {
+      if (!e.isPrimary || e.button!==0) return;
+      limpiar();
+      evitarClick = false;
+      arrastre = {id:e.pointerId,x:e.clientX,y:e.clientY};
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    function mover(e) {
+      if (arrastre?.id!==e.pointerId) return;
       if (!arrastre.fantasma && Math.hypot(e.clientX-arrastre.x,e.clientY-arrastre.y)<7) return;
       if (!arrastre.fantasma) {
-        evitarClick=true;
-        if(box.dataset.vasoVista!=='foto') box.querySelector('[data-vaso-ver="foto"]').click();
-        arrastre.fantasma=icono.cloneNode();
-        arrastre.fantasma.className='barra-gomita-en-mano';
+        evitarClick = true;
+        if (box.dataset.vasoVista!=='foto') box.querySelector('[data-vaso-ver="foto"]').click();
+        arrastre.fantasma = icono.cloneNode();
+        arrastre.fantasma.className = 'barra-gomita-en-mano';
         box.ownerDocument.body.append(arrastre.fantasma);
+        window.addEventListener('blur',limpiar);
+        arrastre.observador = new MutationObserver(() => { if (!box.isConnected) limpiar(); });
+        arrastre.observador.observe(box.closest('#vistaCarta'),{childList:true});
       }
-      arrastre.fantasma.style.left=e.clientX+'px';
-      arrastre.fantasma.style.top=e.clientY+'px';
-      const r=escena.getBoundingClientRect();
-      const dentro=e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom;
-      box.classList.toggle('barra-recibiendo',dentro);
-    });
-    elegir.addEventListener('pointerup',e => {
+      arrastre.fantasma.style.left = e.clientX+'px';
+      arrastre.fantasma.style.top = e.clientY+'px';
+      const punto = puntoSobreVaso(e);
+      box.classList.toggle('barra-recibiendo',!!punto);
+      if (punto) {
+        dulces.style.setProperty('--sitio-x',punto.x+'%');
+        dulces.style.setProperty('--sitio-y',punto.y+'%');
+      }
+    }
+    function soltar(e) {
       if (arrastre?.id!==e.pointerId) return;
-      const r=escena.getBoundingClientRect();
-      if(arrastre.fantasma && e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom) {
-        const x=Math.max(27,Math.min(61,(e.clientX-r.left)/r.width*100-4));
-        elegirTipo(true);
-        [...piezas.children].forEach((pieza,j) => {
-          const centro=x+[0,-4,3][j];
-          pieza.style.left=centro+'%';
-          pieza.style.top=(6+Math.abs(centro-45)*.35+j*2)+'%';
-          if(!reducido.matches) {
-            const destino=pieza.getBoundingClientRect();
-            pieza.animate([{transform:'translate('+(e.clientX-destino.left-destino.width/2)+'px,'+(e.clientY-destino.top-destino.height/2)+'px) scale(1.22)'},{offset:.78,transform:'translateY(3px) rotate(12deg)'},{transform:'rotate(var(--giro))'}],{duration:380+j*85,easing:'ease-out'});
-          }
-        });
+      const punto = arrastre.fantasma && puntoSobreVaso(e);
+      if (punto) {
+        const pieza = e.currentTarget === elegir ? null : e.currentTarget;
+        if (pieza) {
+          const anterior = posiciones[id] || {};
+          posiciones[id] = {...anterior,piezas:{...anterior.piezas,[piezas.indexOf(pieza)]:punto}};
+        } else posiciones[id] = punto;
+        box.dataset.gomitasPos = JSON.stringify(posiciones);
+        seleccionar(true);
+        ubicar(posiciones[id]);
+        caer({x:e.clientX,y:e.clientY},pieza);
       }
-      limpiarArrastre();
-    });
-    elegir.addEventListener('lostpointercapture',limpiarArrastre);
-    elegir.addEventListener('pointercancel',limpiarArrastre);
+      limpiar();
+    }
+    for (const origen of [elegir,...piezas]) {
+      origen.addEventListener('pointerdown',iniciar);
+      origen.addEventListener('pointermove',mover);
+      origen.addEventListener('pointerup',soltar);
+      origen.addEventListener('pointercancel',limpiar);
+      origen.addEventListener('lostpointercapture',limpiar);
+    }
     elegir.addEventListener('click',e => {
-      if(!evitarClick || e.detail===0) elegirTipo();
+      if (!evitarClick || e.detail===0) {
+        const activa = !nombres().includes(nombre);
+        seleccionar(activa);
+        if (activa) {
+          if (box.dataset.vasoVista!=='foto') box.querySelector('[data-vaso-ver="foto"]').click();
+          ubicar(posiciones[id]);
+          caer();
+        }
+      }
       evitarClick=false;
     });
   });
-  box.addEventListener('vaso-reiniciar',() => { box.dataset.surtido = ''; mostrar(0); });
+  box.addEventListener('vaso-reiniciar',() => {
+    box.dataset.surtido = '';
+    box.dataset.gomitasPos = '';
+    posiciones = {};
+    mostrar(0);
+  });
   let paso;
   function mostrar(i, encuadrar = false) {
     if (i > 1 && !botones.some(b => b.getAttribute('aria-pressed') === 'true')) i = 1;

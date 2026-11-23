@@ -10,13 +10,18 @@ var CACHE = "ghost-v2";
 var BASICOS = [
   "./",
   "index.html",
-  "css/style.css",
-  "js/data.js",
-  "js/supabase-config.js",
-  "js/logo.js",
-  "js/store.js",
-  "js/visitas.js",
-  "js/app.js",
+  "css/style.css?v=45",
+  "css/barra-dbarrio.css?v=7",
+  "css/distribucion.css?v=2",
+  "js/vendor/supabase-js.js?v=2.118.0",
+  "js/data.js?v=45",
+  "js/supabase-config.js?v=45",
+  "js/logo.js?v=45",
+  "js/store.js?v=45",
+  "js/visitas.js?v=45",
+  "js/app.js?v=45",
+  "js/barra-dbarrio.js?v=7",
+  "js/hielo-dbarrio.js?v=1",
   "assets/logo-sm.png",
   "assets/icon-192.png",
   "manifest.webmanifest",
@@ -45,17 +50,19 @@ self.addEventListener("fetch", function (e) {
   var url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Supabase, fuentes, CDN: directo a la red
 
+  var recursoInterfaz = /\.(js|css)$/.test(url.pathname);
+  var clave = url.origin + url.pathname;
+  if (recursoInterfaz && url.searchParams.has("v")) clave += "?v=" + encodeURIComponent(url.searchParams.get("v"));
+  var opciones = req.mode === "navigate" || recursoInterfaz ? {cache:"no-cache"} : undefined;
   e.respondWith(
-    fetch(req).then(function (res) {
+    fetch(req, opciones).then(function (res) {
       if (res && res.ok && res.type === "basic") {
         var copia = res.clone();
-        // Se guarda sin "?t=..." para no llenar el teléfono de copias.
-        var clave = url.origin + url.pathname;
-        caches.open(CACHE).then(function (c) { c.put(clave, copia); });
+        e.waitUntil(caches.open(CACHE).then(function (c) { return c.put(clave, copia); }).catch(function () {}));
       }
       return res;
     }).catch(function () {
-      return caches.match(url.origin + url.pathname).then(function (r) {
+      return caches.match(clave).then(function (r) {
         if (r) return r;
         if (req.mode !== "navigate") return new Response("", { status: 503, statusText: "Sin conexión" });
         return caches.match(new URL("./", self.location).href).then(function (inicio) {
