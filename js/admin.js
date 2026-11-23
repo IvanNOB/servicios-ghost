@@ -1731,6 +1731,7 @@
     if (dispTimer) { clearTimeout(dispTimer); dispTimer = null; await guardarDisp(); }
     if (dispGuardando) await dispGuardando;
     elAli.hidden = true;
+    liberarFotoEstado();
     elAliBody.innerHTML = "";
     dispCopia = null;
     document.body.classList.remove("no-scroll");
@@ -1812,7 +1813,7 @@
           '<h4 class="tablero__rotulo">Tu carta</h4>' +
           '<div class="tablero__grid">' +
             tile("⚡", "Disponibilidad rápida", agotados ? agotados + " agotado(s) · toca para cambiar" : "Marca agotados y ajusta precios en segundos", "data-ali-disp", r.id, agotados > 0) +
-            tile("📷", "Mi estado", "Publica una foto durante 24 horas", "data-ali-estado", r.id, false) +
+            tarjetaEstado(r) +
             tile("🔥", "Mi promoción", promoVigente(r) ? "“" + r.promo.texto + "”" + (r.promo.hasta ? " · hasta " + fechaBonita(r.promo.hasta) : "") : "Destaca una oferta en tu tarjeta", "data-ali-promo", r.id, promoVigente(r)) +
             tile("🍽️", "Menú del día", hoyMenu ? hoyMenu + "publicado hoy" : "Publica tu desayuno o almuerzo de hoy", "data-tab-ir", "almuerzos", !!hoyMenu) +
             tile("✏️", "Editar mi carta", platos + " productos · fotos, precios y horario", "data-editar", r.id) +
@@ -1947,18 +1948,76 @@
     }
   }
 
+  var fotoEstadoTemporal;
+  function liberarFotoEstado() {
+    if (fotoEstadoTemporal) URL.revokeObjectURL(fotoEstadoTemporal);
+    fotoEstadoTemporal = null;
+  }
+
+  function estadoActivo(local) {
+    var estado = local.promo?.estado;
+    return estado && Date.parse(estado.hasta) > Date.now() ? estado : null;
+  }
+
+  function tiempoEstado(estado) {
+    var minutos = Math.max(1, Math.ceil((Date.parse(estado.hasta) - Date.now()) / 60000));
+    var horas = Math.floor(minutos / 60);
+    return horas ? "Quedan " + horas + " h " + minutos % 60 + " min" : "Quedan " + minutos + " min";
+  }
+
+  function tarjetaEstado(local) {
+    var estado = estadoActivo(local);
+    return '<button type="button" class="tile tile-estado" data-ali-estado="' + esc(local.id) + '">' +
+      '<span class="tile-estado__icono" aria-hidden="true">' +
+      (estado ? '<img src="' + esc(estado.foto) + '" alt="">' : '+') + '</span>' +
+      '<strong>Mi estado</strong><small>' + (estado ? tiempoEstado(estado) : "Comparte una foto por 24 h") +
+      '</small><span class="tile-estado__accion">' + (estado ? "Gestionar estado" : "Crear estado") + '</span></button>';
+  }
+
   function abrirEstado(id) {
     var local = restPorId(id);
     if (!local) return;
-    var estado = local.promo && local.promo.estado;
-    var activo = estado && Date.parse(estado.hasta) > Date.now();
+    var estado = estadoActivo(local);
+    liberarFotoEstado();
     abrirAli("Mi estado · " + local.nombre,
-      (activo ? '<img src="' + esc(estado.foto) + '" alt="Estado publicado" style="max-width:100%;max-height:240px;border-radius:12px;object-fit:contain">' : "") +
-      '<p class="muted">La foto aparecerá en la portada durante 24 horas. Si publicas otra, reemplaza la anterior.</p>' +
-      '<div class="field"><label for="estadoFoto">Foto del estado</label><input class="field__input" type="file" id="estadoFoto" accept="image/*"></div>' +
-      '<div class="field"><label for="estadoTexto">Descripción (opcional)</label><input class="field__input" id="estadoTexto" maxlength="120"></div>' +
-      '<button class="btn-primary" type="button" data-estado-publicar="' + esc(id) + '">Publicar estado</button>' +
-      (activo ? '<button class="btn-danger" type="button" data-estado-quitar="' + esc(id) + '">Retirar estado</button>' : ""));
+      '<div class="estado-editor">' +
+      '<div class="estado-editor__preview" id="estadoPreview">' +
+        '<img id="estadoVistaFoto" alt="Vista previa de la foto" ' + (estado ? 'src="' + esc(estado.foto) + '"' : "hidden") + '>' +
+        '<span class="estado-editor__sello" id="estadoSello">' + (estado ? "Publicado · " + tiempoEstado(estado) : "Vista previa") + '</span>' +
+        '<span class="estado-editor__vacio" id="estadoVacio"' + (estado ? " hidden" : "") + '>Tu foto aparecerá aquí</span>' +
+        '<span class="estado-editor__caption" id="estadoVistaTexto">' + esc(estado?.texto || "") + '</span></div>' +
+      '<div class="estado-editor__form">' +
+        '<label class="estado-editor__archivo" for="estadoFoto">+ ' + (estado ? "Elegir otra foto" : "Elegir foto") + '</label>' +
+        '<input type="file" id="estadoFoto" accept="image/*" class="estado-editor__input" aria-describedby="estadoArchivo">' +
+        '<small id="estadoArchivo" class="muted" aria-live="polite">La foto se mostrará durante 24 horas.</small>' +
+        '<div class="field"><label for="estadoTexto">Descripción (opcional)</label>' +
+        '<textarea class="field__input" id="estadoTexto" maxlength="120" rows="2" placeholder="Ej. Recién preparados para hoy"></textarea>' +
+        '<small id="estadoContador" class="muted">0 / 120</small></div>' +
+        '<button class="btn-primary" type="button" data-estado-publicar="' + esc(id) + '" disabled>' + (estado ? "Reemplazar estado" : "Publicar estado") + '</button>' +
+        (estado ? '<button class="btn-danger" type="button" data-estado-quitar="' + esc(id) + '">Retirar estado</button>' : "") +
+      '</div></div>');
+    var entrada = $("#estadoFoto");
+    var imagen = $("#estadoVistaFoto");
+    var texto = $("#estadoTexto");
+    function actualizarTexto() {
+      $("#estadoContador").textContent = texto.value.length + " / 120";
+      $("#estadoVistaTexto").textContent = fotoEstadoTemporal ? texto.value : estado?.texto || "";
+    }
+    texto.addEventListener("input", actualizarTexto);
+    entrada.addEventListener("change", function () {
+      var archivo = entrada.files[0];
+      liberarFotoEstado();
+      if (archivo?.type.startsWith("image/")) fotoEstadoTemporal = URL.createObjectURL(archivo);
+      var origen = fotoEstadoTemporal || estado?.foto;
+      if (origen) imagen.src = origen;
+      else imagen.removeAttribute("src");
+      imagen.hidden = !origen;
+      $("#estadoVacio").hidden = !!origen;
+      $("#estadoSello").textContent = fotoEstadoTemporal ? "Vista previa" : estado ? "Publicado · " + tiempoEstado(estado) : "Vista previa";
+      $("#estadoArchivo").textContent = fotoEstadoTemporal ? archivo.name : "Elige un archivo de imagen.";
+      elAliBody.querySelector("[data-estado-publicar]").disabled = !fotoEstadoTemporal;
+      actualizarTexto();
+    });
   }
 
   async function guardarEstado(boton, quitar) {
@@ -1969,6 +2028,9 @@
     if (!quitar && (!foto || !foto.type.startsWith("image/"))) { toast("Elige una foto", true); return; }
     var texto = $("#estadoTexto")?.value || "";
     var controles = Array.from(elAliBody.querySelectorAll("button"));
+    var etiqueta = boton.textContent;
+    boton.textContent = quitar ? "Retirando…" : "Publicando…";
+    var previos = controles.map(function (control) { return control.disabled; });
     controles.forEach(function (control) { control.disabled = true; });
     try {
       var estado = quitar ? null : {
@@ -1982,7 +2044,8 @@
       else pintarLista();
     } catch (error) {
       toast(mensajeErrorGuardar(error), true);
-      controles.forEach(function (control) { control.disabled = false; });
+      boton.textContent = etiqueta;
+      controles.forEach(function (control, i) { control.disabled = previos[i]; });
     }
   }
 

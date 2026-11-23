@@ -919,3 +919,25 @@ body.modo-aliado .tablero { gap: 12px; }
 @media (max-width: 420px) {
   .ped-prod__val, .ped-ded { padding-left: 0; margin-left: 0; }
 }
+
+.tile.tile-estado {display:grid;justify-items:start;gap:7px;background:linear-gradient(145deg,#302719,#1b1916 60%);border-color:#64512d}
+.tile-estado__icono {display:grid;place-items:center;width:34px;height:34px;border:1px solid #b68b42;border-radius:50%;overflow:hidden;color:#ffdb86;font-size:1.25rem}
+.tile-estado__icono img {width:100%;height:100%;object-fit:cover}
+.tile-estado__accion {font-weight:750;color:#ffda8a;font-size:.83rem}
+.estado-editor {display:grid;grid-template-columns:minmax(130px,.8fr) minmax(0,1fr);align-items:start;gap:18px}
+.estado-editor__preview {position:relative;isolation:isolate;aspect-ratio:9/14;background:#151311;overflow:hidden;border:1px solid #655236;border-radius:16px}
+.estado-editor__preview img {position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.estado-editor__sello {position:absolute;top:10px;left:10px;border:1px solid #8c733f;background:#19150eed;border-radius:20px;padding:5px 9px;color:#ffdb8a;font-size:.75rem}
+.estado-editor__vacio {position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:16px;color:#ccc0a9}
+.estado-editor__caption {position:absolute;inset:auto 0 0;padding:30px 12px 12px;background:linear-gradient(transparent,#000e);font-weight:700;color:#fff;overflow-wrap:anywhere;white-space:pre-wrap}
+.estado-editor__caption:empty {display:none}
+.estado-editor__form {position:relative;display:grid;gap:10px}
+.estado-editor__archivo {display:grid;place-items:center;text-align:center;min-height:44px;border:1px dashed #a98a50;border-radius:10px;color:#ffdb8a;font-weight:700;cursor:pointer}
+.estado-editor__input {position:absolute;width:1px;height:1px;clip-path:inset(50%)}
+.estado-editor__form:has(.estado-editor__input:focus-visible) .estado-editor__archivo {outline:2px solid #ffdb8a}
+.estado-editor__form button:disabled {opacity:.48}
+.estado-editor__form small {overflow-wrap:anywhere}
+@media(max-width:510px) {
+  .estado-editor {grid-template-columns:minmax(0,1fr)}
+  .estado-editor__preview {width:min(100%,240px);justify-self:center}
+}
