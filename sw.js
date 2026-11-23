@@ -20,7 +20,7 @@ var BASICOS = [
   "js/logo.js?v=45",
   "js/store.js?v=48",
   "js/visitas.js?v=45",
-  "js/app.js?v=48",
+  "js/app.js?v=50",
   "js/barra-dbarrio.js?v=9",
   "js/hielo-dbarrio.js?v=1",
   "assets/logo-sm.png",

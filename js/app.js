@@ -111,7 +111,7 @@
     if (MODO_PANEL || !v || !v.activo || !Array.isArray(v.ids) || !v.ids.length) return null;
     var ahora = Date.now();
     if (v.desde && ahora < Date.parse(v.desde)) return null;
-    if (!v.hasta || !(ahora < Date.parse(v.hasta))) return null;
+    if ((!v.hasta && !v.gestionarCartas) || (v.hasta && !(ahora < Date.parse(v.hasta)))) return null;
     return v;
   }
   var _vitrinaClave = "";
@@ -141,16 +141,26 @@
     }) });
   }
 
+  function claveVitrina(v) {
+    return JSON.stringify([v ? v.ids : null, !!v?.gestionarCartas, AJUSTES?.vitrina?.orden || []]);
+  }
+
   function cargarRestaurantes(lista) {
     TODOS = lista.map(prepararVasoDbarrio);
     var v = vitrinaActiva();
-    _vitrinaClave = v ? v.ids.join(",") + "|" + v.hasta : "";
+    _vitrinaClave = claveVitrina(v);
     _vitrinaOcultos = {};
     DATA = TODOS.filter(function (r) {
-      if (r.visible === false) return false;
       if (v && v.ids.indexOf(r.id) === -1) { _vitrinaOcultos[r.id] = true; return false; }
-      return true;
+      return r.visible !== false || !!v?.gestionarCartas;
+    }).map(function (r) {
+      return r.visible === false ? Object.assign({}, r, {visible:true}) : r;
     });
+    var orden = AJUSTES?.vitrina?.orden;
+    if (Array.isArray(orden) && orden.length) {
+      var posiciones = new Map(orden.map(function (id, i) { return [id, i]; }));
+      DATA.sort(function (a, b) { return (posiciones.get(a.id) ?? orden.length) - (posiciones.get(b.id) ?? orden.length); });
+    }
     if (PREVIA) PREVIA = TODOS.filter(function (r) { return r.id === PREVIA.id; })[0] || null;
   }
 
@@ -344,7 +354,7 @@
   })();
   function recordarVitrina(v) {
     try {
-      if (v && v.activo && v.hasta && Date.parse(v.hasta) > Date.now()) localStorage.setItem(LS_VITRINA, JSON.stringify(v));
+      if (v && (Array.isArray(v.orden) || (v.activo && (v.gestionarCartas || Date.parse(v.hasta) > Date.now())))) localStorage.setItem(LS_VITRINA, JSON.stringify(v));
       else localStorage.removeItem(LS_VITRINA);
     } catch (e) { /* sin almacenamiento */ }
   }
@@ -745,7 +755,8 @@
 
   function renderGrid() {
     // Los abiertos primero (sin cambiar el orden entre ellos).
-    var lista = restaurantesFiltrados()
+    var lista = restaurantesFiltrados();
+    if (!AJUSTES.vitrina?.orden?.length) lista = lista
       .map(function (r, i) { return { r: r, i: i, a: abiertoAhora(r) ? 0 : 1 }; })
       .sort(function (x, y) { return x.a - y.a || x.i - y.i; })
       .map(function (x) { return x.r; });
@@ -3564,7 +3575,7 @@
   // Si la vitrina empezó o terminó, se recalcula qué negocios se ven y se repinta.
   function aplicarVitrina() {
     var v = vitrinaActiva();
-    var clave = v ? v.ids.join(",") + "|" + v.hasta : "";
+    var clave = claveVitrina(v);
     if (clave !== _vitrinaClave) {
       cargarRestaurantes(TODOS);
       if (vistaActual && !findRest(vistaActual)) irAInicio();
@@ -3574,6 +3585,7 @@
   // Aviso en el inicio mientras la vitrina está activa.
   function renderVitrina() {
     var v = vitrinaActiva();
+    if (v?.gestionarCartas && !String(v.mensaje || "").trim()) v = null;
     var el = document.getElementById("vitrinaAviso");
     if (!v) { if (el) el.remove(); document.documentElement.classList.remove("modo-vitrina"); return; }
     document.documentElement.classList.add("modo-vitrina");
@@ -3787,6 +3799,7 @@
         AJUSTES = a;
         recordarVitrina(a.vitrina);
         aplicarVitrina();
+        if (!vistaActual && /^#r=/.test(location.hash)) revisarHash();
         renderPromos();
         renderPopulares();
         renderRecomendados();

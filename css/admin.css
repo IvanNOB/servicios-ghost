@@ -941,3 +941,12 @@ body.modo-aliado .tablero { gap: 12px; }
   .estado-editor {grid-template-columns:minmax(0,1fr)}
   .estado-editor__preview {width:min(100%,240px);justify-self:center}
 }
+
+#vitrinaPrincipal {margin-bottom:22px}
+.vit-cartas {display:grid;gap:6px;padding-left:26px;margin:12px 0}
+.vit-cartas li {display:list-item;padding:5px 0;border-bottom:1px solid #ffffff20}
+.vit-cartas li label {display:inline-flex;align-items:center;gap:8px;width:calc(100% - 98px);min-height:44px;vertical-align:middle;overflow-wrap:anywhere}
+.vit-cartas button {width:44px;height:44px;margin-left:4px;border:1px solid #ffffff30;border-radius:8px;background:#24211c;color:#ffd786;cursor:pointer;vertical-align:middle}
+.vit-cartas li:first-child button[data-vit-mover="-1"],.vit-cartas li:last-child button[data-vit-mover="1"] {opacity:.42}
+.vit-config {margin:10px 0}
+.vit-config summary {cursor:pointer;padding-block:8px}
