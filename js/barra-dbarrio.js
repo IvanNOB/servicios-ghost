@@ -291,6 +291,7 @@ export function abrirBarra(box, pasoInicial) {
     box.dataset.surtido = '';
     box.dataset.gomitasPos = '';
     posiciones = {};
+    mostrarFoto(null);
     mostrar(0);
   });
   let paso;
@@ -383,7 +384,7 @@ export function abrirBarra(box, pasoInicial) {
     if (!tapaArrastrada || e.detail===0) sellar(!box.classList.contains('barra-sellada'));
     tapaArrastrada = false;
   });
-  listo.addEventListener('click', () => { if (empaqueControl.checked) sellar(true); });
+  box.addEventListener('vaso-agregado', () => { if (empaqueControl.checked) sellar(true); });
   box.addEventListener('change',empaque);
   empaque();
   box.classList.add('barra');
