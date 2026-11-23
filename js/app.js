@@ -799,7 +799,7 @@
       sabor: (vasoAnterior.querySelector('[data-vaso-sabor][aria-pressed="true"]') || {}).dataset?.vasoSabor,
       gomas: !!vasoAnterior.querySelector("[data-vaso-gomas]:checked"),
       empaque: !!vasoAnterior.querySelector("[data-vaso-empaque]:checked"),
-      foto: vasoAnterior.dataset.vasoVista !== "modelo",
+      vista: vasoAnterior.dataset.vasoVista,
       surtido: vasoAnterior.dataset.surtido || "",
       posiciones: vasoAnterior.dataset.gomitasPos || "",
       pasoBarra: Number(vasoAnterior.dataset.pasoBarra) || 0,
@@ -884,7 +884,7 @@
         var gomasVaso = vaso.querySelector("[data-vaso-gomas]");
         if (gomasVaso) gomasVaso.checked = seleccionVaso.gomas;
         vaso.querySelector("[data-vaso-empaque]").checked = seleccionVaso.empaque;
-        cambiarVistaVasoDbarrio(vaso, seleccionVaso.foto ? "foto" : "modelo");
+        cambiarVistaVasoDbarrio(vaso, seleccionVaso.vista === "panorama" ? "panorama" : "foto");
       }
       actualizarVasoDbarrio(vaso);
       function quitarEspera() {
@@ -897,16 +897,14 @@
         finally { quitarEspera(); }
       }
       if (barraLista) montarBarra(barraLista);
-      else import("./barra-dbarrio.js?v=8").then(function (modulo) {
+      else import("./barra-dbarrio.js?v=9").then(function (modulo) {
         barraLista = modulo.abrirBarra;
         montarBarra(barraLista);
       }).catch(function (error) {
         quitarEspera();
         console.warn("Barra interactiva", error);
       });
-      import("./vaso-dbarrio-3d.js?v=8").catch(function (error) {
-        console.warn("Vista 3D de D’Barrio no disponible", error);
-      });
+
     }
     window.scrollTo(0, 0);
     if (_buscaCarta.q) filtrarCarta();
@@ -1195,11 +1193,11 @@
           '<figcaption><span data-vaso-vista-resumen></span><small>Vista ilustrativa</small></figcaption></figure>' +
         '<div class="vaso-dbarrio__vistas" role="group" aria-label="Vista del granizado">' +
           '<button type="button" data-vaso-ver="foto" aria-pressed="true">Vista interactiva</button>' +
-          '<button type="button" data-vaso-ver="modelo" aria-pressed="false">Giro 3D</button></div>' +
-        '<div class="vaso-dbarrio__escena" aria-hidden="true"><div class="vaso-dbarrio__vaso">' +
-          '<div class="vaso-dbarrio__cuerpo"><div class="vaso-dbarrio__liquido"></div>' +
-          '<div class="vaso-dbarrio__gomas"><i></i><i></i><i></i><i></i><i></i></div>' +
-          '<b>D’Barrio</b></div><div class="vaso-dbarrio__tapa"></div></div></div>' +
+          '<button type="button" data-vaso-ver="panorama" aria-pressed="false">Vista panorámica</button></div>' +
+        '<div class="barra-panorama" role="group" aria-label="Desplazar la vista">' +
+          '<button type="button" data-pan="-28" aria-label="Mover vista a la izquierda">‹</button>' +
+          '<span>Arrastra para explorar</span>' +
+          '<button type="button" data-pan="28" aria-label="Mover vista a la derecha">›</button></div>' +
         '<div class="vaso-dbarrio__ficha"><span data-vaso-ficha></span><strong data-vaso-nombre></strong></div>' +
       '</div>' +
       '<div class="vaso-dbarrio__controles">' +
