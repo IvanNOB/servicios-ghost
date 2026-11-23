@@ -69,13 +69,25 @@
       <!-- Pestañas: Restaurantes / Pedidos -->
       <div class="aviso-sql" id="avisoSql" hidden></div>
 
-      <div class="tabs" role="tablist">
-        <button type="button" class="tab tab--active" data-tab="restaurantes" role="tab">🍽️ Restaurantes</button>
-        <button type="button" class="tab" data-tab="almuerzos" role="tab">🍳🍲 Menú del día</button>
-        <button type="button" class="tab" data-tab="pedidos" role="tab" >📋 Pedidos <span class="tab__badge" id="badgePedidos" hidden>0</span></button>
-        <button type="button" class="tab" data-tab="ventas" role="tab" data-solo-admin>📊 Ventas</button>
-        <button type="button" class="tab" data-tab="visitas" role="tab" data-solo-admin>👀 Visitas</button>
-        <button type="button" class="tab" data-tab="ajustes" role="tab" data-solo-admin>⚙️ Ajustes</button>
+      <nav class="panel-nav" aria-label="Secciones del panel">
+        <div class="panel-nav__principal">
+          <button type="button" class="tab" data-tab="vitrina" data-solo-admin>Vitrina</button>
+          <button type="button" class="tab" data-tab="pedidos">Pedidos <span class="tab__badge" id="badgePedidos" hidden>0</span></button>
+          <button type="button" class="tab tab--active" data-tab="restaurantes" aria-current="page">Cartas</button>
+          <button type="button" class="tab" data-tab="almuerzos">Menú del día</button>
+        </div>
+        <details class="panel-nav__mas" data-solo-admin>
+          <summary>Más opciones</summary>
+          <div class="panel-nav__opciones">
+            <button type="button" class="tab" data-tab="ventas">Ventas</button>
+            <button type="button" class="tab" data-tab="visitas">Visitas</button>
+            <button type="button" class="tab" data-tab="ajustes">Ajustes</button>
+          </div>
+        </details>
+      </nav>
+
+      <div id="tabVitrina" class="tab-panel" hidden>
+        <div id="vitrinaPrincipal"></div>
       </div>
 
       <!-- Pestaña Ventas -->
@@ -139,13 +151,16 @@
 
       <!-- Pestaña Restaurantes -->
       <div id="tabRestaurantes" class="tab-panel">
-        <div id="vitrinaPrincipal" data-solo-admin></div>
         <div class="panel__row">
-          <h2 class="panel__title">Restaurantes</h2>
+          <h2 class="panel__title">Cartas de los locales</h2>
           <div class="inline-actions">
             <button type="button" class="btn-primary" id="btnNuevo">+ Nuevo restaurante</button>
           </div>
         </div>
+        <label class="panel-buscar" data-solo-admin>
+          <span>Buscar por nombre o categoría</span>
+          <input type="search" class="field__input" id="buscarCartaAdmin" placeholder="Ej. Granizados D’Barrio">
+        </label>
         <div id="listaRest" class="admin-grid" aria-live="polite"></div>
       </div>
 
