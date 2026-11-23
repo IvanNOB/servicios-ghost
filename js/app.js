@@ -789,6 +789,7 @@
 
   /* ----------------------- Carta del restaurante ------------------ */
 
+  var barraLista;
   function abrirCarta(restId) {
     var r = findRest(restId);
     if (!r) return;
@@ -800,8 +801,13 @@
       empaque: !!vasoAnterior.querySelector("[data-vaso-empaque]:checked"),
       foto: vasoAnterior.dataset.vasoVista !== "modelo",
       surtido: vasoAnterior.dataset.surtido || "",
+      posiciones: vasoAnterior.dataset.gomitasPos || "",
       pasoBarra: Number(vasoAnterior.dataset.pasoBarra) || 0,
     } : null;
+    if (vistaActual !== restId && !MODO_PANEL && !PREVIA && !/^#pedido=/.test(location.hash) && location.hash !== "#r=" + restId) {
+      history.replaceState(history.state, "", location.pathname + location.search + "#r=" + encodeURIComponent(restId));
+    }
+
     vistaActual = restId;
 
     // Desayuno y almuerzo del día (si el restaurante los publicó hoy)
@@ -874,15 +880,30 @@
           opcion.setAttribute("aria-pressed", String(opcion.dataset.vasoSabor === seleccionVaso.sabor));
         });
         vaso.dataset.surtido = seleccionVaso.surtido;
+        vaso.dataset.gomitasPos = seleccionVaso.posiciones;
         var gomasVaso = vaso.querySelector("[data-vaso-gomas]");
         if (gomasVaso) gomasVaso.checked = seleccionVaso.gomas;
         vaso.querySelector("[data-vaso-empaque]").checked = seleccionVaso.empaque;
         cambiarVistaVasoDbarrio(vaso, seleccionVaso.foto ? "foto" : "modelo");
       }
       actualizarVasoDbarrio(vaso);
-      import("./barra-dbarrio.js?v=5").then(function (modulo) {
-        if (vaso.isConnected) modulo.abrirBarra(vaso, seleccionVaso && seleccionVaso.pasoBarra);
-      }).catch(function (error) { console.warn("Barra interactiva", error); });
+      function quitarEspera() {
+        vaso.removeAttribute("data-montando");
+        vaso.querySelector(".barra-espera")?.remove();
+      }
+      function montarBarra(abrir) {
+        if (!vaso.isConnected) return;
+        try { abrir(vaso, seleccionVaso && seleccionVaso.pasoBarra); }
+        finally { quitarEspera(); }
+      }
+      if (barraLista) montarBarra(barraLista);
+      else import("./barra-dbarrio.js?v=7").then(function (modulo) {
+        barraLista = modulo.abrirBarra;
+        montarBarra(barraLista);
+      }).catch(function (error) {
+        quitarEspera();
+        console.warn("Barra interactiva", error);
+      });
       import("./vaso-dbarrio-3d.js?v=8").catch(function (error) {
         console.warn("Vista 3D de D’Barrio no disponible", error);
       });
@@ -1160,11 +1181,12 @@
     var busqueda = productos.map(function (it) { return it.n; }).concat(
       sabores.map(function (sabor) { return sabor.n; })
     ).join(" ");
-    return '<div class="vaso-dbarrio vaso-dbarrio--pedido" data-vaso-dbarrio data-vaso-vista="foto" data-dish data-busqueda="' + esc(busqueda) + '">' +
+    return '<div class="vaso-dbarrio vaso-dbarrio--pedido" data-vaso-dbarrio data-montando data-vaso-vista="foto" data-dish data-busqueda="' + esc(busqueda) + '">' +
+      '<div class="barra-espera" role="status"><img src="assets/granizados-dbarrio/barra/vacio.webp" alt="" width="409" height="415"><span>Preparando el vaso…</span></div>' +
       '<div class="vaso-dbarrio__presentacion">' +
         '<figure class="vaso-dbarrio__foto-referencia">' +
           '<div class="vaso-dbarrio__toma">' +
-            '<img src="assets/granizados-dbarrio/vaso-escarchado.webp" alt="Vaso blanco de Granizados D’Barrio con borde escarchado" width="840" height="840" decoding="async">' +
+            '<img src="assets/granizados-dbarrio/barra/vacio.webp" alt="Vaso de Granizados D’Barrio sobre hielo" width="840" height="840" decoding="async">' +
             '<div class="vaso-dbarrio__llenado" aria-hidden="true">' +
               '<img src="assets/granizados-dbarrio/vaso-con-hielo.webp" alt="" width="840" height="840" decoding="async">' +
               '<span class="vaso-dbarrio__tinte"></span></div>' +
@@ -3620,7 +3642,15 @@
   var _nubeOk = { rest: false, aj: false };
   var esperaNube = !!(window.Store && window.Store.supabaseDisponible && window.Store.supabaseDisponible());
   if (esperaNube) document.documentElement.classList.add("esperando-nube");
+  var rutaResuelta = false;
+  function mostrarRutaInicial() {
+    if (rutaResuelta) return;
+    rutaResuelta = true;
+    revisarHash();
+    document.documentElement.removeAttribute("data-arranque");
+  }
   function nubeLista(parte) {
+    if (parte === "rest" || !parte) mostrarRutaInicial();
     if (parte) _nubeOk[parte] = true;
     if (parte && !(_nubeOk.rest && _nubeOk.aj)) return;
     if (!document.documentElement.classList.contains("esperando-nube")) return;
@@ -3632,7 +3662,7 @@
   // Primer pintado con lo que haya (data.js); queda oculto si estamos esperando la nube.
   conectarEnlacesWa();
   pintarTodo();
-  revisarHash();
+  if (!esperaNube || document.documentElement.dataset.arranque !== "carta") mostrarRutaInicial();
 
   // Luego traemos los datos de la nube (restaurantes + ajustes) y repintamos.
   if (window.Store && typeof window.Store.listar === "function") {

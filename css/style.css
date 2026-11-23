@@ -2522,17 +2522,17 @@ a:focus-visible, button:focus-visible, input:focus-visible, .chip:focus-visible 
 
 /* Carta plegable de cada restaurante */
 .carta-volver, .carta-count { display: none; }
-body:has(#vistaCarta:not([hidden])) .header__inner {
+:is(html[data-arranque="carta"] body, body:has(#vistaCarta:not([hidden]))) .header__inner {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 44px;
   max-width: 760px;
   gap: 10px;
 }
-body:has(#vistaCarta:not([hidden])) .header__nav,
-body:has(#vistaCarta:not([hidden])) .logo__tag,
-body:has(#vistaCarta:not([hidden])) .header__cart-text { display: none; }
-body:has(#vistaCarta:not([hidden])) .logo { justify-self: center; }
-body:has(#vistaCarta:not([hidden])) :is(.carta-volver, .header__cart) {
+:is(html[data-arranque="carta"] body, body:has(#vistaCarta:not([hidden]))) .header__nav,
+:is(html[data-arranque="carta"] body, body:has(#vistaCarta:not([hidden]))) .logo__tag,
+:is(html[data-arranque="carta"] body, body:has(#vistaCarta:not([hidden]))) .header__cart-text { display: none; }
+:is(html[data-arranque="carta"] body, body:has(#vistaCarta:not([hidden]))) .logo { justify-self: center; }
+:is(html[data-arranque="carta"] body, body:has(#vistaCarta:not([hidden]))) :is(.carta-volver, .header__cart) {
   display: grid;
   position: relative;
   place-items: center;
