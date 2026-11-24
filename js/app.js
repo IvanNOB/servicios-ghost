@@ -866,6 +866,7 @@
       (promoVigente(r) ? '<div class="promo-carta">🔥 <strong>' + esc(r.promo.texto) + "</strong>" + (r.promo.hasta ? ' <span class="muted">· hasta el ' + esc(r.promo.hasta.slice(8, 10) + "/" + r.promo.hasta.slice(5, 7)) + "</span>" : "") + "</div>" : "") +
       almuerzoBloque + secciones;
 
+    $("#estadoVideo")?.pause();
     elVistaInicio.hidden = true;
     elVistaCarta.hidden = false;
     var vaso = elVistaCarta.querySelector("[data-vaso-dbarrio]");
@@ -3742,7 +3743,7 @@
   var estadosVisibles = [];
   var estadoSeleccionado = 0;
   var visorEstado = $("#estadoVisor");
-  var coloresEstado = {"granizados-dbarrio":"#ddfa65",atemporal:"#ffab59","obleas-y-mas":"#ff719a","croasan-bloom":"#8eafff"};
+  var coloresEstado = {"granizados-dbarrio":"#28dfff","chino-el-fenix":"#ff594a",atemporal:"#d89bff","obleas-y-mas":"#ff719a","croasan-bloom":"#8eafff"};
   function colorEstado(local) {
     return coloresEstado[local.id] || (/^#[0-9a-f]{6}$/i.test(local.color) ? local.color : "#d4af37");
   }
@@ -3769,16 +3770,18 @@
     }
     var actual = estadosVisibles[estadoSeleccionado]?.id;
     estadosVisibles = lista;
-    if (visorEstado.open) {
-      var indice = lista.findIndex(function (local) { return local.id === actual; });
-      if (indice < 0) visorEstado.close();
-      else mostrarEstado(indice);
-    }
+    var indice = lista.findIndex(function (local) { return local.id === actual; });
+    if (!lista.length) cerrarEstado();
+    else if (!actual || !visorEstado.hidden) mostrarEstado(Math.max(0, indice));
   }
   function esVideoEstado(url) {
     return /\.(mp4|webm)(?:[?#]|$)/i.test(url);
   }
-  visorEstado.addEventListener("close", function () { $("#estadoVideo").pause(); });
+  function cerrarEstado() {
+    visorEstado.hidden = true;
+    $("#estadoVideo").pause();
+    $("#estadosLista").querySelector('[aria-pressed="true"]')?.setAttribute("aria-pressed", "false");
+  }
   function mostrarEstado(indice) {
     var local = estadosVisibles[indice];
     if (!local) return;
@@ -3801,7 +3804,10 @@
     visorEstado.style.setProperty("--estado-color",colorEstado(local));
     visorEstado.querySelector('[data-estado-paso="-1"]').disabled = indice === 0;
     visorEstado.querySelector('[data-estado-paso="1"]').disabled = indice === estadosVisibles.length-1;
-    if (!visorEstado.open) visorEstado.showModal();
+    $("#estadosLista").querySelectorAll("[data-estado-local]").forEach(function (boton) {
+      boton.setAttribute("aria-pressed", String(boton.dataset.estadoLocal === local.id));
+    });
+    visorEstado.hidden = false;
   }
   $("#estadosLista").addEventListener("click",function (e) {
     var boton = e.target.closest("[data-estado-local]");
@@ -3811,10 +3817,10 @@
   visorEstado.addEventListener("click",function (e) {
     var paso = e.target.closest("[data-estado-paso]");
     if (paso) mostrarEstado(estadoSeleccionado + Number(paso.dataset.estadoPaso));
-    if (e.target.closest("[data-estado-cerrar]") || e.target === visorEstado) visorEstado.close();
+    if (e.target.closest("[data-estado-cerrar]")) cerrarEstado();
     if (e.target.closest("[data-estado-carta]")) {
       var local = estadosVisibles[estadoSeleccionado];
-      visorEstado.close();
+      cerrarEstado();
       if (local) irAPlato(local.id);
     }
   });
