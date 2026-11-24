@@ -2029,8 +2029,15 @@
       '<div class="estado-editor__form">' +
         '<label class="estado-editor__archivo" for="estadoFoto">+ ' + "Elegir foto o video" + '</label>' +
         '<input type="file" id="estadoFoto" accept="image/*,video/mp4,video/webm" class="estado-editor__input" aria-describedby="estadoArchivo">' +
-        (fotosCarta.length ? '<div class="field"><label for="estadoFotoCarta">Usar una foto de la carta</label><select id="estadoFotoCarta" class="field__input"><option value="">Selecciona una imagen</option>' +
-          fotosCarta.map(function (foto) { return '<option value="' + esc(foto.url) + '">' + esc(foto.nombre) + '</option>'; }).join("") + '</select></div>' : "") +
+        (fotosCarta.length ? '<input type="hidden" id="estadoFotoCarta">' +
+          '<details class="estado-galeria"><summary>Fotos de la carta</summary>' +
+          '<input type="search" id="estadoBuscarFoto" class="field__input" placeholder="Buscar producto…" aria-label="Buscar foto por producto">' +
+          '<div class="estado-galeria__grid" id="estadoGaleria">' +
+          fotosCarta.map(function (foto, i) {
+            return '<button type="button" data-foto-carta="' + i + '" aria-pressed="false">' +
+              '<img src="' + esc(foto.url) + '" alt="" loading="lazy" decoding="async"><span>' +
+              esc(foto.nombre) + '</span></button>';
+          }).join("") + '</div><p id="estadoSinFotos" class="muted" hidden>No encontramos fotos con ese nombre.</p></details>' : "") +
         '<small id="estadoArchivo" class="muted" aria-live="polite">El estado se mostrará durante 24 horas.</small>' +
         '<div class="field"><label for="estadoTexto">Descripción (opcional)</label>' +
         '<textarea class="field__input" id="estadoTexto" maxlength="120" rows="2" placeholder="Ej. Recién preparados para hoy"></textarea>' +
@@ -2046,13 +2053,30 @@
       $("#estadoVistaTexto").textContent = (fotoEstadoTemporal || selectorCarta?.value) ? texto.value : "";
     }
     texto.addEventListener("input", actualizarTexto);
+    var galeria = $("#estadoGaleria");
     entrada.addEventListener("change", function () {
       if (selectorCarta) selectorCarta.value = "";
+      galeria?.querySelector('[aria-pressed="true"]')?.setAttribute("aria-pressed", "false");
       actualizarFoto();
     });
-    selectorCarta?.addEventListener("change", function () {
+    galeria?.addEventListener("click", function (e) {
+      var boton = e.target.closest("[data-foto-carta]");
+      if (!boton) return;
+      var foto = fotosCarta[Number(boton.dataset.fotoCarta)];
+      galeria.querySelector('[aria-pressed="true"]')?.setAttribute("aria-pressed", "false");
+      boton.setAttribute("aria-pressed", "true");
+      selectorCarta.value = foto.url;
       entrada.value = "";
       actualizarFoto();
+    });
+    $("#estadoBuscarFoto")?.addEventListener("input", function (e) {
+      var consulta = textoBusquedaAdmin(e.target.value);
+      var visibles = 0;
+      galeria.querySelectorAll("[data-foto-carta]").forEach(function (boton) {
+        boton.hidden = !textoBusquedaAdmin(boton.textContent).includes(consulta);
+        if (!boton.hidden) visibles++;
+      });
+      $("#estadoSinFotos").hidden = visibles > 0;
     });
     function actualizarFoto() {
       var archivo = entrada.files[0];
@@ -2071,7 +2095,7 @@
       imagen.hidden = !origen || mostrarVideo;
       $("#estadoVacio").hidden = !!origen;
       $("#estadoSello").textContent = "Vista previa";
-      $("#estadoArchivo").textContent = fotoEstadoTemporal ? archivo.name : "El estado se mostrará durante 24 horas.";
+      $("#estadoArchivo").textContent = fotoEstadoTemporal ? archivo.name : selectorCarta?.value ? "Foto seleccionada · visible durante 24 horas" : "El estado se mostrará durante 24 horas.";
       elAliBody.querySelector("[data-estado-publicar]").disabled = !nueva;
       actualizarTexto();
     }
@@ -2082,7 +2106,7 @@
     var local = restPorId(id);
     if (!local) return;
     var foto = $("#estadoFoto")?.files[0];
-    var fotoCarta = $("#estadoFotoCarta")?.selectedOptions[0]?.value;
+    var fotoCarta = $("#estadoFotoCarta")?.value;
     if (!quitar && !fotoCarta && (!foto?.type.startsWith("image/") && !esVideoArchivoEstado(foto))) { toast("Elige una imagen o un video MP4 o WebM", true); return; }
     var texto = $("#estadoTexto")?.value || "";
     var controles = Array.from(elAliBody.querySelectorAll("button"));
