@@ -43,3 +43,6 @@
 #estadoDescripcion {margin:2px 0 6px}
 .estado-visor__navegar {display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;margin-top:0}
 #estadoVisor [data-estado-paso] {font-size:1.6rem;line-height:1}
+
+#estadosLista button {position:relative}
+.estado-cantidad {position:absolute;top:0;right:4px;border-radius:999px;padding:2px 6px;background:var(--estado-color);color:#161219;font-weight:800}

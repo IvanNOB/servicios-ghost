@@ -273,12 +273,23 @@
   function normalizarPromo(p) {
     if (!p || typeof p !== "object") return null;
     var texto = String(p.texto || "").trim().slice(0, 40);
-    var estado = p.estado;
-    var valido = estado && /^https:\/\//i.test(estado.foto || "") && Number.isFinite(Date.parse(estado.hasta));
-    if (!texto && !valido) return null;
+    var estados = listaEstados(p).filter(function (estado) {
+      return estado && /^https:\/\//i.test(estado.foto || "") && Number.isFinite(Date.parse(estado.hasta));
+    }).map(function (estado) {
+      return { id: estado.id || estado.hasta + "|" + estado.foto, foto: estado.foto,
+        texto: String(estado.texto || "").trim().slice(0, 120), hasta: estado.hasta };
+    });
+    if (!texto && !estados.length) return null;
     var promo = { texto: texto, hasta: /^\d{4}-\d{2}-\d{2}$/.test(p.hasta || "") ? p.hasta : "" };
-    if (valido) promo.estado = { foto: estado.foto, texto: String(estado.texto || "").trim().slice(0, 120), hasta: estado.hasta };
+    if (estados.length) promo.estados = estados;
     return promo;
+  }
+
+  function listaEstados(promo) {
+    return Array.isArray(promo?.estados) ? promo.estados : promo?.estado ? [promo.estado] : [];
+  }
+  function estadosActivos(promo) {
+    return listaEstados(normalizarPromo(promo)).filter(function (estado) { return Date.parse(estado.hasta) > Date.now(); });
   }
 
   async function actualizarPromoParcial(id, cambios) {
@@ -287,7 +298,7 @@
     var consulta = await sb.from("restaurantes").select("promo").eq("id", id).single();
     if (consulta.error) throw consulta.error;
     var anterior = consulta.data.promo;
-    var promo = normalizarPromo(Object.assign({}, anterior, cambios));
+    var promo = normalizarPromo(Object.assign({}, anterior, typeof cambios === "function" ? cambios(anterior) : cambios));
     var guardarPromo = sb.from("restaurantes").update({promo:promo}).eq("id", id);
     guardarPromo = anterior == null ? guardarPromo.is("promo", null) : guardarPromo.eq("promo", JSON.stringify(anterior));
     var resultado = await guardarPromo.select("id");
@@ -707,6 +718,7 @@
     estadoEnviosMap: estadoEnviosMap,
     estadoPedido: estadoPedido,
     actualizarPromoParcial: actualizarPromoParcial,
+    estadosActivos: estadosActivos,
     subirFoto: subirFoto,
     urlPortadaEnlace: urlPortadaEnlace,
     subirPortadaEnlace: subirPortadaEnlace,
