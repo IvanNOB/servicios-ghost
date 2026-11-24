@@ -1,16 +1,24 @@
 .esperando-nube #estadosLocales {display:none}
-#estadosLocales {padding-block:24px 8px}
-#estadosTitulo {margin:0 0 14px;font-size:clamp(1.2rem,4vw,1.6rem)}
-#estadosLista {display:flex;gap:14px;overflow-x:auto;padding:3px 3px 10px;scroll-snap-type:x proximity}
-#estadosLista button {flex:0 0 81px;display:grid;align-content:start;justify-items:center;gap:6px;border:0;background:transparent;color:inherit;font:inherit;font-size:.82rem;text-align:center;cursor:pointer;scroll-snap-align:start}
-.estado-aro {display:grid;place-items:center;width:66px;height:66px;border:2px solid var(--estado-color);border-radius:50%;padding:3px;background:#121212}
-.estado-aro img {width:100%;height:100%;border-radius:50%;object-fit:cover}
+#estadosLocales {padding-block:12px 20px}
+#estadosTitulo {margin:0 0 12px;font-size:clamp(1.2rem,4vw,1.6rem)}
+#estadosLista {display:flex;gap:12px;overflow-x:auto;padding:3px 3px 8px;scroll-snap-type:x proximity}
+#estadosLista button {
+  flex:0 0 clamp(250px,78vw,400px);min-width:0;display:flex;flex-direction:column;gap:0;
+  border:1px solid var(--border);border-bottom:3px solid var(--estado-color);border-radius:14px;
+  overflow:hidden;padding:0;background:var(--surface);color:inherit;font:inherit;text-align:left;
+  cursor:pointer;scroll-snap-align:start;
+}
+#estadosLista strong {padding:10px 12px;overflow-wrap:anywhere}
+.estado-medio {display:block;position:relative;width:100%;aspect-ratio:16/10;background:#151515}
+.estado-medio :is(img,video) {width:100%;height:100%;object-fit:contain}
+.estado-play {position:absolute;inset:0;display:grid;place-items:center;font-size:2rem;color:white;text-shadow:0 2px 8px black}
 #estadoVisor {width:min(100%,480px);height:min(100%,780px);height:min(100dvh,780px);max-width:none;max-height:none;margin:auto;padding:0;border:0;border-radius:18px;background:#101010;color:#fff;overflow:hidden}
 #estadoVisor::backdrop {background:#000c}
-#estadoImagen {display:block;width:100%;height:100%;object-fit:contain;background:#151515}
-.estado-visor__cabecera,.estado-visor__pie {position:absolute;inset-inline:0;padding:16px;background:linear-gradient(#080808ef,transparent)}
+#estadoImagen, #estadoVideo {display:block;width:100%;height:100%;object-fit:contain;background:#151515}
+#estadoVisor[open] {display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.estado-visor__cabecera,.estado-visor__pie {position:relative;inset-inline:0;padding:16px;background:linear-gradient(#080808ef,transparent)}
 .estado-visor__cabecera {top:0;display:flex;align-items:center;justify-content:space-between;border-top:3px solid var(--estado-color)}
-.estado-visor__pie {bottom:0;background:linear-gradient(transparent,#080808f5 42%);padding-top:46px}
+.estado-visor__pie {bottom:0;background:linear-gradient(transparent,#080808f5 42%);padding-top:12px}
 #estadoDescripcion {font-size:1.25rem;font-weight:700;margin:0 0 12px;overflow-wrap:anywhere}
 #estadoDescripcion:empty {display:none}
 #estadoVisor button {min-height:44px;border:0;border-radius:9px;background:#1f1f1f;color:white;font:inherit;cursor:pointer;padding-inline:12px}

@@ -75,7 +75,7 @@
   <link rel="stylesheet" href="css/style.css?v=45">
   <link rel="stylesheet" href="css/barra-dbarrio.css?v=9">
   <link rel="stylesheet" href="css/distribucion.css?v=14">
-  <link rel="stylesheet" href="css/estados.css?v=1">
+  <link rel="stylesheet" href="css/estados.css?v=2">
 </head>
 <body>
 
@@ -147,6 +147,11 @@
           </button>
           <nav class="chips" id="chips" aria-label="Filtrar por categoría" hidden></nav>
         </div>
+        <section id="estadosLocales" aria-labelledby="estadosTitulo" hidden>
+          <h2 id="estadosTitulo">Estados de los locales</h2>
+          <div id="estadosLista"></div>
+        </section>
+
         <div class="directorio__seleccion" id="filtrosResumen" hidden>
           <span id="filtroActual"></span>
           <button type="button" class="btn-link" id="btnQuitarFiltros" data-quitar-categoria>Quitar filtro</button>
@@ -161,11 +166,6 @@
           No encontramos locales. Prueba con otra palabra o
           <button type="button" class="btn-link" data-limpiar-filtros>mira todos los locales</button>.
         </p>
-      </section>
-
-      <section id="estadosLocales" aria-labelledby="estadosTitulo" hidden>
-        <h2 id="estadosTitulo">Estados de los locales</h2>
-        <div id="estadosLista"></div>
       </section>
 
       <section id="recomendado" class="bloque bloque--compacto" aria-labelledby="tituloRecomendados" hidden data-portada>
@@ -290,6 +290,7 @@
   <dialog id="estadoVisor" aria-labelledby="estadoLocal">
     <div class="estado-visor__cabecera"><strong id="estadoLocal"></strong><button type="button" data-estado-cerrar aria-label="Cerrar estado">×</button></div>
     <img id="estadoImagen" alt="">
+    <video id="estadoVideo" controls playsinline preload="none" hidden></video>
     <div class="estado-visor__pie">
       <p id="estadoDescripcion"></p>
       <button type="button" data-estado-carta>Ver carta</button>
@@ -330,6 +331,6 @@
   <script defer src="js/logo.js?v=45"></script>
   <script defer src="js/store.js?v=48"></script>
   <script defer src="js/visitas.js?v=45"></script>
-  <script defer src="js/app.js?v=62" onerror="document.documentElement.dataset.arranque='error'"></script>
+  <script defer src="js/app.js?v=63" onerror="document.documentElement.dataset.arranque='error'"></script>
 </body>
 </html>

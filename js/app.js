@@ -3755,11 +3755,13 @@
     zona.hidden = !lista.length;
     var contenedor = $("#estadosLista");
     var html = lista.map(function (local) {
+      var estado = local.promo.estado;
+      var video = esVideoEstado(estado.foto);
+      var medio = video
+        ? '<video src="' + esc(estado.foto) + '" preload="metadata" muted playsinline aria-hidden="true"></video><span class="estado-play" aria-hidden="true">▶</span>'
+        : '<img src="' + esc(estado.foto) + '" alt="" loading="lazy" decoding="async">';
       return '<button type="button" data-estado-local="' + esc(local.id) + '" style="--estado-color:' + colorEstado(local) + '">' +
-        '<span class="estado-aro">' + (local.logo
-          ? '<img src="' + esc(local.logo) + '" alt="" loading="lazy">'
-          : '<span aria-hidden="true">' + esc(iniciales(local.nombre)) + '</span>') +
-        '</span><span>' + esc(local.nombre) + '</span></button>';
+        '<span class="estado-medio">' + medio + '</span><strong>' + esc(local.nombre) + '</strong></button>';
     }).join("");
     if (contenedor.dataset.contenido !== html) {
       contenedor.innerHTML = html;
@@ -3773,6 +3775,10 @@
       else mostrarEstado(indice);
     }
   }
+  function esVideoEstado(url) {
+    return /\.(mp4|webm)(?:[?#]|$)/i.test(url);
+  }
+  visorEstado.addEventListener("close", function () { $("#estadoVideo").pause(); });
   function mostrarEstado(indice) {
     var local = estadosVisibles[indice];
     if (!local) return;
@@ -3780,7 +3786,15 @@
     var estado = local.promo.estado;
     $("#estadoLocal").textContent = local.nombre;
     var imagen = $("#estadoImagen");
-    if (imagen.getAttribute("src") !== estado.foto) imagen.src = estado.foto;
+    var video = $("#estadoVideo");
+    var esVideo = esVideoEstado(estado.foto);
+    imagen.hidden = esVideo;
+    video.hidden = !esVideo;
+    if (esVideo && video.getAttribute("src") !== estado.foto) video.src = estado.foto;
+    if (!esVideo) {
+      video.pause();
+      if (imagen.getAttribute("src") !== estado.foto) imagen.src = estado.foto;
+    }
     imagen.alt = estado.texto ? "" : "Foto publicada por " + local.nombre;
     $("#estadoDescripcion").textContent = estado.texto;
     $("#estadoPosicion").textContent = (indice+1) + " de " + estadosVisibles.length;
