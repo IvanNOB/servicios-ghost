@@ -2156,7 +2156,7 @@
     });
   }
 
-  function renderSheet() {
+  function renderSheet(perfil) {
     var groups = groupedCart();
 
     if (groups.length === 0) {
@@ -2204,6 +2204,7 @@
     var formPrevio = document.getElementById("pedidoForm");
     var previo = null;
     try { if (formPrevio) previo = leerFormulario(formPrevio); } catch (e) { previo = null; }
+    if (previo && perfil) Object.assign(previo, perfil);
     var destPrevio = formPrevio ? leerDestinatario(formPrevio) : null;
     if (previo) modoEntrega = previo.modo;
     var vNombre = previo ? previo.nombre : (c.nombre || "");
@@ -2232,7 +2233,7 @@
           "</div>" +
         "</div>" +
         '<h3 class="form__heading" data-modo-titulo>' + (modoEntrega === "regalo" ? "Tus datos (quien compra)" : "Tus datos de entrega") + "</h3>" +
-        (c.nombre ? '<p class="form__hint form__hint--ok">✓ Usamos tus datos del último pedido. Revísalos.</p>' : "") +
+        (c.nombre ? '<p class="form__hint form__hint--ok">✓ Revisa tus datos de entrega guardados.</p>' : "") +
         '<div class="field">' +
           '<label class="field__label" for="fNombre" data-modo-lbl-nombre>' + (modoEntrega === "regalo" ? "Tu nombre *" : "Nombre *") + "</label>" +
           '<input class="field__input" id="fNombre" name="nombre" type="text" placeholder="¿A nombre de quién?" autocomplete="name" maxlength="80" required value="' + esc(vNombre) + '" />' +
@@ -3100,8 +3101,9 @@
         titulo = r?.nombre || "Menú del día";
         if (!m) { html = '<p class="sg-vacio">Este menú ya no está disponible.</p>'; break; }
         html = '<div class="sg-detalle"><div class="sg-detalle__meta">' + estadoHTML(r) + botonFavorito(r) + '</div>' +
-          '<div class="sg-filtros"><button aria-pressed="true" type="button">Menú del día</button><button type="button" data-explorar-carta="' + esc(r.id) +
-          '">Platos a la carta</button></div>' + (m.foto ? '<div class="sg-detalle__foto">' + imagenInicio(m.foto) + '</div>' : '') +
+          (r.carta.some(function (seccion) { return seccion.items.length; })
+            ? '<div class="sg-filtros"><span class="sg-tab-actual">Menú del día</span><button type="button" data-solo-platos data-explorar-carta="' +
+              esc(r.id) + '">Platos a la carta</button></div>' : '') + (m.foto ? '<div class="sg-detalle__foto">' + imagenInicio(m.foto) + '</div>' : '') +
           '<h3>' + esc(m.titulo || MENUS[paso.tipo].titulo) + '</h3>' +
           (m.desc ? '<p>' + esc(m.desc) + '</p>' : '') + '<b class="sg-precio">' + esc(precioTxt(m.precio)) + '</b>' +
           (m.grupos || []).map(function (g) {
@@ -3195,6 +3197,7 @@
     var form = e.target, datos = Object.fromEntries(new FormData(form));
     if (datos.telefono && !telCol(datos.telefono)) { toast("Revisa el número de WhatsApp."); form.telefono.focus(); return; }
     escribirLS(LS_CLIENTE, Object.assign({}, leerLS(LS_CLIENTE, {}), datos));
+    if ($("#pedidoForm")) renderSheet(datos);
     dialogoExplorar.close(); toast("Datos de entrega guardados.");
   });
   function accionInicio(t) {
@@ -3214,7 +3217,11 @@
       var paso = recorrido[recorrido.length-1];
       dialogoExplorar.close(); abrirMenuVentana(paso.id, paso.tipo);
     }
-    else if (d.explorarCarta) { if (dialogoExplorar.open) dialogoExplorar.close(); abrirCarta(d.explorarCarta); }
+    else if (d.explorarCarta) {
+      if (dialogoExplorar.open) dialogoExplorar.close();
+      abrirCarta(d.explorarCarta);
+      if (b.hasAttribute("data-solo-platos")) $("#cartaNav")?.scrollIntoView({block:"start"});
+    }
     else if (d.favorito) alternarFavorito(d.favorito);
     else if (b.hasAttribute("data-explorar-volver")) { recorrido.pop(); pintarExplorador(); $("#explorarTitulo").focus(); }
     else if (b.hasAttribute("data-abrir-seguimiento")) { dialogoExplorar.close(); abrirSeguimiento(""); }
