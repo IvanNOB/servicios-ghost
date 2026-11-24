@@ -238,16 +238,16 @@ body:has(#vistaInicio:not([hidden])) :is(.fab__pista,.fab__badge) {display:none}
 body:has(.carta-tamanos[open]) {overflow:hidden}
 
 /* El logo identifica al restaurante en la cabecera. Las tarjetas conservan las fotos reales. */
-#vistaCarta .dishes > .dish.dish--ilustrado:is([data-rest="chino-el-fenix"],[data-rest="zz-chicken-wings"]) {
+#vistaCarta .dishes > .dish.dish--ilustrado:is([data-rest="chino-el-fenix"],[data-rest="zz-chicken-wings"],[data-rest="chino-doradito-la-pista"]) {
   grid-template-columns:minmax(0,1fr);
   grid-template-areas:"info" "pie";
   grid-template-rows:1fr auto;
   padding:clamp(11px,2vw,16px);
 }
-#vistaCarta .dishes > .dish.dish--ilustrado.dish--opciones:is([data-rest="chino-el-fenix"],[data-rest="zz-chicken-wings"]) {
+#vistaCarta .dishes > .dish.dish--ilustrado.dish--opciones:is([data-rest="chino-el-fenix"],[data-rest="zz-chicken-wings"],[data-rest="chino-doradito-la-pista"]) {
   grid-template-areas:"info" "opc";
 }
-#vistaCarta .dish--ilustrado:is([data-rest="chino-el-fenix"],[data-rest="zz-chicken-wings"]) > .dish__foto {display:none}
+#vistaCarta .dish--ilustrado:is([data-rest="chino-el-fenix"],[data-rest="zz-chicken-wings"],[data-rest="chino-doradito-la-pista"]) > .dish__foto {display:none}
 #vistaCarta .dish--opciones-tarjetas .dish__desc {line-height:1.55}
 #vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas {padding:clamp(12px,3.3vw,22px);gap:16px}
 #vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas .opciones-tarjetas__opciones {gap:9px}
