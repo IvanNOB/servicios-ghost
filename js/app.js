@@ -975,11 +975,14 @@
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
-    var selectorTarjetas = opcionesEnTarjetas(r.id) &&
-      Array.isArray(it.opciones) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; });
+    var alitas = r.id === "zz-chicken-wings" && /^zz-al-\d+$/.test(it.id);
+    var selectorTarjetas = Array.isArray(it.opciones) && (
+      alitas ? it.opciones.some(function (grupo) { return norm(grupo.nombre) === "salsa"; }) :
+      opcionesEnTarjetas(r.id) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; })
+    );
     var sePuedePedir = !it.agotado && abiertoAhora(r);
     var grupoCarta = selectorTarjetas && r.carta.find(function (grupo) { return grupo.sec === seccion; });
-    var opcionesEnVentana = grupoCarta && grupoCarta.items.length > 1;
+    var opcionesEnVentana = selectorTarjetas && (alitas || (grupoCarta && grupoCarta.items.length > 1));
 
     // Plato con opciones a elegir (ej. salsa de las alitas) o con adiciones.
     if (selectorTarjetas || (armable(r, it) && sePuedePedir)) {
@@ -995,10 +998,10 @@
             (it.d ? '<div class="dish__desc">' + esc(it.d) + "</div>" : "") +
             (selectorTarjetas && !opcionesEnVentana ? "" : '<div class="dish__price">' + esc(precioMostrar) + "</div>") +
           "</div>" +
-          (opcionesEnVentana ? '<button type="button" class="carta-elegir" data-abrir-tamanos aria-haspopup="dialog">Elegir tamaño</button>' +
+          (opcionesEnVentana ? '<button type="button" class="carta-elegir" data-abrir-tamanos aria-haspopup="dialog">' + (alitas ? "Elegir salsa" : "Elegir tamaño") + '</button>' +
             '<dialog class="carta-tamanos" aria-label="' + esc(it.n) + '">' +
             '<div class="carta-tamanos__cabecera"><strong>' + esc(it.n) + '</strong>' +
-            '<button type="button" data-cerrar-tamanos aria-label="Cerrar tamaños" autofocus>×</button></div>' : '') +
+            '<button type="button" data-cerrar-tamanos aria-label="Cerrar opciones" autofocus>×</button></div>' : '') +
           opcionesPlatoHTML(r, it, selectorTarjetas, sePuedePedir) +
           (opcionesEnVentana ? '</dialog>' : '') +
         "</div>"
@@ -1457,7 +1460,7 @@
       var op = (g.opciones || []).filter(function (o) { return o.n === sel.value; })[0];
       total += op ? Number(op.precio) || 0 : 0;
     });
-    if (selectorTarjetas) {
+    if (selectorTarjetas && cont.querySelector("[data-precio-tamano]")) {
       var indice = it.opciones.findIndex(function (g) { return norm(g.nombre) === "tamano"; });
       var tamanos = it.opciones[indice].opciones;
       var control = cont.querySelector('[data-opc="' + indice + '"]:checked');
