@@ -654,7 +654,7 @@
       res.total + (res.total === 1 ? " plato" : " platos") + " con “" + termino.trim() + "”";
     cont.innerHTML = res.lista.map(function (x) {
       var img = x.it.foto
-        ? '<img class="res__img" src="' + esc(x.it.foto) + '" alt="" loading="lazy" decoding="async" />'
+        ? '<img class="res__img" src="' + esc(fotoMiniatura(x.it.foto)) + '" alt="" loading="lazy" decoding="async" />'
         : imagenProductoSinFoto(x.it, x.r, "res__img");
       var precio = x.it.p > 0 ? (tieneOpciones(x.it) ? "desde " : "") + money(x.it.p) : precioTxt(0);
       return '<button type="button" class="res' + (x.it.agotado || !abiertoAhora(x.r) ? " res--off" : "") + '" data-ir-rest="' + esc(x.r.id) + '" data-ir-item="' + esc(x.it.id) + '">' +
@@ -761,7 +761,7 @@
       // Respeta la portada que el negocio configuró. Si falta, usa una foto de su carta.
       var foto = !r.logo && productosDisponibles(r).find(function (it) { return it.foto; });
       var cover = r.logo
-        ? LogoGhost.recuadro(r, "card__cover", { mosaico: true })
+        ? LogoGhost.recuadro(r, "card__cover", { mosaico: true, sinLazy: i < 2 })
         : '<div class="card__cover card__cover--fondo">' +
           (foto ? '<img class="card__foto" src="' + esc(foto.foto) + '" alt="" loading="lazy" decoding="async" />'
             : '<span class="card__initials">' + esc(iniciales(r.nombre)) + "</span>") + "</div>";
@@ -821,11 +821,11 @@
       var productosVaso = r.id === "granizados-dbarrio" && sec.sec === "Granizados"
         ? sec.items.filter(function (it) { return /^gd-(8|12|16|fruta)$/.test(it.id) &&
             (it.opciones || []).some(function (g) { return g.nombre === "Sabor"; }); }) : [];
+      var abierto = abiertos ? abiertos.includes("sec-" + s) : (s === 0 || productosVaso.length > 0);
       var platos = productosVaso.length ? vasoDbarrioHTML(r, productosVaso) : "";
       for (var i = 0; i < sec.items.length; i++) {
-        if (productosVaso.indexOf(sec.items[i]) === -1) platos += dishHTML(r, sec.items[i], sec.sec);
+        if (productosVaso.indexOf(sec.items[i]) === -1) platos += dishHTML(r, sec.items[i], sec.sec, abierto ? (s === 0 && i < 2 ? "eager" : "lazy") : "plegado");
       }
-      var abierto = abiertos ? abiertos.includes("sec-" + s) : (s === 0 || productosVaso.length > 0);
       secciones +=
         '<details class="section carta-grupo" id="sec-' + s + '" data-sec="' + s + '"' + (abierto ? " open" : "") + '>' +
           '<summary class="section__title carta-grupo__titulo">' +
@@ -970,7 +970,7 @@
     return Array.isArray(locales) ? locales.includes(restId) : restId === "chino-el-fenix";
   }
 
-  function dishHTML(r, it, seccion) {
+  function dishHTML(r, it, seccion, carga) {
     var imagenClase = it.foto ? " dish--foto" : " dish--foto dish--ilustrado";
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
@@ -988,7 +988,7 @@
       var precioMostrar = it.p > 0 ? (variaPrecio ? "desde " : "") + money(it.p) : precioTxt(0);
       return (
         '<div class="dish dish--opciones' + (selectorTarjetas ? ' dish--opciones-tarjetas' : '') + imagenClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
-          fotoHTML(it, r, seccion) +
+          fotoHTML(it, r, seccion, carga) +
           '<div class="dish__info">' +
             msgHTML(it) +
             '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
@@ -1006,7 +1006,7 @@
     }
     return (
       '<div class="dish' + agotadoClase + imagenClase + '" data-dish data-rest="' + esc(r.id) + '" data-item="' + esc(it.id) + '">' +
-        fotoHTML(it, r, seccion) +
+        fotoHTML(it, r, seccion, carga) +
         '<div class="dish__info">' +
           msgHTML(it) +
           '<div class="dish__name">' + esc(it.n) + etiqueta + "</div>" +
@@ -1060,11 +1060,29 @@
       '" aria-hidden="true"><span>' + figura + "</span>" + logo + "</span>";
   }
 
+  var miniaturasObleas = new Set("bf-lim-cerezada bf-lim-hierbabuena bf-lim-maracuya bf-michelada bs-helado he-affogato he-crujiente he-ensalada he-fantasia he-festival he-fresas-crema he-frutal he-frutos-amarillos he-frutos-rojos he-malteada he-maracumango he-michelada-mango he-queso he-sunday mi-oceano mi-osito mi-payasito ob-nachos sa-deditos sa-panzerotti sa-sandwich-ranchero so-queso sp-especial wa-especial".split(" "));
+  function fotoMiniatura(url) {
+    var archivo = /^assets\/obleas-y-mas\/([\w-]+)\.webp$/.exec(url);
+    return archivo && miniaturasObleas.has(archivo[1]) ? "assets/obleas-y-mas/mini/" + archivo[1] + ".webp" : url;
+  }
+
+  elVistaCarta.addEventListener("toggle", function (e) {
+    var grupo = e.target;
+    if (!grupo.open || !grupo.matches(".carta-grupo")) return;
+    grupo.querySelectorAll("img[data-src]").forEach(function (img) {
+      img.src = img.dataset.src;
+      img.removeAttribute("data-src");
+    });
+  }, true);
+
   // Foto del plato (si la subieron en el panel). Carga diferida: no gasta datos
   // hasta que el cliente baja hasta ese plato.
-  function fotoHTML(it, r, seccion) {
+  function fotoHTML(it, r, seccion, carga) {
     if (!it.foto) return imagenProductoSinFoto(it, r, "dish__foto", seccion);
-    return '<img class="dish__foto" src="' + esc(it.foto) + '" alt="' + esc(it.n) + '" loading="lazy" decoding="async" width="96" height="96" data-foto-ver title="Ver foto" />';
+    var atributo = carga === "plegado" ? "data-src" : "src";
+    return '<img class="dish__foto" ' + atributo + '="' + esc(fotoMiniatura(it.foto)) + '" alt="' + esc(it.n) +
+      '" loading="' + (carga === "eager" ? "eager" : "lazy") + '" decoding="async" width="96" height="96" data-foto-ver="' + esc(it.foto) + '" title="Ver foto" />';
+
   }
 
   // ¿El plato ofrece opciones a elegir (grupos tipo salsa)?
@@ -2610,7 +2628,7 @@
 
     // --- Logo: volver al inicio ---
     if (t.closest("[data-volver-panel]") || (MODO_PANEL && t.closest("#logoHome"))) { e.preventDefault(); volverAlPanel(); return; }
-    if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); if (vistaActual) conTransicion(irAInicio); else irAInicio(); return; }
+    if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); irAInicio(); return; }
 
     // --- Chips de categoría ---
     if (t.closest("#filtrosBoton")) {
@@ -2634,7 +2652,7 @@
     }
 
     // --- Volver desde la carta ---
-    if (t.closest("[data-back]")) { if (MODO_PANEL) volverAlPanel(); else conTransicion(irAInicio); return; }
+    if (t.closest("[data-back]")) { if (MODO_PANEL) volverAlPanel(); else irAInicio(); return; }
     var comp = t.closest("[data-compartir]");
     if (comp) { compartirNegocio(comp.getAttribute("data-compartir")); return; }
 
@@ -2749,7 +2767,7 @@
     if (menuCarta) {
       cerrarMenuVentana();
       var idMc = menuCarta.getAttribute("data-menu-carta");
-      conTransicion(function () { abrirCarta(idMc); }, findRest(idMc));
+      abrirCarta(idMc);
       return;
     }
 
@@ -2763,7 +2781,7 @@
 
     // --- Fotos ampliadas ---
     var fotoVer = t.closest("[data-foto-ver]");
-    if (fotoVer) { verFoto(fotoVer.getAttribute("src"), fotoVer.getAttribute("data-foto-titulo") || fotoVer.getAttribute("alt") || ""); return; }
+    if (fotoVer) { verFoto(fotoVer.getAttribute("data-foto-ver") || fotoVer.getAttribute("src"), fotoVer.getAttribute("data-foto-titulo") || fotoVer.getAttribute("alt") || ""); return; }
     if (t.closest("[data-visor-close]")) { cerrarFoto(); return; }
 
 
@@ -2771,7 +2789,7 @@
     var card = t.closest("[data-rest]");
     if (card && card.classList.contains("card")) {
       var idCard = card.getAttribute("data-rest");
-      conTransicion(function () { abrirCarta(idCard); }, findRest(idCard));
+      abrirCarta(idCard);
       return;
     }
   }
@@ -3077,41 +3095,11 @@
 
   /* ------------- Transición con el fantasma al entrar/salir de una carta -------------
      Rápida (~0,4 s): aparece el logo, se cambia la vista por detrás y se va. */
-  var _transOcupada = false, elTrans = null;
-  function conTransicion(cambio, rest) {
-    var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce || _transOcupada) { cambio(); return; }
-    _transOcupada = true;
-    if (!elTrans) {
-      elTrans = document.createElement("div");
-      elTrans.className = "trans";
-      elTrans.setAttribute("aria-hidden", "true");
-      elTrans.innerHTML =
-        '<div class="trans__centro">' +
-          '<span class="trans__logo"><img src="assets/logo-sm.png" alt="" width="96" height="96" /></span>' +
-          '<span class="trans__txt"></span>' +
-        "</div>";
-      document.body.appendChild(elTrans);
-    }
-    elTrans.querySelector(".trans__txt").textContent = rest ? rest.nombre : "Servicios Ghost";
-    elTrans.classList.remove("trans--sale");
-    void elTrans.offsetWidth; // reinicia la animación
-    elTrans.classList.add("trans--entra");
-    setTimeout(function () {
-      try { cambio(); } finally {
-        setTimeout(function () {
-          elTrans.classList.remove("trans--entra");
-          elTrans.classList.add("trans--sale");
-          setTimeout(function () { elTrans.classList.remove("trans--sale"); _transOcupada = false; }, 220);
-        }, 140);
-      }
-    }, 150);
-  }
-
   // Abre la carta de un restaurante y, si se indica, resalta un plato.
   function irAPlato(restId, itemId) {
     if (!findRest(restId)) return;
-    conTransicion(function () { abrirCarta(restId); resaltarPlato(itemId); }, findRest(restId));
+    abrirCarta(restId);
+    resaltarPlato(itemId);
   }
   function resaltarPlato(itemId) {
     if (!itemId) return;
@@ -3565,7 +3553,7 @@
     if (a === "pedido") openSheet();
     else if (a === "restaurantes") {
       var ir = function () { irAInicio(); limpiarFiltros(); irASeccionInicio("restaurantes"); };
-      if (vistaActual) conTransicion(ir); else ir();
+      ir();
     }
     else if (a === "buscar") {
       if (vistaActual) irAInicio();
@@ -3723,7 +3711,7 @@
     lista.forEach(function (x) {
       var r = x.r, it = x.it;
       var imagen = it.foto
-        ? '<img class="recomendado-card__foto" src="' + esc(it.foto) + '" alt="" loading="lazy" decoding="async" />'
+        ? '<img class="recomendado-card__foto" src="' + esc(fotoMiniatura(it.foto)) + '" alt="" loading="lazy" decoding="async" />'
         : imagenProductoSinFoto(it, r, "recomendado-card__ilustracion");
       var estado = estadoApertura(r);
       var precio = (tieneOpciones(it) ? "Desde " : "") + money(it.p);
