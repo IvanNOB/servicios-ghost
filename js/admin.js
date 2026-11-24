@@ -46,7 +46,7 @@
   function hoyISO() { return fechaColombia(); }
 
   // Perfil del usuario con sesión: { rol: "admin" } o { rol: "aliado", restaurante_id }.
-  var perfil = { rol: "admin" };
+  var perfil = null;
   function esAliado() { return perfil && perfil.rol === "aliado"; }
   function almuerzoHoy(r) {
     var a = r && r.almuerzo;
@@ -82,6 +82,7 @@
     elAvisoConfig.hidden = cualVista !== "config";
     elVistaLogin.hidden = cualVista !== "login";
     elVistaPanel.hidden = cualVista !== "panel";
+    document.body.classList.toggle("panel-activo", cualVista === "panel");
     elHeaderRight.hidden = cualVista !== "panel";
   }
 
@@ -203,8 +204,8 @@
     document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado && el.getAttribute("data-tab") !== "pedidos"; });
     var tag = document.querySelector(".admin-header .logo__tag"); if (tag) tag.textContent = aliado ? "Mi negocio" : "Admin";
     var tabP0 = document.querySelector("[data-tab=pedidos]"); if (tabP0) tabP0.hidden = false;
-    var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR) tabR.textContent = aliado ? "Mi negocio" : "Cartas";
-    var titR = document.querySelector("#tabRestaurantes .panel__title"); if (titR) titR.textContent = aliado ? "Mi negocio" : "Cartas de los locales";
+    var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR) tabR.querySelector("span").textContent = aliado ? "Mi negocio" : "Establecimientos";
+    var titR = document.querySelector("#tabRestaurantes .panel__title"); if (titR) titR.textContent = aliado ? "Mi negocio" : "Establecimientos";
     ["#btnNuevo", "#btnNuevoLugarAlm"].forEach(function (s) { var el = $(s); if (el) el.hidden = aliado; });
   }
 
@@ -250,52 +251,24 @@
   function textoBusquedaAdmin(texto) {
     return String(texto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
   }
-  $("#buscarCartaAdmin").addEventListener("input", pintarLista);
-
+  var directorio = crearDirectorioAdmin({
+    esc, iniciales, contarPlatos, contarSinPrecio, contarConFoto, cartaNueva, menuHoy, urlVistaPrevia, money,
+    lista: function () { return restaurantes; },
+    permitido: function () { return perfil?.rol === "admin"; },
+    abrir: function (accion,id) {
+      cambiarTab("restaurantes");
+      ({disp:abrirDisponibilidad, estado:abrirEstado, promo:abrirPromo})[accion](id);
+    },
+    ventas: async function () {
+      var datos = await Store.listarPedidos("todos", desdeRango("7"), "estado,creado_en,items,total");
+      return calcularVentas(datos).porRest;
+    }
+  });
   function pintarLista() {
-    if (!restaurantes.length) {
-      elListaRest.innerHTML = '<p class="muted">Aún no hay restaurantes. Toca “+ Nuevo restaurante”.</p>';
-      return;
-    }
-    var html = esAliado() && restaurantes[0] ? tableroAliadoHTML(restaurantes[0]) + bienvenidaAliadoHTML(restaurantes[0]) : "";
-    var nuevas = esAliado() ? [] : restaurantes.filter(cartaNueva);
-    if (nuevas.length) {
-      html += '<div class="aviso-sql" style="grid-column:1/-1">🆕 <strong>Estas cartas son distintas a la versión que me pasaste por el chat:</strong> ' +
-        esc(nuevas.map(function (r) { return r.nombre; }).join(", ")) +
-        '. La tienda muestra la copia guardada en el panel. Toca <strong>“Revisar carta nueva”</strong> para ver qué cambia en cada una; si la diferencia son correcciones que hiciste tú en el panel, toca Cancelar y no pasa nada.</div>';
-    }
-    if (esAliado()) { elListaRest.innerHTML = html; return; }
-    var consulta = textoBusquedaAdmin($("#buscarCartaAdmin").value);
-    var visibles = restaurantes.filter(function (local) {
-      return textoBusquedaAdmin(local.nombre + " " + (local.cat || "")).includes(consulta);
-    });
-    if (!visibles.length) html += '<p class="muted">No se encontraron cartas.</p>';
-    for (var i = 0; i < visibles.length; i++) {
-      var r = visibles[i];
-      var cover = estiloPortada(r);
-      html +=
-        '<div class="admin-card' + (r.visible === false ? " admin-card--oculto" : "") + '">' +
-          (r.logo ? LogoGhost.recuadro(r, "admin-card__cover", { mosaico: true })
-                  : '<div class="admin-card__cover" ' + cover + '>' + esc(iniciales(r.nombre)) + "</div>") +
-          '<div class="admin-card__info">' +
-            '<div class="admin-card__name">' + esc(r.nombre) +
-              (r.visible === false ? ' <span class="estado-badge estado-badge--preparando">🙈 Oculto</span>' : "") + "</div>" +
-            '<div class="admin-card__meta">' + esc(r.cat) + " · " + (r.abierto ? "Abierto" : "Cerrado") +
-              " · " + contarPlatos(r) + " platos" + (contarConFoto(r) ? " · 📷 " + contarConFoto(r) + "/" + contarPlatos(r) : "") +
-              (menuHoy(r, "desayuno") ? " · 🍳 desayuno hoy" : "") + (almuerzoHoy(r) ? " · 🍲 almuerzo hoy" : "") +
-              (contarSinPrecio(r) ? ' · <span class="falta-precio">⚠️ ' + contarSinPrecio(r) + " sin precio</span>" : "") +
-              "</div>" +
-          "</div>" +
-          '<div class="admin-card__actions">' +
-            '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
-            (!esAliado() ? '<button type="button" class="btn-copy btn-sm" data-ali-estado="' + esc(r.id) + '">Estado</button>' : "") +
-            '<button type="button" class="btn-copy btn-sm" data-ali-disp="' + esc(r.id) + '" title="Marcar agotados y cambiar precios rápido">Productos y precios</button>' +
-            (!esAliado() && cartaNueva(r) ? '<button type="button" class="btn-primary btn-sm" data-sincronizar="' + esc(r.id) + '" title="La carta que me pasaste por el chat es distinta a la guardada. Toca para ver qué cambia antes de aplicarla.">🆕 Revisar carta nueva</button>' : "") +
-            (esAliado() ? "" : '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>') +
-          "</div>" +
-        "</div>";
-    }
-    elListaRest.innerHTML = html;
+    if (esAliado()) {
+      var r = restaurantes[0];
+      elListaRest.innerHTML = r ? tableroAliadoHTML(r) + bienvenidaAliadoHTML(r) : '<p class="muted">Aún no tienes un establecimiento asignado.</p>';
+    } else if (perfil) directorio.pintar();
   }
 
   // Lista de pasos para el negocio aliado cuando entra al panel.
@@ -1853,6 +1826,7 @@
     } catch (ex) {
       toast(mensajeErrorGuardar(ex), true);
       boton.disabled = false;
+      pintarLista();
     }
   }
 
@@ -2678,7 +2652,7 @@
     if (!elEditorSheet.hidden) return "editor";
     return null;
   }
-  function inicioPanel() { return esAliado() ? "restaurantes" : "vitrina"; }
+  function inicioPanel() { return "restaurantes"; }
   function tabActual() {
     var t = document.querySelector(".tab.tab--active");
     return t ? t.getAttribute("data-tab") : inicioPanel();
@@ -2725,20 +2699,15 @@
       if (t === activo) t.setAttribute("aria-current", "page");
       else t.removeAttribute("aria-current");
     });
-    var mas = document.querySelector(".panel-nav__mas");
-    var secundaria = mas.contains(activo);
-    var resumen = mas.querySelector("summary");
-    var focoEnMenu = mas.contains(document.activeElement);
-    mas.open = false;
-    resumen.textContent = secundaria ? activo.textContent.trim() + " · Más" : "Más opciones";
-    if (secundaria && focoEnMenu) resumen.focus();
-    var paneles = { vitrina: "tabVitrina", restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
+    $("#nombreSeccion").textContent = activo.querySelector("span").textContent;
+    var paneles = { resumen:"tabResumen", repartos:"tabRepartos", clientes:"tabClientes", vitrina: "tabVitrina", restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
       ventas: "tabVentas", visitas: "tabVisitas", ajustes: "tabAjustes" };
     Object.keys(paneles).forEach(function (k) {
       var el = document.getElementById(paneles[k]);
       if (el) el.hidden = k !== cual;
     });
     if (cual === "almuerzos") pintarAlmuerzos();
+    if (["resumen","repartos","clientes"].includes(cual)) cargarOperacion(cual, $("#"+paneles[cual]));
     if (cual === "ventas") cargarVentas();
     if (cual === "visitas") cargarVisitas();
     if (cual === "ajustes") pintarAjustes();
@@ -3484,6 +3453,38 @@
       publicarPopulares(ventasPedidos, rango);
     } catch (ex) {
       cont.innerHTML = '<p class="muted">No se pudieron cargar las ventas: ' + esc(ex && ex.message ? ex.message : "error") + "</p>";
+    }
+  }
+
+  async function cargarOperacion(tipo, panel) {
+    if (perfil?.rol !== "admin") return;
+    var titulo = {resumen:"Resumen de operación",repartos:"Pedidos para reparto",clientes:"Clientes de los últimos 7 días"}[tipo];
+    var cabecera = '<h2 class="panel__title">' + titulo + '</h2>';
+    panel.innerHTML = cabecera + '<p role="status">Consultando pedidos…</p>';
+    try {
+      var lista = tipo === "repartos"
+        ? (await Promise.all(["listo","en-camino"].map(estado=>Store.listarPedidos(estado,null,"codigo,estado,creado_en")))).flat()
+        : await Store.listarPedidos("todos",desdeRango("7"),tipo === "clientes" ? "nombre:cliente->>nombre,tel:cliente->>telefono" : "estado,total,creado_en,items");
+      if (panel.hidden || perfil?.rol !== "admin") return;
+      if (tipo === "resumen") {
+        var v = calcularVentas(lista);
+        panel.innerHTML = cabecera + '<p>Últimos 7 días</p><div class="kpis">' +
+          [["Pedidos",v.pedidos],["En curso",v.pendientes],["Entregados",v.entregados],["Ventas entregadas",money(v.ventas)]].map(([k,n])=>
+            '<div class="kpi"><span>'+k+'</span><strong class="kpi__val">'+esc(n)+'</strong></div>').join("")+'</div>';
+      } else if (tipo === "clientes") {
+        var clientes = new Map();
+        lista.forEach(function(p){
+          var key = p.tel || p.nombre;
+          if (!key) return;
+          var c = clientes.get(key) || {nombre:p.nombre || "Cliente",n:0};
+          c.n++; clientes.set(key,c);
+        });
+        panel.innerHTML = cabecera + (clientes.size ? '<ul class="dir-operacion">'+Array.from(clientes.values()).sort((a,b)=>b.n-a.n).map(c=>'<li><b>'+esc(c.nombre)+'</b><span>'+c.n+' pedidos</span></li>').join("")+'</ul>' : '<p>Todavía no hay clientes con pedidos en este periodo.</p>');
+      } else {
+        panel.innerHTML = cabecera + (lista.length ? '<ul class="dir-operacion">'+lista.map(p=>'<li><b>'+esc(p.codigo)+'</b><span>'+esc(ESTADO_LABEL[p.estado])+'</span></li>').join("")+'</ul>' : '<p>No hay pedidos listos ni en camino.</p>') + '<button class="btn-copy" data-tab-ir="pedidos">Gestionar pedidos</button>';
+      }
+    } catch (e) {
+      panel.innerHTML = cabecera + '<p>No se pudieron cargar los datos.</p><button class="btn-copy" data-tab-ir="'+tipo+'">Reintentar</button>';
     }
   }
 

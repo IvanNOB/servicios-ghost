@@ -1,0 +1,106 @@
+/* Consola de establecimientos */
+.admin {--acento:#ffd23c;--linea:#383731;--ficha:#151515}
+#nombreSeccion,.sede {display:none}
+.panel-activo:not(.modo-aliado) .admin-header {background:#10100f;border-color:var(--linea)}
+.panel-activo:not(.modo-aliado) #nombreSeccion {display:block;font:800 1.4rem var(--font-title);margin-right:auto}
+.admin-header .logo img {object-fit:contain}
+.panel-nav .tab i {font-style:normal;color:#edc958;font-size:1.25em}
+.panel-nav .tab {display:flex;align-items:center;justify-content:flex-start;gap:10px}
+.panel-nav__principal {display:flex;flex-wrap:wrap}
+.admin .dir-head p {margin:2px 0;color:#bdb9af}
+.admin .dir-head h2 {margin:0;font-size:clamp(1.45rem,2.4vw,2.05rem);letter-spacing:-.04em}
+.dir-head input {max-width:350px;border-radius:100px}
+.dir-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(238px,28%);align-items:start;gap:16px}
+.dir-main,.dir-interior {min-width:0}
+.dir-main #listaRest {display:block}
+#dirKpis {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:17px}
+#dirKpis button {--tinte:#ccac6d;display:flex;align-items:center;text-align:left;gap:8px;min-width:0;padding:12px 8px;background:linear-gradient(145deg,color-mix(in srgb,var(--tinte) 19%,#101010),#121211 85%);border:1px solid color-mix(in srgb,var(--tinte) 56%,#222);border-radius:14px;color:#faf9f3;font:600 .81rem/1.2 var(--font-body);cursor:pointer}
+#dirKpis button:nth-child(2){--tinte:#34d77c}#dirKpis button:nth-child(3){--tinte:#ed6065}#dirKpis button:nth-child(4){--tinte:#ffd047}#dirKpis button:nth-child(5){--tinte:#c78df9}
+#dirKpis button[aria-pressed=true] {border-color:var(--tinte)}
+#dirKpis i {display:grid;place-items:center;flex:none;width:31px;height:31px;background:#ffffff0d;color:var(--tinte);border-radius:50%;font:700 1.2rem var(--font-body)}
+#dirKpis b {display:block;font:800 1.42rem var(--font-title)}
+.dir-tools,#dirPaginas {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.dir-switch {display:flex;gap:4px;margin-right:auto}
+.dir-tools select,.dir-switch button,#dirPaginas button,.dir-ico,.dir-preview,.dir-gestion button,#dirCifras button {background:linear-gradient(#232322,#181818);color:#eee;border:1px solid var(--linea);border-radius:9px;min-height:40px;padding:7px 11px;font:inherit;cursor:pointer}
+.dir-tools select {max-width:100%;font-size:.9rem}
+.dir-switch button[aria-pressed=true],#btnNuevo {color:#211900;background:linear-gradient(150deg,#ffe376,#ffca23);border-color:#e7b633;font-weight:750}
+.dir-tabla,.dir-cards article {border:1px solid var(--linea);border-radius:12px;overflow:hidden;background:var(--ficha)}
+.dir-tabla {overflow-x:auto}
+.dir-tabla table {border-collapse:collapse;width:100%;font-size:.85rem;line-height:1.28}
+.dir-tabla th {background:#242321;text-align:left;font-weight:700;padding:11px 7px}
+.dir-tabla td {padding:8px 7px;border-top:1px solid #33322c}
+.dir-tabla td:last-child {white-space:nowrap}
+.dir-tabla tr.elegido,.dir-cards article.elegido {background:#251f11;outline:1px solid #c49d32;outline-offset:-1px}
+.dir-elegir {display:flex;align-items:center;gap:8px;border:0;background:transparent;color:#faf9f5;font:inherit;text-align:left;padding:0;min-height:44px;cursor:pointer}
+.dir-logo {width:43px;height:43px;flex:none;border-radius:9px;overflow:hidden}
+.dir-inicial {display:grid;place-items:center;background:radial-gradient(at 25% 5%,#655028,#24221f);color:#ffe39a;font-weight:800}
+.dir-estado {display:inline-flex;align-items:center;gap:5px;background:none;border:0;color:inherit;min-height:40px;padding:0;font:inherit;cursor:pointer}
+.dir-estado i {width:29px;height:17px;position:relative;border-radius:12px;background:#666}
+.dir-estado i::after {content:"";position:absolute;width:13px;height:13px;top:2px;left:2px;background:white;border-radius:50%}
+.dir-estado[aria-checked=true] i {background:#128e44}
+.dir-estado[aria-checked=true] i::after {left:14px}
+.dir-alerta {display:inline-block;padding:3px 6px;background:#3a3014;color:#ffdf7f;border-radius:5px;font-size:.8rem}
+.dir-ico {display:inline-grid;place-items:center;min-width:31px;min-height:36px;padding:4px;font-size:1.05rem;text-decoration:none}
+.dir-cards {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:9px}
+.dir-cards article {display:grid;align-content:start;justify-items:start;gap:6px;padding:13px}
+.dir-cards small,.dir-interior p,#dirPaginas span {color:#c5c1b7}
+#dirPaginas {justify-content:flex-end;margin-block:12px;font-size:.86rem}
+#dirPaginas span {margin-right:auto}
+#dirPaginas button {min-width:38px;font-size:1.1rem}
+#dirPaginas button:disabled {opacity:.4}
+#dirDetalle {position:sticky;top:76px;border:1px solid #a48735;border-radius:16px;overflow:hidden;background:linear-gradient(160deg,#1b1914,#101010 65%);scroll-margin-top:76px}
+#dirDetalle:empty {display:none}
+.dir-portada {width:100%;height:clamp(125px,12vw,190px);font:800 2.4rem var(--font-title)}
+.dir-interior {padding:14px}
+.dir-interior h2 {font-size:1.4rem;line-height:1.12}
+.dir-interior p {margin:4px 0 7px;font-size:.9rem}
+.dir-preview {float:right;text-decoration:none;min-height:36px;font-size:.85rem}
+.dir-gestion {clear:both;display:grid;gap:6px;margin-block:12px}
+.dir-gestion button {display:flex;align-items:center;justify-content:space-between;text-align:left;gap:8px;font-size:.9rem}
+.dir-gestion i {color:var(--acento);font-style:normal}
+.dir-interior h3 {font-size:.87rem;color:#ddd5c3}
+#dirCifras {display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:7px 0 12px;font-size:.81rem}
+#dirCifras span {padding:8px;border-radius:8px;background:#231f16}
+#dirCifras b {display:block;color:#ffdf87;font-size:1rem}
+.dir-interior details {border-top:1px solid var(--linea);padding-top:6px;color:#ada99e;font-size:.83rem}
+.dir-interior summary {cursor:pointer;padding:7px 0}
+.modo-aliado .dir-layout {display:block}
+.modo-aliado .dir-main #listaRest {display:grid}
+@media(min-width:1051px){
+ .panel-activo:not(.modo-aliado) {--lateral:clamp(178px,15vw,245px);padding-left:var(--lateral)}
+ .panel-activo:not(.modo-aliado) .admin-header {padding:12px 20px;min-height:68px}
+ .panel-activo:not(.modo-aliado) .admin-main {max-width:1650px;padding:18px clamp(12px,1.4vw,24px) 44px}
+ .panel-activo:not(.modo-aliado) .admin-header .logo {position:fixed;left:0;top:0;width:var(--lateral);height:68px;background:#12110f;padding:10px 14px;gap:6px}
+ .panel-activo:not(.modo-aliado) .logo__tag {display:none}
+ .panel-activo:not(.modo-aliado) .panel-nav {position:fixed;inset:68px auto 0 0;width:var(--lateral);display:flex;flex-flow:column nowrap;justify-content:space-between;align-items:stretch;overflow:auto;z-index:20;background:linear-gradient(145deg,#17150f,#0e0e0e 40%);border-radius:0;margin:0;padding:14px 8px;border-width:1px 1px 0 0}
+ .panel-activo:not(.modo-aliado) .panel-nav__principal {display:grid;grid-template-columns:1fr;flex:0;gap:3px}
+ .panel-activo:not(.modo-aliado) .panel-nav .tab {text-align:left;color:#e4e0d8}
+ .panel-activo:not(.modo-aliado) .panel-nav .tab--active {color:#ffeaa4;background:linear-gradient(115deg,#483713,#19160f);border-color:#c39b34}
+ .sede {display:grid;text-align:center;padding:12px 0;color:#e9dfbe}.sede img {width:100%;mix-blend-mode:screen}.sede small {color:#bdb7a7}
+}
+@media(max-width:1250px) {#dirKpis i {display:none}}
+@media(max-width:1050px) {
+ .dir-layout {grid-template-columns:minmax(0,1fr)}
+ #dirDetalle {position:static}
+ .dir-interior {max-width:720px}
+ .panel-nav__principal {display:flex;flex-wrap:nowrap;overflow-x:auto}
+ .panel-nav .tab {flex:none}
+}
+@media(max-width:640px){
+ .admin-main {padding-inline:12px}
+ .panel-activo:not(.modo-aliado) #nombreSeccion {display:none}
+ .admin-header {flex-wrap:wrap}
+ .admin-user {max-width:13ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .admin-header__right {flex-wrap:wrap}
+ .dir-head input {max-width:none}
+ #dirKpis {display:flex;overflow:auto;padding-bottom:4px}
+ #dirKpis button {flex:0 0 112px;min-height:70px}
+ .dir-tools select {flex:1;min-width:0}
+ .dir-tabla th:nth-child(2),.dir-tabla td:nth-child(2),.dir-tabla th:nth-child(4),.dir-tabla td:nth-child(4),.dir-tabla th:last-child,.dir-tabla td:last-child {display:none}
+ .dir-tabla td {padding:6px 4px}
+ .dir-logo {width:35px;height:35px}
+ .dir-interior button {min-height:44px}
+}
+.dir-operacion {list-style:none;padding:0;border:1px solid var(--linea);border-radius:12px;background:var(--ficha)}
+.dir-operacion li {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px}
+.dir-operacion li+li {border-top:1px solid var(--linea)}
