@@ -31,21 +31,26 @@
 .directorio__resultados {margin-bottom:20px}
 .directorio__resultados h2,#tituloCoincidencias {font-size:1.05rem;margin:0 0 10px;overflow-wrap:anywhere}
 #vistaInicio :is(#resultados,#gridRestaurantes,#almuerzos,#restaurantes) {scroll-margin-top:calc(var(--alto-header,64px) + 12px)}
-#vistaInicio #gridRestaurantes {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#vistaInicio #gridRestaurantes {
+  grid-template-columns:repeat(auto-fill,minmax(215px,1fr));
+  gap:16px;
+}
 #gridRestaurantes .card {
-  display:grid;grid-template-columns:clamp(78px,20vw,108px) minmax(0,1fr);
-  align-items:center;gap:clamp(12px,2vw,18px);padding:10px;
-  border:1px solid var(--border);border-radius:16px;background:var(--surface-2);
+  display:flex;flex-direction:column;align-items:stretch;min-width:0;padding:0;
+  overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--surface-2);
 }
 #gridRestaurantes .card:hover {border-color:#766536}
-#gridRestaurantes .card__cover {width:100%;height:auto;aspect-ratio:1;border-radius:9px}
-#gridRestaurantes .card__body {display:grid;gap:4px;min-width:0;padding:0}
-#gridRestaurantes .card__name {display:block;font-size:clamp(1rem,2.3vw,1.15rem);line-height:1.2;overflow-wrap:anywhere}
-#gridRestaurantes .card__info {white-space:normal;line-height:1.35;font-size:.83rem}
-#gridRestaurantes .card__meta {margin:2px 0 0;padding:0;gap:6px 12px;justify-content:space-between}
-#gridRestaurantes .state {background:none;padding:0;font-size:.8rem}
-#gridRestaurantes .card__ver {background:none;padding:0;color:var(--gold-soft);font-size:.85rem}
-#gridRestaurantes .card__promo {position:static;justify-self:start;max-width:100%;color:var(--gold-soft);background:none;box-shadow:none;padding:0;white-space:normal}
+#gridRestaurantes .card__cover {width:100%;height:auto;aspect-ratio:1.65;flex:none;border-radius:0}
+#gridRestaurantes .card__body {display:flex;flex:1;flex-direction:column;align-items:stretch;gap:5px;min-width:0;padding:clamp(10px,2vw,16px)}
+#gridRestaurantes .card__name {display:block;font-size:clamp(1rem,2.3vw,1.16rem);line-height:1.2;overflow-wrap:anywhere}
+#gridRestaurantes .card__info {white-space:normal;line-height:1.35;font-size:.85rem}
+#gridRestaurantes .card__meta {display:contents}
+#gridRestaurantes .state {align-self:flex-start;background:none;padding:0;font-size:.84rem}
+#gridRestaurantes .card__ver {
+  order:1;margin-top:auto;display:grid;place-items:center;min-height:44px;
+  border-radius:9px;background:var(--primary);color:var(--text-oscuro);font-weight:750;font-size:.94rem;
+}
+#gridRestaurantes .card__promo {position:static;max-width:100%;color:var(--gold-soft);background:none;box-shadow:none;padding:0;white-space:normal}
 #vistaInicio #estadosLocales {padding:14px 0;border-top:1px solid var(--border)}
 #vistaInicio.inicio--filtrado #estadosLocales {display:none}
 #vistaInicio #recomendado {border-top:1px solid var(--border)}
@@ -85,8 +90,8 @@ body:has(#vistaInicio:not([hidden])) .logo-flotante {bottom:calc(12px + env(safe
 body:has(#vistaInicio:not([hidden])) .fab__menu {bottom:calc(64px + env(safe-area-inset-bottom,0px));max-height:calc(100dvh - 100px)}
 body:has(#vistaInicio:not([hidden])) :is(.fab__pista,.fab__badge) {display:none}
 @media(max-width:650px) {
-  #vistaInicio #gridRestaurantes,.recomendados-lista {grid-template-columns:minmax(0,1fr)}
-  #vistaInicio #gridRestaurantes {gap:9px}
+  .recomendados-lista {grid-template-columns:minmax(0,1fr)}
+  #vistaInicio #gridRestaurantes {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .recomendados-fotos .recomendado-card__accion {display:none}
 }
 @media(min-width:760px) {
