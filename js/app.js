@@ -3785,6 +3785,7 @@
   function mostrarEstado(indice) {
     var local = estadosVisibles[indice];
     if (!local) return;
+    var cambiarMedio = visorEstado.hidden || estadoSeleccionado !== indice || visorEstado.dataset.foto !== local.promo.estado.foto;
     estadoSeleccionado = indice;
     var estado = local.promo.estado;
     $("#estadoLocal").textContent = local.nombre;
@@ -3808,11 +3809,34 @@
       boton.setAttribute("aria-pressed", String(boton.dataset.estadoLocal === local.id));
     });
     visorEstado.hidden = false;
+    if (cambiarMedio) {
+      visorEstado.dataset.foto = estado.foto;
+      $("#estadoProgreso").innerHTML = estadosVisibles.map(function (_, i) {
+        return i <= indice ? "<span class=estado-paso-activo></span>" : "<span></span>";
+      }).join("");
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        (esVideo ? video : imagen).animate([{opacity:.65,transform:"scale(.985)"},{opacity:1,transform:"scale(1)"}], {duration:200});
+      }
+    }
   }
   $("#estadosLista").addEventListener("click",function (e) {
     var boton = e.target.closest("[data-estado-local]");
     if (!boton) return;
     mostrarEstado(estadosVisibles.findIndex(function (local) { return local.id === boton.dataset.estadoLocal; }));
+  });
+  var inicioGestoEstado = null;
+  var medioEstado = visorEstado.querySelector(".estado-visor__medio");
+  medioEstado.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "touch" || e.target.matches("video")) return;
+    inicioGestoEstado = {x:e.clientX, y:e.clientY};
+  });
+  medioEstado.addEventListener("pointercancel", function () { inicioGestoEstado = null; });
+  medioEstado.addEventListener("pointerup", function (e) {
+    if (!inicioGestoEstado) return;
+    var dx = e.clientX - inicioGestoEstado.x;
+    var dy = e.clientY - inicioGestoEstado.y;
+    inicioGestoEstado = null;
+    if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy) * 1.4) mostrarEstado(estadoSeleccionado + (dx < 0 ? 1 : -1));
   });
   visorEstado.addEventListener("click",function (e) {
     var paso = e.target.closest("[data-estado-paso]");

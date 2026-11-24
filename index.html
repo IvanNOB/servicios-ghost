@@ -75,7 +75,7 @@
   <link rel="stylesheet" href="css/style.css?v=45">
   <link rel="stylesheet" href="css/barra-dbarrio.css?v=9">
   <link rel="stylesheet" href="css/distribucion.css?v=14">
-  <link rel="stylesheet" href="css/estados.css?v=3">
+  <link rel="stylesheet" href="css/estados.css?v=4">
 </head>
 <body>
 
@@ -151,13 +151,20 @@
           <h2 id="estadosTitulo">Estados de los locales</h2>
           <div id="estadosLista"></div>
           <div id="estadoVisor" role="region" aria-labelledby="estadoLocal" hidden>
+            <div id="estadoProgreso" class="estado-visor__progreso" aria-hidden="true"></div>
             <div class="estado-visor__cabecera"><strong id="estadoLocal"></strong><button type="button" data-estado-cerrar aria-label="Cerrar estado">×</button></div>
+            <div class="estado-visor__medio">
             <img id="estadoImagen" alt="">
             <video id="estadoVideo" controls playsinline preload="none" hidden></video>
+            </div>
             <div class="estado-visor__pie">
               <p id="estadoDescripcion"></p>
-              <button type="button" data-estado-carta>Ver carta</button>
-              <div class="estado-visor__navegar"><button type="button" data-estado-paso="-1">Anterior</button><span id="estadoPosicion" aria-live="polite"></span><button type="button" data-estado-paso="1">Siguiente</button></div>
+              <div class="estado-visor__navegar">
+                <button type="button" data-estado-paso="-1" aria-label="Anterior">‹</button>
+                <button type="button" data-estado-carta>Ver carta</button>
+                <button type="button" data-estado-paso="1" aria-label="Siguiente">›</button>
+              </div>
+              <span id="estadoPosicion" class="sr-only" aria-live="polite"></span>
             </div>
           </div>
         </section>
@@ -332,6 +339,6 @@
   <script defer src="js/logo.js?v=45"></script>
   <script defer src="js/store.js?v=48"></script>
   <script defer src="js/visitas.js?v=45"></script>
-  <script defer src="js/app.js?v=64" onerror="document.documentElement.dataset.arranque='error'"></script>
+  <script defer src="js/app.js?v=65" onerror="document.documentElement.dataset.arranque='error'"></script>
 </body>
 </html>

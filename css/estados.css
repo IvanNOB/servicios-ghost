@@ -30,3 +30,16 @@
 #estadoVisor [data-estado-carta] {width:100%;background:var(--estado-color);color:#101010;font-weight:800}
 .estado-visor__navegar {display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:.85rem}
 #estadoVisor button:disabled {opacity:.38;cursor:default}
+
+#estadosLista button {gap:5px}
+#estadosLista strong {display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#estadoVisor {grid-template-rows:auto auto auto auto;background:color-mix(in srgb,var(--estado-color) 9%,#131116)}
+.estado-visor__progreso {display:flex;gap:4px;padding:9px 11px 0}
+.estado-visor__progreso span {flex:1;height:3px;border-radius:4px;background:#ffffff30}
+.estado-visor__progreso .estado-paso-activo {background:var(--estado-color)}
+.estado-visor__cabecera,.estado-visor__pie {padding:6px 10px}
+.estado-visor__medio {touch-action:pan-y;overflow:hidden;background:color-mix(in srgb,var(--estado-color) 10%,#100e14)}
+#estadoImagen,#estadoVideo {height:auto;max-height:clamp(310px,66svh,500px);min-height:0;background:transparent}
+#estadoDescripcion {margin:2px 0 6px}
+.estado-visor__navegar {display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:6px;margin-top:0}
+#estadoVisor [data-estado-paso] {font-size:1.6rem;line-height:1}
