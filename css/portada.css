@@ -194,3 +194,7 @@ body:has(#explorador[open]) {overflow:hidden}
   .header__cart svg,.logo__mark,.sg-menu {flex-shrink:0}
   body:has(#vistaInicio:not([hidden])) .header__cart {gap:5px}
 }
+
+.sg-tab-actual {display:inline-grid;place-items:center;padding:9px 13px;border-radius:12px;color:#211600;background:var(--sg-oro);font-weight:700}
+#cartaNav {scroll-margin-top:calc(var(--alto-header,64px) + 8px)}
+.esperando-nube #vistaInicio :is(#almuerzos,#recomendado,#populares,#promos) {display:none}
