@@ -6,7 +6,7 @@
    para que la app abra igual y se pueda mirar la carta.
    No toca nada de otros dominios (Supabase, WhatsApp, fuentes).
    ===================================================================== */
-var CACHE = "ghost-v2";
+var CACHE = "ghost-v3";
 var BASICOS = [
   "./",
   "index.html",
@@ -14,13 +14,16 @@ var BASICOS = [
   "css/barra-dbarrio.css?v=9",
   "css/distribucion.css?v=14",
   "css/estados.css?v=5",
+  "css/portada.css?v=1",
+  "assets/inicio/ghost.webp",
+  "assets/inicio/hora.webp",
   "js/vendor/supabase-js.js?v=2.118.0",
   "js/data.js?v=45",
   "js/supabase-config.js?v=45",
   "js/logo.js?v=45",
   "js/store.js?v=49",
   "js/visitas.js?v=45",
-  "js/app.js?v=66",
+  "js/app.js?v=67",
   "js/barra-dbarrio.js?v=9",
   "js/hielo-dbarrio.js?v=1",
   "assets/logo-sm.png",
