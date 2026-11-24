@@ -967,18 +967,21 @@
 
   function opcionesEnTarjetas(restId) {
     var locales = AJUSTES.vitrina?.opcionesEnTarjetas;
-    return restId === "chino-doradito-la-pista" || (Array.isArray(locales) ? locales.includes(restId) : restId === "chino-el-fenix");
+    return Array.isArray(locales) && locales.includes(restId);
   }
 
   function dishHTML(r, it, seccion, carga) {
-    var imagenClase = it.foto ? " dish--foto" : " dish--foto dish--ilustrado";
+    var arrozChino = /comida chin[ao]|restaurante chin[ao]/.test(norm(r.cat + " " + r.nombre)) ||
+      /arroz chino/.test(norm(it.n + " " + seccion));
+    var estiloCompacto = arrozChino || r.id === "zz-chicken-wings";
+    var imagenClase = (estiloCompacto ? " dish--compacto" : "") + (it.foto ? " dish--foto" : " dish--foto dish--ilustrado");
     var qty = getQty(r.id, it.id);
     var agotadoClase = it.agotado ? " dish--agotado" : "";
     var etiqueta = it.agotado ? ' <span class="agotado-tag">Agotado</span>' : "";
     var alitas = r.id === "zz-chicken-wings" && /^zz-al-\d+$/.test(it.id);
     var selectorTarjetas = Array.isArray(it.opciones) && (
       alitas ? it.opciones.some(function (grupo) { return norm(grupo.nombre) === "salsa"; }) :
-      opcionesEnTarjetas(r.id) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; })
+      (arrozChino || opcionesEnTarjetas(r.id)) && it.opciones.some(function (grupo) { return norm(grupo.nombre) === "tamano"; })
     );
     var sePuedePedir = !it.agotado && abiertoAhora(r);
     var grupoCarta = selectorTarjetas && r.carta.find(function (grupo) { return grupo.sec === seccion; });
