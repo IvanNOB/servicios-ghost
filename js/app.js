@@ -529,7 +529,7 @@
   // pescados", "Café y Repostería"...). Las agrupamos en pocas y claras.
   // cat = se busca en la categoría; sec = en los nombres de las secciones de la carta.
   var GRUPOS = [
-    { k: "rapida", t: "🍔 Comida rápida", cat: /rapida|hamburgues|burger/, sec: /hamburgues|perro|salchipap|burger/ },
+    { k: "rapida", t: "🍔 Comida rápida", cat: /rapida|hamburgues|burger/, sec: /hamburgues|perro|salchipap|burger|alitas|paninis?|sandwich/ },
     { k: "pizza", t: "🍕 Pizza", cat: /pizza/, sec: /pizza/ },
     { k: "parrilla", t: "🥩 Parrilla", cat: /parrill|asad/, sec: /parrill|picada|al barril/ },
     { k: "mar", t: "🐟 Pescados y mar", cat: /pescad|marisc/, sec: /pescad|marisc|camaron|de mar/ },
@@ -674,15 +674,8 @@
     renderChips();
     var filtrando = enModoFiltro();
     elVistaInicio.classList.toggle("inicio--filtrado", filtrando);
-    var esMenu = filtroCategoria === "desayuno" || filtroCategoria === "almuerzo";
-    // Las secciones de portada se ocultan al buscar/filtrar; al volver, cada
-    // una decide si se muestra según los datos disponibles.
     if (filtrando) document.querySelectorAll("[data-portada]").forEach(function (el) { el.hidden = true; });
-    var menu = document.getElementById("almuerzos");
-    // En la portada, si hoy nadie publicó desayuno ni almuerzo, no ocupa espacio.
-    var sinMenus = !menusDeHoy("desayuno").length && !menusDeHoy("almuerzo").length;
-    if (menu) menu.hidden = esMenu ? false : (filtrando || sinMenus);
-    if (esMenu && tipoMenuDia !== filtroCategoria) { tipoMenuDia = filtroCategoria; renderMenuDia(); }
+    $("#almuerzos").hidden = filtrando;
     if (!filtrando) { renderPromos(); renderPopulares(); }
     renderRecomendados();
     renderResultadosPlatos();
@@ -713,7 +706,7 @@
   function irAResultados() {
     var platos = $("#resultados");
     var destino = !platos.hidden ? platos :
-      (filtroCategoria === "desayuno" || filtroCategoria === "almuerzo") ? $("#almuerzos") : $("#gridRestaurantes");
+      $("#gridRestaurantes");
     if (destino) destino.scrollIntoView({block: "start", behavior: "smooth"});
   }
 
@@ -808,6 +801,7 @@
     }
 
     vistaActual = restId;
+    marcarDestino("restaurantes");
 
     // Desayuno y almuerzo del día (si el restaurante los publicó hoy)
     var almuerzoBloque = menuHTML(r, "desayuno") + menuHTML(r, "almuerzo");
@@ -855,7 +849,7 @@
       '<div class="rest-head carta-rest-head">' +
         (r.logo ? '<img class="carta-rest-logo" src="' + esc(r.logo) + '" alt="" width="128" height="96" decoding="async" />' : "") +
         "<div>" +
-          '<h1 class="rest-head__name">' + esc(r.nombre) + "</h1>" +
+          '<h1 class="rest-head__name">' + esc(r.nombre) + "</h1>" + botonFavorito(r) +
           (r.cat || r.desc ? '<p class="rest-head__desc">' + esc(r.cat || r.desc) + "</p>" : "") +
           '<div class="rest-head__meta"><span>⏱ ' + esc(r.tiempo) + "</span>" +
             estadoHTML(r) +
@@ -1581,9 +1575,10 @@
         (grupos.some(function (g) { return !grupoMenuObligatorio(g); })
           ? '<p class="almuerzo__nota">💡 ¿No quieres algo? Déjalo sin marcar y no te lo llevamos.</p>' : "") +
         gruposHTML +
+        '<div class="sg-menu-total"><span>Total <strong data-menu-total>' + esc(precioTxt(a.precio)) + '</strong></span>' +
         '<button type="button" class="add-btn almuerzo__btn" data-menu-add' + (abierto ? "" : " disabled") + ">" +
-          (abierto ? "Agregar " + M.nombre : "Cerrado") +
-        "</button>" +
+          (abierto ? "Agregar al pedido" : "Cerrado") +
+        "</button></div>" +
         '<p class="almuerzo__error" data-menu-msg role="alert"></p>' +
       "</div>"
     );
@@ -1616,6 +1611,18 @@
       // Si se oculta, desmarcamos sus opciones para no arrastrar elecciones viejas.
       if (!cumple) gEl.querySelectorAll("input:checked").forEach(function (c) { c.checked = false; });
     });
+    if (a) box.querySelector("[data-menu-total]").textContent = precioTxt(precioDelMenu(box, a));
+  }
+
+  // La opción con precio sustituye el precio base tanto en pantalla como en la bolsa.
+  function precioDelMenu(box, menu) {
+    var precio = menu.precio || 0;
+    box.querySelectorAll("[data-alm-grupo]:not([hidden]) input:checked").forEach(function (campo) {
+      var grupo = menu.grupos[Number(campo.closest("[data-alm-grupo]").dataset.almGrupo)];
+      var opcion = grupo?.opciones?.find(function (o) { return o.n === campo.value; });
+      if (typeof opcion?.precio === "number" && opcion.precio > 0) precio = opcion.precio;
+    });
+    return precio;
   }
 
   // Lee lo escogido y agrega el desayuno/almuerzo armado al carrito.
@@ -1628,14 +1635,14 @@
     var err = box.querySelector("[data-menu-msg]");
     var grupos = a.grupos || [];
     var elecciones = [], faltan = [];
-    var precioOpcion = null; // si alguna opción define precio, manda sobre el base
+
 
     var gruposEl = box.querySelectorAll("[data-alm-grupo]");
     for (var i = 0; i < gruposEl.length; i++) {
       var gEl = gruposEl[i];
       if (gEl.hidden) continue; // grupo condicional que no aplica
       var def = grupos[Number(gEl.getAttribute("data-alm-grupo"))] || {};
-      var defOps = Array.isArray(def.opciones) ? def.opciones : [];
+
       var marcados = gEl.querySelectorAll("input:checked");
       if (!marcados.length) {
         // Lo que el cliente deja sin marcar NO se le lleva ("Sin principio").
@@ -1648,9 +1655,6 @@
       for (var m = 0; m < marcados.length; m++) {
         var val = marcados[m].value;
         vals.push(val);
-        for (var d = 0; d < defOps.length; d++) {
-          if (defOps[d].n === val && typeof defOps[d].precio === "number" && defOps[d].precio > 0) precioOpcion = defOps[d].precio;
-        }
       }
       elecciones.push({ grupo: def.nombre, valores: vals });
     }
@@ -1668,7 +1672,8 @@
       id: tipo + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
       n: (a.titulo || M.titulo) + (resumen ? " (" + resumen + ")" : ""),
       d: "",
-      p: precioOpcion != null ? precioOpcion : (a.precio || 0),
+      p: precioDelMenu(box, a),
+      foto: a.foto || "",
       _almuerzo: true,   // "menú del día": vence al terminar el día
       _menu: tipo,
     };
@@ -1689,13 +1694,13 @@
   function abrirMenuVentana(restId, tipo) {
     var r = findRest(restId);
     if (!r || !elMenuSheet || !menuVigente(r, tipo)) { if (r) abrirCarta(restId); return; }
-    var M = MENUS[tipo];
-    document.getElementById("menuTitle").textContent = M.emoji + " Arma tu " + M.nombre;
+    document.getElementById("menuTitle").textContent = tipo === "almuerzo" ? "Arma tu corrientazo" : "Arma tu desayuno";
     elMenuBody.innerHTML = menuHTML(r, tipo, true) +
       '<button type="button" class="btn-link menu-ver-carta" data-menu-carta="' + esc(r.id) + '">Ver la carta completa de ' + esc(r.nombre) + " →</button>";
     elMenuSheet.hidden = false;
     document.body.classList.add("no-scroll");
     elMenuBody.scrollTop = 0;
+    elMenuSheet.querySelector("[data-menu-close].icon-btn").focus({preventScroll:true});
   }
   function cerrarMenuVentana() {
     if (!elMenuSheet || elMenuSheet.hidden) return;
@@ -1706,6 +1711,7 @@
 
   function irAInicio() {
     vistaActual = null;
+    marcarDestino("inicio");
     PREVIA = null;
     if (/^#r=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
     elVistaCarta.hidden = true;
@@ -1722,7 +1728,10 @@
     if (insignia) { insignia.textContent = n; insignia.hidden = n === 0; }
     var cantidad = n === 1 ? "1 producto" : n + " productos";
     var importe = n > 0 ? money(totalPesos()) : "";
-    $("#pedidoInicioTotal").textContent = importe;
+    $("#pedidoInicioTotal").textContent = importe || money(0);
+    var dockPedido = document.querySelector('.sg-dock [data-destino="pedido"]');
+    dockPedido.dataset.cantidad = n ? String(n) : "";
+    dockPedido.setAttribute("aria-label", "Mi pedido, " + cantidad);
     $("#cartBtnTop").setAttribute("aria-label", n > 0 ? "Ver mi pedido, " + cantidad + ", " + importe : "Ver mi pedido");
     if (n <= 0) {
       elCartBar.hidden = true;
@@ -1763,18 +1772,19 @@
   /* ----------------------- Hoja inferior (sheet) ------------------ */
 
   function openSheet() {
-    if (totalProductos() <= 0) return;
     try { renderSheet(); } catch (e) {
       elSheetBody.innerHTML =
         '<p class="cart-empty">Hubo un problema al mostrar el pedido. Toca la X para cerrar.</p>';
     }
     elSheet.hidden = false;
+    marcarDestino("pedido");
     document.body.classList.add("no-scroll");
   }
 
   function closeSheet() {
     pasoEntrega = false;
     elSheet.hidden = true;
+    marcarDestino(vistaActual ? "restaurantes" : "inicio");
     document.body.classList.remove("no-scroll");
     _mostrandoConfirmacion = false;
   }
@@ -1864,6 +1874,7 @@
   // Pantalla de confirmación tras enviar el pedido (dentro de la hoja).
   function mostrarConfirmacion(destinos, codigo) {
     _mostrandoConfirmacion = true;
+    $("#sheetTitle").textContent = "Confirmación";
     if (typeof destinos === "string") destinos = [{ url: destinos, nombre: NOMBRE_NEGOCIO, esGhost: true }];
     var varios = destinos.length > 1;
     var nombreUno = destinos[0].esGhost ? "nosotros" : destinos[0].nombre;
@@ -1874,10 +1885,8 @@
     }).join("");
     elSheetBody.innerHTML =
       '<div class="confirm">' +
-        '<div class="confirm__ico" aria-hidden="true">' +
-          '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>' +
-        "</div>" +
-        '<h3 class="confirm__title">¡Pedido enviado!</h3>' +
+        '<img class="sg-mascota" src="assets/inicio/confirmado.webp" alt="">' +
+        '<h3 class="confirm__title">Tu pedido está listo para enviar</h3>' +
         (varios
           ? '<p class="confirm__text">Tu pedido es de varios lugares: <strong>envía un mensaje a cada uno</strong>. ' +
               "Ya abrimos el primero; cuando lo envíes, vuelve aquí y toca el siguiente.</p>"
@@ -2129,6 +2138,7 @@
     var bolsa = elSheetBody.querySelector("[data-bolsa]");
     if (!bolsa) return;
     var form = elSheetBody.querySelector("#pedidoForm");
+    $("#sheetTitle").textContent = pasoEntrega ? "Datos de entrega" : "Mi pedido";
     bolsa.hidden = pasoEntrega;
     form.hidden = !pasoEntrega;
     var totales = document.getElementById("resumenTotales");
@@ -2150,6 +2160,7 @@
     var groups = groupedCart();
 
     if (groups.length === 0) {
+      $("#sheetTitle").textContent = "Mi pedido";
       elSheetBody.innerHTML = '<p class="cart-empty">Tu pedido está vacío.</p>' + repetirHTML();
       return;
     }
@@ -2166,7 +2177,7 @@
         var tarj = maxDed && Array.isArray(tarjetasCart[kNota]) && tarjetasCart[kNota].some(tieneTexto) ? tarjetasCart[kNota] : null;
         lineas +=
           '<div class="cart-line">' +
-            '<div class="cart-line__info">' +
+            '<div class="cart-line__info">' + (item.foto ? '<img class="sg-mini-pedido" alt="" src="' + esc(fotoMiniatura(item.foto)) + '">' : '') +
               '<div class="cart-line__name">' + esc(item.n) + "</div>" +
               '<div class="cart-line__price">' + esc(item.p > 0 ? money(item.p) + " c/u" : precioTxt(0)) + "</div>" +
             "</div>" +
@@ -2204,14 +2215,14 @@
     var datosPrevios = { barrio: vBarrio, domicilio: tarifaDomicilio(vBarrio) };
 
     elSheetBody.innerHTML =
-      '<section data-bolsa><h3>Tu bolsa</h3>' + gruposHTML +
+      '<section data-bolsa>' + gruposHTML +
       avisosCerrados(groups) +
       '<div id="resumenTotales">' + resumenTotalesHTML(datosPrevios) + "</div>" +
       (hayPorConfirmar()
         ? '<p class="cart-note">Algunos productos tienen precio a confirmar: te lo decimos por WhatsApp.</p>' : "") +
       '<button type="button" class="btn-link cart-vaciar" data-vaciar-pedido>🗑️ Vaciar todo el pedido</button>' +
       '<button class="btn btn--primary" type="button" data-bolsa-paso>Continuar a entrega</button></section>' +
-      '<form class="form" id="pedidoForm" novalidate><button type="button" class="btn-link" data-bolsa-paso>Volver a la bolsa</button><h3>Entrega y pago</h3>'  +
+      '<form class="form" id="pedidoForm" novalidate><button type="button" class="btn-link" data-bolsa-paso>Volver al pedido</button>'  +
         // ¿Para quién es? (antes de los datos de entrega)
         '<div class="field">' +
           '<span class="field__label">¿Para quién es el pedido?</span>' +
@@ -2608,6 +2619,8 @@
     var t = e.target;
     if (!t || !t.closest) return;
 
+    if (accionInicio(t)) { e.preventDefault(); return; }
+
     // --- Cerrar la hoja (X o fondo oscuro) ---
     // --- Seguimiento de pedido ---
     var trOpen = t.closest("[data-track-open]");
@@ -2635,7 +2648,7 @@
 
     // --- Logo: volver al inicio ---
     if (t.closest("[data-volver-panel]") || (MODO_PANEL && t.closest("#logoHome"))) { e.preventDefault(); volverAlPanel(); return; }
-    if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); irAInicio(); return; }
+    if (t.closest("#logoHome")) { e.preventDefault(); if (!elSheet.hidden) closeSheet(); irADestino("inicio"); return; }
 
     // --- Chips de categoría ---
     if (t.closest("#filtrosBoton")) {
@@ -2755,18 +2768,8 @@
     }
 
     // --- Menú del día del inicio: pestañas y "Armar" ---
-    var menuTab = t.closest("[data-menu-tab]");
-    if (menuTab) { tipoMenuDia = menuTab.getAttribute("data-menu-tab"); renderMenuDia(); return; }
     var menuIr = t.closest("[data-menu-ir]");
-    if (menuIr) {
-      e.preventDefault();
-      tipoMenuDia = menuIr.getAttribute("data-menu-ir");
-      if (vistaActual) irAInicio();
-      renderMenuDia();
-      var sec = document.getElementById("almuerzos");
-      if (sec && sec.scrollIntoView) sec.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
+    if (menuIr) { e.preventDefault(); explorar({vista:"lista", categoria:menuIr.dataset.menuIr}); return; }
     var menuAbrir = t.closest("[data-menu-abrir]");
     if (menuAbrir) { abrirMenuVentana(menuAbrir.getAttribute("data-menu-abrir"), menuAbrir.getAttribute("data-tipo")); return; }
     if (t.closest("[data-menu-close]")) { cerrarMenuVentana(); return; }
@@ -2949,68 +2952,276 @@
   });
 
   /* ------------------------- Menú del día (inicio) ------------------------- */
-  // Pestañas "Desayunos / Almuerzos". Por defecto: desayunos antes de las
-  // 11 am (hora de Colombia) si hay; si no, almuerzos.
-  var tipoMenuDia = null;
-
   function menusDeHoy(tipo) { return DATA.filter(function (r) { return menuVigente(r, tipo); }); }
 
-  function renderMenuDia() {
-    var cont = document.getElementById("gridAlmuerzos");
-    var vacio = document.getElementById("almuerzosVacio");
-    var tabs = document.getElementById("menuTabs");
-    if (!cont) return;
-    var hay = { desayuno: menusDeHoy("desayuno"), almuerzo: menusDeHoy("almuerzo") };
-    if (!tipoMenuDia) {
-      var temprano = ahoraColombia().min < 11 * 60;
-      tipoMenuDia = (temprano && hay.desayuno.length) || !hay.almuerzo.length && hay.desayuno.length ? "desayuno" : "almuerzo";
-    }
-    if (tabs) {
-      tabs.innerHTML = TIPOS_MENU.map(function (t) {
-        var M = MENUS[t], n = hay[t].length;
-        return '<button type="button" class="menu-tab' + (t === tipoMenuDia ? " menu-tab--on" : "") + '" data-menu-tab="' + t + '" aria-pressed="' + (t === tipoMenuDia) + '">' +
-          M.emoji + " " + M.plural + (n ? ' <span class="menu-tab__n">' + n + "</span>" : "") + "</button>";
-      }).join("");
-    }
-    var M = MENUS[tipoMenuDia];
-    // Abiertos primero.
-    var lista = hay[tipoMenuDia].slice().sort(function (a, b) { return (abiertoAhora(a) ? 0 : 1) - (abiertoAhora(b) ? 0 : 1); });
-    if (!lista.length) {
-      cont.innerHTML = "";
-      if (vacio) {
-        vacio.hidden = false;
-        var otro = tipoMenuDia === "desayuno" ? "almuerzo" : "desayuno";
-        vacio.innerHTML = "Hoy todavía no hay " + M.plural.toLowerCase() + " publicados." +
-          (hay[otro].length ? ' <button type="button" class="btn-link" data-menu-tab="' + otro + '">Ver ' + MENUS[otro].plural.toLowerCase() + " →</button>" : " Vuelve más tarde o escríbenos por WhatsApp.");
-      }
-      return;
-    }
-    if (vacio) vacio.hidden = true;
+  // La franja sugerida sigue la hora local. Una elección del visitante tiene prioridad.
+  var franjaElegida = null;
+  var franjas = {
+    desayuno: {titulo:"Desayunos de hoy", icono:"desayuno"},
+    almuerzo: {titulo:"Corrientazos de hoy", icono:"menus"},
+    rapida: {titulo:"Comidas rápidas", icono:"rapida"}
+  };
+  var categoriasDia = {
+    desayuno: ["Desayunos", "6 a. m. – 10 a. m.", "desayuno"],
+    almuerzo: ["Corrientazos del día", "10 a. m. – 3 p. m.", "corrientazo"],
+    especial: ["Almuerzos especiales", "Especiales del día", "especial"],
+    carta: ["Platos a la carta", "Explorar restaurantes", "carta"]
+  };
+  var dialogoExplorar = $("#explorador");
+  var recorrido = [];
+  var favoritosLocales = leerLS("ghost_favoritos_v1", []);
+  if (!Array.isArray(favoritosLocales)) favoritosLocales = [];
 
-    cont.innerHTML = lista.map(function (r) {
-      var a = r[M.campo];
-      var resumen = "";
-      var grupos = Array.isArray(a.grupos) ? a.grupos : [];
-      for (var g = 0; g < grupos.length && g < 4; g++) {
-        var ops = (grupos[g].opciones || []).filter(function (o) { return !o.agotado; }).map(function (o) { return o.n; });
-        if (ops.length) resumen += "<li><strong>" + esc(grupos[g].nombre) + ":</strong> " + esc(ops.join(", ")) + "</li>";
-      }
-      var abierto = abiertoAhora(r);
-      return '<article class="alm-card' + (a.foto ? " alm-card--foto" : "") + (abierto ? "" : " alm-card--cerrado") + '">' +
-          (a.foto ? '<img class="alm-card__foto" src="' + esc(a.foto) + '" alt="' + esc(a.titulo || M.titulo) + '" loading="lazy" decoding="async" />' : "") +
-          '<div class="alm-card__head">' +
-            '<span class="alm-card__rest">' + esc(r.nombre) + "</span>" +
-            (a.precio ? '<span class="alm-card__precio">' + esc(money(a.precio)) + "</span>" : "") +
-          "</div>" +
-          '<div class="alm-card__titulo">' + M.emoji + " " + esc(a.titulo || M.titulo) + "</div>" +
-          (a.desc ? '<p class="alm-card__desc">' + esc(a.desc) + "</p>" : "") +
-          (resumen ? '<ul class="alm-card__ops">' + resumen + "</ul>" : "") +
-          '<div class="alm-card__foot">' + estadoHTML(r) +
-            '<button type="button" class="add-btn" data-menu-abrir="' + esc(r.id) + '" data-tipo="' + tipoMenuDia + '"' + (abierto ? "" : " disabled") + ">" +
-              (abierto ? "Armar mi " + M.nombre + " →" : "Cerrado") + "</button>" +
-          "</div>" +
-        "</article>";
-    }).join("");
+  function iconoInicio(id) {
+    return '<svg class="sg-icon" aria-hidden="true"><use href="#sg-' + id + '"/></svg>';
+  }
+  function franjaActual() {
+    var min = ahoraColombia().min;
+    return franjaElegida || (min >= 360 && min < 600 ? "desayuno" : min >= 600 && min < 900 ? "almuerzo" : "rapida");
+  }
+  function imagenInicio(url) {
+    return url ? '<img src="' + esc(url) + '" alt="" decoding="async" loading="lazy">' : '';
+  }
+  function visualLocal(r, url) {
+    return imagenInicio(url || r.logo) || '<span class="sg-iniciales">' + esc(iniciales(r.nombre)) + '</span>';
+  }
+  function nombreCorto(r) {
+    return r.nombre.replace(/^restaurante\s+(?:chino\s+)?/i, "") || r.nombre;
+  }
+  function marcarDestino(id) {
+    document.querySelectorAll(".sg-tabs [data-destino], .sg-dock [data-destino]").forEach(function (b) {
+      if (b.dataset.destino === id) b.setAttribute("aria-current", "page");
+      else b.removeAttribute("aria-current");
+    });
+  }
+  function botonFavorito(r) {
+    var activo = favoritosLocales.includes(r.id);
+    return '<button type="button" class="sg-favorito" data-favorito="' + esc(r.id) + '" aria-pressed="' + activo +
+      '" aria-label="' + (activo ? 'Quitar de favoritos' : 'Guardar en favoritos') + '">' + iconoInicio("favoritos") + '</button>';
+  }
+  function alternarFavorito(id) {
+    if (!findRest(id)) return;
+    favoritosLocales = favoritosLocales.includes(id) ? favoritosLocales.filter(function (x) { return x !== id; }) : favoritosLocales.concat(id);
+    escribirLS("ghost_favoritos_v1", favoritosLocales);
+    var activo = favoritosLocales.includes(id);
+    document.querySelectorAll("[data-favorito]").forEach(function (b) {
+      if (b.dataset.favorito !== id) return;
+      b.setAttribute("aria-pressed", String(activo));
+      b.setAttribute("aria-label", activo ? "Quitar de favoritos" : "Guardar en favoritos");
+    });
+  }
+
+  function restaurantesDia(categoria) {
+    if (categoria === "carta") return DATA.filter(function (r) { return productosDisponibles(r).length; });
+    if (categoria === "rapida") return DATA.filter(function (r) { return cumpleFiltro(r, "rapida"); });
+    if (categoria === "especial") return menusDeHoy("almuerzo").filter(function (r) {
+      var a = r.almuerzo;
+      return norm(a.titulo).includes("especial") || (a.grupos || []).some(function (g) {
+        return (g.opciones || []).some(function (o) { return !o.agotado && norm(o.n).includes("especial"); });
+      });
+    });
+    return menusDeHoy(categoria);
+  }
+  function platoDestacado(r, tipo) {
+    if (tipo !== "rapida") return r[tipo];
+    var grupos = r.carta.filter(function (s) { return GRUPOS[0].sec.test(norm(s.sec)); });
+    var items = grupos.flatMap(function (s) { return s.items.filter(function (it) { return !it.agotado; }); });
+    if (!items.length) items = productosDisponibles(r);
+    return items.find(function (it) { return it.foto; }) || items[0];
+  }
+  function tarjetaDeHoy(r, tipo) {
+    var plato = platoDestacado(r, tipo);
+    if (!plato) return "";
+    var rapido = tipo === "rapida";
+    var destino = rapido ? 'data-ir-rest="' + esc(r.id) + '" data-ir-item="' + esc(plato.id) + '"' :
+      'data-menu-detalle="' + esc(r.id) + '" data-tipo="' + tipo + '"';
+    var precio = rapido ? plato.p : plato.precio;
+    var etiqueta = rapido && tieneOpciones(plato) && precio ? 'Desde ' : '';
+    var fotoCarta = r.id === "zz-chicken-wings" && /^zz-al-/.test(plato.id) ? "assets/inicio/alitas.webp" : "";
+    var foto = plato.foto || fotoCarta || r.logo;
+    return '<button type="button" class="sg-plato" ' + destino + '><span class="sg-plato__foto">' +
+      visualLocal(r, foto && fotoMiniatura(foto)) + '</span><span class="sg-plato__contenido"><small>' +
+      esc(r.nombre) + '</small><strong>' + esc(plato.titulo || plato.n || MENUS[tipo]?.titulo || r.nombre) +
+      '</strong><b class="sg-precio">' + etiqueta + esc(precioTxt(precio)) + '</b>' + estadoHTML(r, false) +
+      '<span class="sg-ver">Ver ' + (rapido ? 'plato' : 'menú') + '</span></span></button>';
+  }
+  function renderMenuDia() {
+    var tipo = franjaActual();
+    var meta = franjas[tipo];
+    $("#tituloDia").innerHTML = iconoInicio(meta.icono) + esc(meta.titulo);
+    document.querySelectorAll("[data-franja]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.franja === tipo)); });
+    var lista = restaurantesDia(tipo).filter(function (r) { return platoDestacado(r, tipo); })
+      .sort(function (a,b) { return Number(abiertoAhora(b)) - Number(abiertoAhora(a)); });
+    var html = lista.slice(0, 2).map(function (r) { return tarjetaDeHoy(r, tipo); }).join("");
+    if (!html) {
+      html = '<div class="sg-sin-menu"><span>' + (tipo === "rapida" ? "Por ahora no hay cartas de comidas rápidas en la vitrina." :
+        "Los locales aún no han publicado " + (tipo === "almuerzo" ? "el corrientazo" : "el desayuno") + " de hoy.") +
+        '</span><button class="sg-enlace" type="button" data-destino="restaurantes">Explorar restaurantes</button></div>';
+    }
+    var grid = $("#gridAlmuerzos");
+    if (grid.dataset.contenido !== html) { grid.innerHTML = html; grid.dataset.contenido = html; }
+  }
+  function filaLocal(r, tipo) {
+    var menu = tipo && r[tipo];
+    var accion = menu ? 'data-menu-detalle="' + esc(r.id) + '" data-tipo="' + tipo + '"' : 'data-explorar-carta="' + esc(r.id) + '"';
+    return '<button type="button" class="sg-fila" ' + accion + '><span class="sg-fila__foto">' + visualLocal(r, menu?.foto) +
+      '</span><span><strong>' + esc(r.nombre) + '</strong><small>' + esc(menu?.titulo || r.cat || "") + '</small>' +
+      estadoHTML(r, false) + '</span><span class="sg-chevron" aria-hidden="true">›</span></button>';
+  }
+  function pintarExplorador() {
+    var paso = recorrido[recorrido.length - 1];
+    if (!paso) return;
+    var titulo, html;
+    switch (paso.vista) {
+      case "menus":
+        titulo = "Desayunos y almuerzos";
+        html = '<div class="sg-categorias">' + Object.entries(categoriasDia).map(function (entry) {
+          var k = entry[0], cat = entry[1];
+          return '<button type="button" data-categoria-dia="' + k + '">' + imagenInicio('assets/inicio/' + cat[2] + '.webp') +
+            '<strong>' + cat[0] + '</strong><small>' + cat[1] + '</small></button>';
+        }).join("") + '</div>';
+        break;
+      case "lista":
+        var k = paso.categoria;
+        titulo = categoriasDia[k]?.[0] || franjas[k].titulo;
+        var locales = restaurantesDia(k);
+        var filtro = paso.filtro || "todos";
+        var lista = locales.filter(function (r) { return filtro === "todos" || abiertoAhora(r) === (filtro === "abiertos"); });
+        var tipo = k === "especial" ? "almuerzo" : MENUS[k] ? k : null;
+        html = '<div class="sg-filtros" role="group" aria-label="Disponibilidad">' +
+          [['todos','Todos'],['abiertos','Abiertos'],['cerrados','Cerrados']].map(function (f) {
+            return '<button type="button" data-lista-filtro="' + f[0] + '" aria-pressed="' + (f[0] === filtro) + '">' + f[1] + '</button>';
+          }).join("") + '</div>' + (lista.map(function (r) { return filaLocal(r,tipo); }).join("") ||
+          '<p class="sg-vacio">Por ahora no hay ' + (tipo ? 'menús publicados' : 'locales') + ' para esta selección.</p>');
+        break;
+      case "detalle":
+        var r = findRest(paso.id);
+        var m = r && menuVigente(r, paso.tipo) && r[paso.tipo];
+        titulo = r?.nombre || "Menú del día";
+        if (!m) { html = '<p class="sg-vacio">Este menú ya no está disponible.</p>'; break; }
+        html = '<div class="sg-detalle"><div class="sg-detalle__meta">' + estadoHTML(r) + botonFavorito(r) + '</div>' +
+          '<div class="sg-filtros"><button aria-pressed="true" type="button">Menú del día</button><button type="button" data-explorar-carta="' + esc(r.id) +
+          '">Platos a la carta</button></div>' + (m.foto ? '<div class="sg-detalle__foto">' + imagenInicio(m.foto) + '</div>' : '') +
+          '<h3>' + esc(m.titulo || MENUS[paso.tipo].titulo) + '</h3>' +
+          (m.desc ? '<p>' + esc(m.desc) + '</p>' : '') + '<b class="sg-precio">' + esc(precioTxt(m.precio)) + '</b>' +
+          (m.grupos || []).map(function (g) {
+            var opciones = (g.opciones || []).filter(function (o) { return !o.agotado; });
+            return '<details><summary>' + esc(g.nombre) + ' <small>(' + opciones.length + ')</small></summary><p>' +
+              (opciones.map(function (o) { return esc(o.n); }).join(' · ') || "Agotado") + '</p></details>';
+          }).join("") + '<button type="button" class="sg-primario" data-preparar-menu' +
+          (abiertoAhora(r) ? '>' + (paso.tipo === "almuerzo" ? "Armar mi corrientazo" : "Armar mi desayuno") : ' disabled>Cerrado') + '</button></div>';
+        break;
+      case "favoritos":
+        titulo = "Mis favoritos";
+        html = DATA.filter(function (r) { return favoritosLocales.includes(r.id); }).map(function (r) { return filaLocal(r); }).join("") ||
+          '<p class="sg-vacio">Toca el corazón en la carta de un local para guardarlo aquí.</p>';
+        break;
+      case "promos":
+        titulo = "Promociones";
+        var anuncios = listaPromos().filter(function (p) { return !p.rest || DATA.some(function (r) { return r.id === p.rest; }); });
+        html = anuncios.map(function (p) {
+          var local = findRest(p.rest);
+          return '<article class="sg-anuncio"><strong>' + esc(p.titulo || "Promoción") + '</strong><p>' + esc(p.texto || "") + '</p>' +
+            (local ? '<button class="sg-enlace" data-explorar-carta="' + esc(local.id) + '">Ver ' + esc(local.nombre) + '</button>' : '') + '</article>';
+        }).join("") || '<p class="sg-vacio">Por ahora no hay promociones publicadas.</p>';
+        break;
+      case "ofertas":
+        titulo = "Ofertas de los locales";
+        html = DATA.filter(promoVigente).map(function (r) {
+          return '<article class="sg-anuncio"><strong>' + esc(r.promo.texto) + '</strong>' + filaLocal(r) + '</article>';
+        }).join("") || '<p class="sg-vacio">Los locales aún no han publicado ofertas vigentes.</p>';
+        break;
+      case "cuenta":
+        var cliente = leerLS(LS_CLIENTE, {});
+        titulo = "Mi cuenta";
+        html = '<p class="sg-vacio">Datos de entrega guardados en este dispositivo.</p><form id="sgPerfil">' +
+          [['nombre','Nombre','name'],['telefono','WhatsApp','tel'],['barrio','Barrio','address-level3'],['direccion','Dirección','street-address']].map(function (f) {
+            return '<label>' + f[1] + '<input class="field__input" name="' + f[0] + '" autocomplete="' + f[2] + '" maxlength="160" ' +
+              (f[0] === "telefono" ? 'type="tel" ' : '') + 'value="' + esc(cliente[f[0]] || "") + '"></label>';
+          }).join("") + '<button type="submit" class="sg-primario">Guardar datos</button></form><button type="button" class="sg-secundario" data-abrir-seguimiento>Mis pedidos y seguimiento</button>';
+        break;
+      case "mas":
+        titulo = "Servicios Ghost";
+        html = '<div class="sg-mas">' + [['buscar','Buscar un plato'],['restaurantes','Restaurantes'],['favoritos','Mis favoritos'],['cuenta','Mi cuenta']].map(function (f) {
+          return '<button data-destino="' + f[0] + '">' + iconoInicio(f[0]) + f[1] + '</button>';
+        }).join("") + '<button data-abrir-seguimiento>' + iconoInicio('pedido') + 'Seguir mi pedido</button>' +
+          '<button data-mas-acciones>' + iconoInicio('mas') + 'Más acciones</button></div>';
+        break;
+    }
+    $("#explorarTitulo").textContent = titulo;
+    var cargando = document.documentElement.classList.contains("esperando-nube");
+    var contenido = $("#explorarContenido");
+    var siguiente = cargando && ["lista","detalle","ofertas","promos","favoritos"].includes(paso.vista)
+      ? '<p class="sg-vacio" role="status">Cargando locales…</p>' : html;
+    if (paso.vista === "cuenta" || contenido.dataset.marca !== siguiente) {
+      contenido.innerHTML = siguiente;
+      contenido.dataset.marca = siguiente;
+    }
+    dialogoExplorar.querySelector("[data-explorar-volver]").hidden = recorrido.length < 2;
+  }
+  function explorar(paso) {
+    if (!dialogoExplorar.open) recorrido = [];
+    recorrido.push(paso);
+    marcarDestino(["lista","detalle"].includes(paso.vista) ? "menus" : paso.vista);
+    pintarExplorador();
+    if (!dialogoExplorar.open) dialogoExplorar.showModal();
+    dialogoExplorar.scrollTop = 0;
+    $("#explorarTitulo").focus({preventScroll:true});
+  }
+  function irADestino(destino) {
+    if (dialogoExplorar.open) dialogoExplorar.close();
+    if (destino === "pedido") { openSheet(); return; }
+    if (destino === "todosDia") { explorar({vista:"lista", categoria:franjaActual()}); return; }
+    if (["inicio","restaurantes","buscar"].includes(destino)) {
+      irAInicio();
+      limpiarFiltros();
+      marcarDestino(destino);
+      if (destino === "restaurantes") irASeccionInicio("restaurantes");
+      if (destino === "buscar") elBuscador.focus();
+    } else explorar({vista:destino});
+  }
+  dialogoExplorar.addEventListener("close", function () {
+    if (!dialogoExplorar.open && elSheet.hidden) marcarDestino(vistaActual ? "restaurantes" : "inicio");
+  });
+  dialogoExplorar.addEventListener("click", function (e) {
+    if (e.target === dialogoExplorar && !e.target.closest("#explorarContenido")) {
+      var rect = dialogoExplorar.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) dialogoExplorar.close();
+    }
+  });
+  dialogoExplorar.addEventListener("submit", function (e) {
+    if (e.target.id !== "sgPerfil") return;
+    e.preventDefault();
+    var form = e.target, datos = Object.fromEntries(new FormData(form));
+    if (datos.telefono && !telCol(datos.telefono)) { toast("Revisa el número de WhatsApp."); form.telefono.focus(); return; }
+    escribirLS(LS_CLIENTE, Object.assign({}, leerLS(LS_CLIENTE, {}), datos));
+    dialogoExplorar.close(); toast("Datos de entrega guardados.");
+  });
+  function accionInicio(t) {
+    var b = t.closest("[data-destino],[data-franja],[data-categoria-dia],[data-lista-filtro],[data-menu-detalle],[data-preparar-menu],[data-explorar-carta],[data-favorito],[data-explorar-cerrar],[data-explorar-volver],[data-abrir-seguimiento],[data-mas-acciones],[data-novedades]");
+    if (!b) return false;
+    var d = b.dataset;
+    if (d.destino) irADestino(d.destino);
+    else if (d.franja) { franjaElegida = d.franja; renderMenuDia(); }
+    else if (d.categoriaDia) explorar({vista:"lista", categoria:d.categoriaDia});
+    else if (d.listaFiltro) {
+      recorrido[recorrido.length-1].filtro = d.listaFiltro;
+      pintarExplorador();
+      dialogoExplorar.querySelector('[data-lista-filtro="' + d.listaFiltro + '"]').focus();
+    }
+    else if (d.menuDetalle) explorar({vista:"detalle", id:d.menuDetalle, tipo:d.tipo});
+    else if (b.hasAttribute("data-preparar-menu")) {
+      var paso = recorrido[recorrido.length-1];
+      dialogoExplorar.close(); abrirMenuVentana(paso.id, paso.tipo);
+    }
+    else if (d.explorarCarta) { if (dialogoExplorar.open) dialogoExplorar.close(); abrirCarta(d.explorarCarta); }
+    else if (d.favorito) alternarFavorito(d.favorito);
+    else if (b.hasAttribute("data-explorar-volver")) { recorrido.pop(); pintarExplorador(); $("#explorarTitulo").focus(); }
+    else if (b.hasAttribute("data-abrir-seguimiento")) { dialogoExplorar.close(); abrirSeguimiento(""); }
+    else if (b.hasAttribute("data-mas-acciones")) { dialogoExplorar.close(); abrirFab(); }
+    else if (b.hasAttribute("data-novedades")) mostrarEstado(0);
+    else dialogoExplorar.close();
+    return true;
   }
 
   /* --------------------- Ver una foto en grande --------------------- */
@@ -3290,7 +3501,14 @@
       return '<li class="tpaso ' + clase + '"><span class="tpaso__punto"></span><div><strong>' + esc(s.t) +
         "</strong>" + (i === idx && !cancelado ? "<span>" + esc(s.d) + "</span>" : "") + "</div></li>";
     }).join("");
-    return '<div class="track-card">' +
+    var entregado = p.estado === "entregado";
+    var calificar = entregado ? '<div class="sg-entregado"><img class="sg-mascota" src="assets/inicio/entregado.webp" alt="">' +
+      '<h3>¡Pedido entregado!</h3><p>¿Cómo estuvo el servicio?</p><div class="sg-estrellas" aria-label="Calificar servicio por WhatsApp">' +
+      [1,2,3,4,5].map(function (n) {
+        var msg = "Mi calificación para el pedido " + p.codigo + " es " + n + " de 5 estrellas.";
+        return '<a href="https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener" aria-label="Calificar con ' + n + ' de 5 por WhatsApp">★</a>';
+      }).join("") + '</div><small>Envía tu calificación por WhatsApp.</small></div>' : "";
+    return '<div class="track-card">' + calificar +
         '<div class="track-card__head"><span class="track-card__codigo">' + esc(p.codigo) + "</span>" +
           '<span class="estado-pill estado-pill--' + esc(p.estado) + '">' +
             esc(cancelado ? "Cancelado" : (PASOS[idx] || { t: p.estado }).t) + "</span></div>" +
@@ -3756,7 +3974,7 @@
       return grupo.estados.map(function (estado) { return {local:grupo.local, estado:estado}; });
     });
     var zona = $("#estadosLocales");
-    zona.hidden = !lista.length;
+    zona.hidden = !DATA.length;
     var contenedor = $("#estadosLista");
     var html = grupos.map(function (grupo) {
       var local = grupo.local;
@@ -3765,9 +3983,18 @@
       var medio = video
         ? '<video src="' + esc(estado.foto) + '" preload="metadata" muted playsinline aria-hidden="true"></video><span class="estado-play" aria-hidden="true">▶</span>'
         : '<img src="' + esc(estado.foto) + '" alt="" loading="lazy" decoding="async">';
-      return '<button type="button" data-estado-local="' + esc(local.id) + '" style="--estado-color:' + colorEstado(local) + '">' +
-        '<span class="estado-medio">' + medio + '</span>' + (grupo.estados.length > 1 ? '<span class="estado-cantidad">' + grupo.estados.length + '</span>' : '') + '<strong>' + esc(local.nombre) + '</strong></button>';
+      return '<button type="button" aria-label="Estados de ' + esc(local.nombre) + '" data-estado-local="' + esc(local.id) + '" style="--estado-color:' + colorEstado(local) + '">' +
+        '<span class="estado-medio">' + medio + '</span>' + (grupo.estados.length > 1 ? '<span class="estado-cantidad">' + grupo.estados.length + '</span>' : '') + '<strong>' + esc(nombreCorto(local)) + '</strong></button>';
     }).join("");
+    var conEstado = new Set(grupos.map(function (g) { return g.local.id; }));
+    var otros = DATA.filter(function (r) { return !conEstado.has(r.id); }).slice(0, Math.max(0, 6 - grupos.length));
+    var novedades = lista.length ? '<button type="button" data-novedades><span class="estado-medio sg-novedades">' +
+      imagenInicio("assets/inicio/ghost.webp") + '</span><strong>Novedades</strong></button>' : '';
+    html = novedades + html + otros.map(function (r) {
+      return '<button type="button" data-explorar-carta="' + esc(r.id) + '" aria-label="Ver carta de ' + esc(r.nombre) + '"><span class="estado-medio sg-local">' +
+        visualLocal(r) + '</span><strong>' + esc(nombreCorto(r)) + '</strong></button>';
+    }).join("") + '<button type="button" data-destino="restaurantes"><span class="estado-medio sg-todos">' +
+      iconoInicio("mas") + '</span><strong>Ver todos</strong></button>';
     if (contenedor.dataset.contenido !== html) {
       contenedor.innerHTML = html;
       contenedor.dataset.contenido = html;
@@ -3776,7 +4003,7 @@
     estadosVisibles = lista;
     var indice = lista.findIndex(function (item) { return item.local.id === actual?.local.id && item.estado.id === actual?.estado.id; });
     if (!lista.length) cerrarEstado();
-    else if (!actual || !visorEstado.hidden) mostrarEstado(Math.max(0, indice));
+    else if (!visorEstado.hidden) mostrarEstado(Math.max(0, indice));
   }
   function esVideoEstado(url) {
     return /\.(mp4|webm)(?:[?#]|$)/i.test(url);
@@ -3862,6 +4089,7 @@
     renderMenuDia();
     actualizarVista();
     renderRepetir();
+    if (dialogoExplorar.open && recorrido.at(-1)?.vista !== "cuenta") pintarExplorador();
     refreshCart();
   }
 
@@ -3943,6 +4171,7 @@
     aplicarVitrina();  // la vitrina empieza o termina sola a la hora fijada
     renderEstados();
     if (!elVistaInicio.hidden) { renderMenuDia(); actualizarVista(); }
+    if (dialogoExplorar.open && ["lista","detalle","ofertas"].includes(recorrido.at(-1)?.vista)) pintarExplorador();
   }
   setInterval(refrescarHorarios, 60000);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) refrescarHorarios(); });

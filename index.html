@@ -76,8 +76,27 @@
   <link rel="stylesheet" href="css/barra-dbarrio.css?v=9">
   <link rel="stylesheet" href="css/distribucion.css?v=14">
   <link rel="stylesheet" href="css/estados.css?v=5">
+  <link rel="stylesheet" href="css/portada.css?v=1">
 </head>
 <body>
+  <svg class="sg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="sg-inicio" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v12h5v-7h4v7h5V9"/></symbol>
+    <symbol id="sg-restaurantes" viewBox="0 0 24 24"><path d="M5 3v5a3 3 0 0 0 6 0V3M8 3v18M18 21v-8h-3c0-6 1.5-9 4-10v18"/></symbol>
+    <symbol id="sg-menus" viewBox="0 0 24 24"><path d="M3 17h18M2 20h20M4 14a8 8 0 0 1 16 0M12 4v2m-1-2h2"/></symbol>
+    <symbol id="sg-ofertas" viewBox="0 0 24 24"><path d="m3 12 10-9h7l1 7-10 11-8-8z"/><circle cx="17" cy="7" r="1"/></symbol>
+    <symbol id="sg-promos" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13m0-13C4 9 5 2 8 3c2 .2 4 5 4 5s2-5 4-5c4-1 4 6-4 5Z"/></symbol>
+    <symbol id="sg-buscar" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></symbol>
+    <symbol id="sg-pedido" viewBox="0 0 24 24"><path d="M2 3h3l3 12h11l3-9H6"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></symbol>
+    <symbol id="sg-favoritos" viewBox="0 0 24 24"><path d="M20.5 5.5a5 5 0 0 0-8.5 2 5 5 0 0 0-8.5-2C0 10 6 15 12 20c6-5 12-10 8.5-14.5Z"/></symbol>
+    <symbol id="sg-cuenta" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M3 21v-2c0-7 18-7 18 0v2z"/></symbol>
+    <symbol id="sg-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="sg-desayuno" viewBox="0 0 24 24"><path d="M3 7h13v6a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6zm13 1h2a3 3 0 0 1 0 6h-2M2 21h17"/></symbol>
+    <symbol id="sg-rapida" viewBox="0 0 24 24"><path d="M3 10a9 7 0 0 1 18 0ZM2 14l4-1 4 2 4-2 4 2 4-1M3 18h18l-2 3H5Z"/></symbol>
+    <symbol id="sg-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="sg-menu" viewBox="0 0 24 24"><path d="M3 5h18M3 12h18M3 19h18"/></symbol>
+    <symbol id="sg-estrella" viewBox="0 0 24 24"><path d="m12 2 3 6.4 7 1-5 5 1.3 7-6.3-3.4-6.3 3.4L7 14.4l-5-5 7-1z"/></symbol>
+    <symbol id="sg-atras" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7"/></symbol>
+  </svg>
 
   <!-- ============================ ENCABEZADO ============================ -->
   <header class="header" role="banner">
@@ -87,25 +106,18 @@
       </button>
       <a class="logo" href="#" aria-label="Servicios Ghost, inicio" id="logoHome">
         <span class="logo__mark" aria-hidden="true">
-          <svg viewBox="0 0 48 48" width="38" height="38" role="img" aria-hidden="true">
-            <!-- gorro de chef -->
-            <path d="M16 15c0-4 3.6-7 8-7s8 3 8 7c2.4 0 4 1.8 4 4s-1.8 3.6-4 3.6H16c-2.2 0-4-1.4-4-3.6s1.6-4 4-4z" fill="#0B0B0B" stroke="#D4AF37" stroke-width="1.6"/>
-            <!-- cuerpo fantasma -->
-            <path d="M15 24c0-5 4-9 9-9s9 4 9 9v12l-3-2.4L27 36l-3-2.4L21 36l-3-2.4L15 36z" fill="#0B0B0B" stroke="#D4AF37" stroke-width="1.6" stroke-linejoin="round"/>
-            <!-- ojos -->
-            <circle cx="21" cy="25.5" r="1.5" fill="#D4AF37"/>
-            <circle cx="27" cy="25.5" r="1.5" fill="#D4AF37"/>
-          </svg>
+          <img src="assets/inicio/ghost.webp" width="51" height="40" alt="">
+
         </span>
         <span class="logo__text">
-          <span class="logo__name"><span class="logo__accent">SERVICIOS</span> GHOST</span>
+          <span class="logo__name"><span>SERVICIOS</span> <b>GHOST</b></span>
           <span class="logo__tag">Cartagena del Chairá</span>
         </span>
       </a>
 
       <nav class="header__nav" aria-label="Navegación">
         <a href="#restaurantes">Restaurantes</a>
-        <a href="#almuerzos">Desayunos y almuerzos</a>
+        <a href="#almuerzos" data-destino="menus">Desayunos y almuerzos</a>
         <a href="#como-funciona">Cómo funciona</a>
         <a href="#" data-track-open="">Seguir mi pedido</a>
       </nav>
@@ -114,6 +126,7 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         <span class="header__cart-text">Mi pedido</span><span class="header__importe" id="pedidoInicioTotal"></span><span id="cartaCount" class="carta-count" aria-hidden="true" hidden></span>
       </button>
+      <button class="sg-menu" data-destino="mas" aria-label="Más opciones"><svg class="sg-icon" aria-hidden="true"><use href="#sg-menu"/></svg></button>
     </div>
   </header>
 
@@ -130,15 +143,10 @@
         <div class="repetir-box" id="repetirBox" hidden></div>
       </div>
 
-      <section id="restaurantes" class="bloque bloque--compacto" aria-labelledby="tituloRestaurantes">
-        <div class="bloque__head directorio__head">
-          <h1 class="bloque__title" id="tituloRestaurantes">Elige un local</h1>
-          <span class="locales__resumen" id="resumenAbiertos" hidden></span>
-        </div>
         <div class="directorio__buscar" id="buscadorFijo" role="search" aria-label="Locales y platos">
           <div class="search__box">
             <svg class="search__icon" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" id="buscador" class="search__input" placeholder="Buscar local o plato" aria-label="Buscar local o plato" autocomplete="off" enterkeyhint="search" />
+            <input type="search" id="buscador" class="search__input" placeholder="Buscar restaurante, plato o producto…" aria-label="Buscar restaurante, plato o producto…" autocomplete="off" enterkeyhint="search" />
             <button type="button" class="search__limpiar" id="buscadorLimpiar" hidden aria-label="Borrar búsqueda">✕</button>
           </div>
           <button type="button" class="directorio__filtro" id="filtrosBoton" aria-expanded="false" aria-controls="chips">
@@ -147,8 +155,14 @@
           </button>
           <nav class="chips" id="chips" aria-label="Filtrar por categoría" hidden></nav>
         </div>
-        <section id="estadosLocales" aria-labelledby="estadosTitulo" hidden>
-          <h2 id="estadosTitulo">Estados de los locales</h2>
+<nav class="sg-tabs" aria-label="Explorar">
+        <button type="button" data-destino="inicio"><svg class="sg-icon" aria-hidden="true"><use href="#sg-inicio"/></svg><span>Inicio</span></button>
+        <button type="button" data-destino="restaurantes" aria-label="Restaurantes"><svg class="sg-icon" aria-hidden="true"><use href="#sg-restaurantes"/></svg><span class="sg-label-largo">Restaurantes</span><span class="sg-label-corto" aria-hidden="true">Locales</span></button>
+        <button type="button" data-destino="menus" aria-label="Desayunos y almuerzos"><svg class="sg-icon" aria-hidden="true"><use href="#sg-menus"/></svg><span class="sg-label-largo">Desayunos y almuerzos</span><span class="sg-label-corto" aria-hidden="true">Menú del día</span></button>
+        <button type="button" data-destino="ofertas"><svg class="sg-icon" aria-hidden="true"><use href="#sg-ofertas"/></svg><span>Ofertas</span></button>
+        <button type="button" data-destino="promos" aria-label="Promociones"><svg class="sg-icon" aria-hidden="true"><use href="#sg-promos"/></svg><span class="sg-label-largo">Promociones</span><span class="sg-label-corto" aria-hidden="true">Promos</span></button>
+      </nav>
+        <section id="estadosLocales" aria-label="Novedades y locales" hidden>
           <div id="estadosLista"></div>
           <div id="estadoVisor" role="region" aria-labelledby="estadoLocal" hidden>
             <div id="estadoProgreso" class="estado-visor__progreso" aria-hidden="true"></div>
@@ -169,6 +183,31 @@
           </div>
         </section>
 
+<section id="ciudad" class="sg-ciudad">
+        <div class="sg-ciudad__head"><svg class="sg-icon" aria-hidden="true"><use href="#sg-reloj"/></svg>
+        <div><h1>Ahora en la ciudad</h1><p>Elige según la hora del día.</p></div></div>
+        <div class="sg-franjas" role="group" aria-label="Momento del día">
+        <button type="button" data-franja="desayuno"><svg class="sg-icon" aria-hidden="true"><use href="#sg-desayuno"/></svg><span><b>Desayunos</b><small>6 a. m. – 10 a. m.</small></span></button>
+        <button type="button" data-franja="almuerzo"><svg class="sg-icon" aria-hidden="true"><use href="#sg-menus"/></svg><span><b>Almuerzos</b><small>10 a. m. – 3 p. m.</small></span></button>
+        <button type="button" data-franja="rapida"><svg class="sg-icon" aria-hidden="true"><use href="#sg-rapida"/></svg><span><b>Comidas rápidas</b><small>Después de las 3 p. m.</small></span></button></div>
+      </section>
+      <section id="almuerzos" class="bloque bloque--compacto" aria-labelledby="tituloDia">
+        <div class="bloque__head"><h2 id="tituloDia" class="bloque__title"></h2><button class="sg-enlace" data-destino="todosDia">Ver todos</button></div>
+        <div id="gridAlmuerzos" class="sg-platos" aria-live="polite"></div>
+      </section>
+      <section id="recomendado" class="bloque bloque--compacto" aria-labelledby="tituloRecomendados" hidden data-portada>
+        <div class="bloque__head">
+          <h2 class="bloque__title" id="tituloRecomendados"><svg class="sg-icon" aria-hidden="true"><use href="#sg-estrella"/></svg>Recomendados</h2>
+        </div>
+        <p class="recomendados__aviso" id="recomendadosAviso" hidden>Por ahora los locales están cerrados. Puedes mirar sus cartas y consultar cuándo abren.</p>
+        <div class="recomendados-grid" id="gridRecomendados"></div>
+      </section>
+
+      <section id="restaurantes" class="bloque bloque--compacto" aria-labelledby="tituloRestaurantes">
+        <div class="bloque__head directorio__head">
+          <h2 class="bloque__title" id="tituloRestaurantes"><svg class="sg-icon" aria-hidden="true"><use href="#sg-restaurantes"/></svg>Restaurantes</h2>
+          <span class="locales__resumen" id="resumenAbiertos" hidden></span>
+        </div>
         <div class="directorio__seleccion" id="filtrosResumen" hidden>
           <span id="filtroActual"></span>
           <button type="button" class="btn-link" id="btnQuitarFiltros" data-quitar-categoria>Quitar filtro</button>
@@ -185,26 +224,8 @@
         </p>
       </section>
 
-      <section id="recomendado" class="bloque bloque--compacto" aria-labelledby="tituloRecomendados" hidden data-portada>
-        <div class="bloque__head">
-          <h2 class="bloque__title" id="tituloRecomendados">Recomendados</h2>
-        </div>
-        <p class="recomendados__aviso" id="recomendadosAviso" hidden>Por ahora los locales están cerrados. Puedes mirar sus cartas y consultar cuándo abren.</p>
-        <div class="recomendados-grid" id="gridRecomendados"></div>
-      </section>
-
       <!-- Promociones -->
       <div class="promos" id="promos" aria-label="Promociones" data-portada></div>
-
-      <!-- ============== MENÚ DEL DÍA: DESAYUNOS Y ALMUERZOS ============== -->
-      <section id="almuerzos" class="bloque bloque--compacto">
-        <div class="bloque__head bloque__head--menu">
-          <h2 class="bloque__title">🍽️ Menú del día</h2>
-          <div class="menu-tabs" id="menuTabs" role="group" aria-label="Desayunos o almuerzos"></div>
-        </div>
-        <div class="alm-grid alm-grid--fila" id="gridAlmuerzos" aria-live="polite"></div>
-        <p class="empty" id="almuerzosVacio" hidden></p>
-      </section>
 
       <!-- ======================== LO MÁS PEDIDO ======================== -->
       <details id="populares" class="bloque bloque--compacto populares-inicio" hidden data-portada>
@@ -253,6 +274,17 @@
     <section id="vistaCarta" class="vista" hidden></section>
   </main>
 
+<nav class="sg-dock" aria-label="Navegación principal">
+        <button type="button" data-destino="inicio"><svg class="sg-icon" aria-hidden="true"><use href="#sg-inicio"/></svg><span>Inicio</span></button>
+        <button type="button" data-destino="buscar"><svg class="sg-icon" aria-hidden="true"><use href="#sg-buscar"/></svg><span>Buscar</span></button>
+        <button type="button" data-destino="pedido"><svg class="sg-icon" aria-hidden="true"><use href="#sg-pedido"/></svg><span>Pedidos</span></button>
+        <button type="button" data-destino="favoritos"><svg class="sg-icon" aria-hidden="true"><use href="#sg-favoritos"/></svg><span>Favoritos</span></button>
+        <button type="button" data-destino="cuenta"><svg class="sg-icon" aria-hidden="true"><use href="#sg-cuenta"/></svg><span>Mi cuenta</span></button>
+      </nav>
+  <dialog id="explorador" aria-labelledby="explorarTitulo">
+    <div class="sg-dialog-head"><button type="button" class="sg-iconbtn" data-explorar-volver aria-label="Volver" hidden><svg class="sg-icon" aria-hidden="true"><use href="#sg-atras"/></svg></button><h2 id="explorarTitulo" tabindex="-1"></h2><button type="button" class="sg-iconbtn" data-explorar-cerrar aria-label="Cerrar">×</button></div>
+    <div id="explorarContenido"></div>
+  </dialog>
   <!-- ====================== BARRA DEL CARRITO ======================== -->
   <button type="button" class="cart-bar" id="cartBar" hidden>
     <span class="cart-bar__left">
@@ -295,7 +327,7 @@
     <div class="sheet__backdrop" data-track-close></div>
     <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="trackTitle">
       <div class="sheet__head">
-        <h2 class="sheet__title" id="trackTitle">📦 Seguir mi pedido</h2>
+        <h2 class="sheet__title" id="trackTitle">Seguimiento de pedido</h2>
         <button type="button" class="icon-btn" data-track-close aria-label="Cerrar">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
@@ -339,6 +371,6 @@
   <script defer src="js/logo.js?v=45"></script>
   <script defer src="js/store.js?v=49"></script>
   <script defer src="js/visitas.js?v=45"></script>
-  <script defer src="js/app.js?v=66" onerror="document.documentElement.dataset.arranque='error'"></script>
+  <script defer src="js/app.js?v=67" onerror="document.documentElement.dataset.arranque='error'"></script>
 </body>
 </html>
