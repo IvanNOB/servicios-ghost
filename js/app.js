@@ -967,7 +967,7 @@
 
   function opcionesEnTarjetas(restId) {
     var locales = AJUSTES.vitrina?.opcionesEnTarjetas;
-    return Array.isArray(locales) ? locales.includes(restId) : restId === "chino-el-fenix";
+    return restId === "chino-doradito-la-pista" || (Array.isArray(locales) ? locales.includes(restId) : restId === "chino-el-fenix");
   }
 
   function dishHTML(r, it, seccion, carga) {
