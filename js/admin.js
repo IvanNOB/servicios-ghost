@@ -1978,11 +1978,6 @@
     fotoEstadoTemporal = null;
   }
 
-  function estadoActivo(local) {
-    var estado = local.promo?.estado;
-    return estado && Date.parse(estado.hasta) > Date.now() ? estado : null;
-  }
-
   function tiempoEstado(estado) {
     var minutos = Math.max(1, Math.ceil((Date.parse(estado.hasta) - Date.now()) / 60000));
     var horas = Math.floor(minutos / 60);
@@ -1990,12 +1985,12 @@
   }
 
   function tarjetaEstado(local) {
-    var estado = estadoActivo(local);
+    var estados = window.Store.estadosActivos(local.promo);
     return '<button type="button" class="tile tile-estado" data-ali-estado="' + esc(local.id) + '">' +
       '<span class="tile-estado__icono" aria-hidden="true">' +
-      (estado ? '<img src="' + esc(estado.foto) + '" alt="">' : '+') + '</span>' +
-      '<strong>Mi estado</strong><small>' + (estado ? tiempoEstado(estado) : "Comparte una foto por 24 h") +
-      '</small><span class="tile-estado__accion">' + (estado ? "Gestionar estado" : "Crear estado") + '</span></button>';
+      (estados.length ? estados.length : "+") + '</span>' +
+      '<strong>Mi estado</strong><small>' + (estados.length ? estados.length + " en el aire" : "Comparte por 24 h") +
+      '</small><span class="tile-estado__accion">' + "Gestionar estados" + '</span></button>';
   }
 
   function esVideoArchivoEstado(archivo) {
@@ -2005,8 +2000,8 @@
   function abrirEstado(id) {
     var local = restPorId(id);
     if (!local) return;
-    var estado = estadoActivo(local);
-    var estadoVideo = /\.(mp4|webm)(?:[?#]|$)/i.test(estado?.foto || "");
+    var estados = window.Store.estadosActivos(local.promo);
+
     liberarFotoEstado();
     var fotosCarta = [{url:local.logo, nombre:"Portada del local"}];
     (local.carta || []).forEach(function (seccion) {
@@ -2016,15 +2011,23 @@
     });
     fotosCarta = fotosCarta.filter(function (foto) { return /^(https:\/\/|assets\/)/.test(foto.url || ""); });
     abrirAli("Mi estado · " + local.nombre,
-      '<div class="estado-editor">' +
+      (estados.length ? '<div class="estados-activos"><h3>Publicados · ' + estados.length + '</h3>' + estados.map(function (estado) {
+        return '<div class="estados-activos__fila">' +
+          (/\.(mp4|webm)(?:[?#]|$)/i.test(estado.foto) ? '<video src="' + esc(estado.foto) + '" muted preload="metadata"></video>' :
+            '<img src="' + esc(estado.foto) + '" alt="" loading="lazy">') +
+          '<span><strong>' + esc(estado.texto || "Estado") + '</strong><small>' + tiempoEstado(estado) + '</small></span>' +
+          '<button type="button" class="btn-copy btn-sm" data-estado-quitar="' + esc(id) +
+          '" data-estado-id="' + esc(estado.id) + '" aria-label="Retirar ' + esc(estado.texto || "estado") + '">Retirar</button></div>';
+      }).join("") + '</div>' : "") +
+      '<h3 class="estado-nuevo-titulo">Nuevo estado</h3><div class="estado-editor">' +
       '<div class="estado-editor__preview" id="estadoPreview">' +
-        '<img id="estadoVistaFoto" alt="Vista previa de la foto" ' + (estado && !estadoVideo ? 'src="' + esc(estado.foto) + '"' : "hidden") + '>' +
-        '<video id="estadoVistaVideo" controls playsinline preload="metadata" ' + (estadoVideo ? 'src="' + esc(estado.foto) + '"' : "hidden") + '></video>' +
-        '<span class="estado-editor__sello" id="estadoSello">' + (estado ? "Publicado · " + tiempoEstado(estado) : "Vista previa") + '</span>' +
-        '<span class="estado-editor__vacio" id="estadoVacio"' + (estado ? " hidden" : "") + '>Tu imagen o video aparecerá aquí</span>' +
-        '<span class="estado-editor__caption" id="estadoVistaTexto">' + esc(estado?.texto || "") + '</span></div>' +
+        '<img id="estadoVistaFoto" alt="Vista previa" hidden>' +
+        '<video id="estadoVistaVideo" controls playsinline preload="metadata" hidden></video>' +
+        '<span class="estado-editor__sello" id="estadoSello">Vista previa</span>' +
+        '<span class="estado-editor__vacio" id="estadoVacio">Tu imagen o video aparecerá aquí</span>' +
+        '<span class="estado-editor__caption" id="estadoVistaTexto"></span></div>' +
       '<div class="estado-editor__form">' +
-        '<label class="estado-editor__archivo" for="estadoFoto">+ ' + (estado ? "Elegir otro archivo" : "Elegir foto o video") + '</label>' +
+        '<label class="estado-editor__archivo" for="estadoFoto">+ ' + "Elegir foto o video" + '</label>' +
         '<input type="file" id="estadoFoto" accept="image/*,video/mp4,video/webm" class="estado-editor__input" aria-describedby="estadoArchivo">' +
         (fotosCarta.length ? '<div class="field"><label for="estadoFotoCarta">Usar una foto de la carta</label><select id="estadoFotoCarta" class="field__input"><option value="">Selecciona una imagen</option>' +
           fotosCarta.map(function (foto) { return '<option value="' + esc(foto.url) + '">' + esc(foto.nombre) + '</option>'; }).join("") + '</select></div>' : "") +
@@ -2032,8 +2035,7 @@
         '<div class="field"><label for="estadoTexto">Descripción (opcional)</label>' +
         '<textarea class="field__input" id="estadoTexto" maxlength="120" rows="2" placeholder="Ej. Recién preparados para hoy"></textarea>' +
         '<small id="estadoContador" class="muted">0 / 120</small></div>' +
-        '<button class="btn-primary" type="button" data-estado-publicar="' + esc(id) + '" disabled>' + (estado ? "Reemplazar estado" : "Publicar estado") + '</button>' +
-        (estado ? '<button class="btn-danger" type="button" data-estado-quitar="' + esc(id) + '">Retirar estado</button>' : "") +
+        '<button class="btn-primary" type="button" data-estado-publicar="' + esc(id) + '" disabled>Publicar estado</button>' +
       '</div></div>');
     var entrada = $("#estadoFoto");
     var imagen = $("#estadoVistaFoto");
@@ -2041,7 +2043,7 @@
     var selectorCarta = $("#estadoFotoCarta");
     function actualizarTexto() {
       $("#estadoContador").textContent = texto.value.length + " / 120";
-      $("#estadoVistaTexto").textContent = (fotoEstadoTemporal || selectorCarta?.value) ? texto.value : estado?.texto || "";
+      $("#estadoVistaTexto").textContent = (fotoEstadoTemporal || selectorCarta?.value) ? texto.value : "";
     }
     texto.addEventListener("input", actualizarTexto);
     entrada.addEventListener("change", function () {
@@ -2057,9 +2059,9 @@
       liberarFotoEstado();
       if (archivo?.type.startsWith("image/") || esVideoArchivoEstado(archivo)) fotoEstadoTemporal = URL.createObjectURL(archivo);
       var nueva = fotoEstadoTemporal || selectorCarta?.value;
-      var origen = nueva || estado?.foto;
+      var origen = nueva;
       var video = $("#estadoVistaVideo");
-      var mostrarVideo = fotoEstadoTemporal ? esVideoArchivoEstado(archivo) : !nueva && estadoVideo;
+      var mostrarVideo = !!fotoEstadoTemporal && esVideoArchivoEstado(archivo);
       video.pause();
       if (origen && mostrarVideo) video.src = origen;
       else video.removeAttribute("src");
@@ -2068,7 +2070,7 @@
       else imagen.removeAttribute("src");
       imagen.hidden = !origen || mostrarVideo;
       $("#estadoVacio").hidden = !!origen;
-      $("#estadoSello").textContent = nueva ? "Vista previa" : estado ? "Publicado · " + tiempoEstado(estado) : "Vista previa";
+      $("#estadoSello").textContent = "Vista previa";
       $("#estadoArchivo").textContent = fotoEstadoTemporal ? archivo.name : "El estado se mostrará durante 24 horas.";
       elAliBody.querySelector("[data-estado-publicar]").disabled = !nueva;
       actualizarTexto();
@@ -2090,13 +2092,17 @@
     controles.forEach(function (control) { control.disabled = true; });
     try {
       var estado = quitar ? null : {
-        foto: fotoCarta || (esVideoArchivoEstado(foto) ? await window.Store.subirFoto(foto, "estados") : await subirFotoComprimida(foto, "estados", 1440)),
+        id: crypto.randomUUID(),
+        foto: fotoCarta ? new URL(fotoCarta, location.href).href : (esVideoArchivoEstado(foto) ? await window.Store.subirFoto(foto, "estados") : await subirFotoComprimida(foto, "estados", 1440)),
         texto: texto,
         hasta: new Date(Date.now() + 86400000).toISOString()
       };
-      local.promo = await window.Store.actualizarPromoParcial(id, {estado:estado});
+      local.promo = await window.Store.actualizarPromoParcial(id, function (promo) {
+        var activos = window.Store.estadosActivos(promo);
+        return {estados: quitar ? activos.filter(function (item) { return item.id !== boton.dataset.estadoId; }) : activos.concat(estado)};
+      });
       toast(quitar ? "Estado retirado" : "Estado publicado por 24 horas");
-      if (boton.isConnected) cerrarAli();
+      if (boton.isConnected) abrirEstado(id);
       else pintarLista();
     } catch (error) {
       toast(mensajeErrorGuardar(error), true);

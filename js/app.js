@@ -3748,29 +3748,33 @@
     return coloresEstado[local.id] || (/^#[0-9a-f]{6}$/i.test(local.color) ? local.color : "#d4af37");
   }
   function renderEstados() {
-    var lista = DATA.filter(function (local) {
-      var estado = local.promo && local.promo.estado;
-      return estado && Date.parse(estado.hasta) > Date.now();
+    var grupos = DATA.map(function (local) {
+      var estados = window.Store?.estadosActivos(local.promo) || [];
+      return {local:local, estados:estados};
+    }).filter(function (grupo) { return grupo.estados.length; });
+    var lista = grupos.flatMap(function (grupo) {
+      return grupo.estados.map(function (estado) { return {local:grupo.local, estado:estado}; });
     });
     var zona = $("#estadosLocales");
     zona.hidden = !lista.length;
     var contenedor = $("#estadosLista");
-    var html = lista.map(function (local) {
-      var estado = local.promo.estado;
+    var html = grupos.map(function (grupo) {
+      var local = grupo.local;
+      var estado = grupo.estados[grupo.estados.length - 1];
       var video = esVideoEstado(estado.foto);
       var medio = video
         ? '<video src="' + esc(estado.foto) + '" preload="metadata" muted playsinline aria-hidden="true"></video><span class="estado-play" aria-hidden="true">▶</span>'
         : '<img src="' + esc(estado.foto) + '" alt="" loading="lazy" decoding="async">';
       return '<button type="button" data-estado-local="' + esc(local.id) + '" style="--estado-color:' + colorEstado(local) + '">' +
-        '<span class="estado-medio">' + medio + '</span><strong>' + esc(local.nombre) + '</strong></button>';
+        '<span class="estado-medio">' + medio + '</span>' + (grupo.estados.length > 1 ? '<span class="estado-cantidad">' + grupo.estados.length + '</span>' : '') + '<strong>' + esc(local.nombre) + '</strong></button>';
     }).join("");
     if (contenedor.dataset.contenido !== html) {
       contenedor.innerHTML = html;
       contenedor.dataset.contenido = html;
     }
-    var actual = estadosVisibles[estadoSeleccionado]?.id;
+    var actual = estadosVisibles[estadoSeleccionado];
     estadosVisibles = lista;
-    var indice = lista.findIndex(function (local) { return local.id === actual; });
+    var indice = lista.findIndex(function (item) { return item.local.id === actual?.local.id && item.estado.id === actual?.estado.id; });
     if (!lista.length) cerrarEstado();
     else if (!actual || !visorEstado.hidden) mostrarEstado(Math.max(0, indice));
   }
@@ -3783,11 +3787,12 @@
     $("#estadosLista").querySelector('[aria-pressed="true"]')?.setAttribute("aria-pressed", "false");
   }
   function mostrarEstado(indice) {
-    var local = estadosVisibles[indice];
-    if (!local) return;
-    var cambiarMedio = visorEstado.hidden || estadoSeleccionado !== indice || visorEstado.dataset.foto !== local.promo.estado.foto;
+    var item = estadosVisibles[indice];
+    if (!item) return;
+    var local = item.local;
+    var estado = item.estado;
+    var cambiarMedio = visorEstado.hidden || estadoSeleccionado !== indice || visorEstado.dataset.foto !== estado.foto;
     estadoSeleccionado = indice;
-    var estado = local.promo.estado;
     $("#estadoLocal").textContent = local.nombre;
     var imagen = $("#estadoImagen");
     var video = $("#estadoVideo");
@@ -3822,7 +3827,7 @@
   $("#estadosLista").addEventListener("click",function (e) {
     var boton = e.target.closest("[data-estado-local]");
     if (!boton) return;
-    mostrarEstado(estadosVisibles.findIndex(function (local) { return local.id === boton.dataset.estadoLocal; }));
+    mostrarEstado(estadosVisibles.findIndex(function (item) { return item.local.id === boton.dataset.estadoLocal; }));
   });
   var inicioGestoEstado = null;
   var medioEstado = visorEstado.querySelector(".estado-visor__medio");
@@ -3843,7 +3848,7 @@
     if (paso) mostrarEstado(estadoSeleccionado + Number(paso.dataset.estadoPaso));
     if (e.target.closest("[data-estado-cerrar]")) cerrarEstado();
     if (e.target.closest("[data-estado-carta]")) {
-      var local = estadosVisibles[estadoSeleccionado];
+      var local = estadosVisibles[estadoSeleccionado]?.local;
       cerrarEstado();
       if (local) irAPlato(local.id);
     }
