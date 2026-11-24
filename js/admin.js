@@ -289,7 +289,7 @@
           '<div class="admin-card__actions">' +
             '<button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar</button>' +
             (!esAliado() ? '<button type="button" class="btn-copy btn-sm" data-ali-estado="' + esc(r.id) + '">Estado</button>' : "") +
-            '<button type="button" class="btn-copy btn-sm" data-ali-disp="' + esc(r.id) + '" title="Marcar agotados y cambiar precios rápido">⚡ Disponibilidad</button>' +
+            '<button type="button" class="btn-copy btn-sm" data-ali-disp="' + esc(r.id) + '" title="Marcar agotados y cambiar precios rápido">Productos y precios</button>' +
             (!esAliado() && cartaNueva(r) ? '<button type="button" class="btn-primary btn-sm" data-sincronizar="' + esc(r.id) + '" title="La carta que me pasaste por el chat es distinta a la guardada. Toca para ver qué cambia antes de aplicarla.">🆕 Revisar carta nueva</button>' : "") +
             (esAliado() ? "" : '<button type="button" class="btn-danger" data-borrar="' + esc(r.id) + '">Borrar</button>') +
           "</div>" +
@@ -1880,12 +1880,23 @@
               '<small class="disp-tag">' + (it.agotado ? "Agotado" : "Disponible") + "</small></span>" +
             '<span class="disp-precio"><span>$</span><input class="field__input" type="number" min="0" step="100" inputmode="numeric" data-disp-p="' + k + '" value="' +
               esc(it.p || "") + '" aria-label="Precio de ' + esc(it.n) + '" /></span>' +
+          opcionesRapidas(it, k) +
           "</div>";
       });
       html += "</div>";
     });
     if (!(dispCopia.carta || []).length) html += '<p class="muted">Aún no tienes productos. Agrégalos en “Editar mi carta”.</p>';
-    abrirAli("⚡ Disponibilidad · " + r.nombre, html);
+    abrirAli("Productos y precios · " + r.nombre, html);
+  }
+  function opcionesRapidas(it, clave) {
+    var grupos = it.opciones || [];
+    if (!grupos.length) return "";
+    return '<details class="disp-opciones"><summary>Precios de opciones</summary>' + grupos.map(function (g, i) {
+      return '<fieldset><legend>' + esc(g.nombre) + '</legend>' + (g.opciones || []).map(function (o, j) {
+        return '<label>' + esc(o.n) + '<span>Adicional $ <input type="number" min="0" step="1" inputmode="numeric" data-disp-extra="' + clave +
+          '" data-grupo="' + i + '" data-opcion="' + j + '" value="' + (Number(o.precio) || 0) + '"></span></label>';
+      }).join("") + '</fieldset>';
+    }).join("") + '</details>';
   }
   function itemDisp(k) {
     var p = k.split("-");
@@ -2155,6 +2166,15 @@
     if ((x = t.closest("[data-ali-ventas]"))) { abrirVentasAliado(x.getAttribute("data-ali-ventas")); return; }
     if ((x = t.closest("[data-ali-compartir]"))) { abrirCompartir(x.getAttribute("data-ali-compartir")); return; }
     if (t.closest("[data-ali-copiar]")) { copiarEnlaceAli(); return; }
+    if ((x = t.closest("[data-vit-previa]"))) {
+      var seleccion = Array.from(document.querySelectorAll("#vitCartas [data-vit-id]"));
+      var lista = seleccion.map(function (campo) { return {local:restPorId(campo.value), elegido:campo.checked}; })
+        .filter(function (fila) { return fila.local && ($("#ajVitOn").checked ? fila.elegido : fila.local.visible !== false); });
+      abrirAli("Vista previa de la selección", '<ol class="vit-previa">' + lista.map(function (fila) {
+        return '<li><strong>' + esc(fila.local.nombre) + '</strong><small>' + esc(fila.local.cat || "") + '</small></li>';
+      }).join("") + '</ol>' + (!lista.length ? '<p>Sin locales en esta selección.</p>' : ""));
+      return;
+    }
     if ((x = t.closest("[data-tab-ir]"))) { cambiarTab(x.getAttribute("data-tab-ir")); window.scrollTo(0, 0); return; }
     if ((x = t.closest("[data-promo-idea]"))) { $("#promoTexto").value = x.getAttribute("data-promo-idea"); pintarVistaPromo(); return; }
     if ((x = t.closest("[data-promo-guardar]"))) { guardarPromo(x.getAttribute("data-promo-guardar"), false, x); return; }
@@ -2171,6 +2191,14 @@
       var fila = t.closest("[data-disp-fila]");
       fila.classList.toggle("disp-fila--agotado", it.agotado);
       fila.querySelector(".disp-tag").textContent = it.agotado ? "Agotado" : "Disponible";
+      programarGuardadoDisp();
+      return;
+    }
+    if (t.hasAttribute("data-disp-extra")) {
+      var producto = itemDisp(t.dataset.dispExtra);
+      var opcion = producto.opciones[t.dataset.grupo].opciones[t.dataset.opcion];
+      if (!t.value || !t.validity.valid) { t.value = Number(opcion.precio) || 0; return; }
+      opcion.precio = Number(t.value);
       programarGuardadoDisp();
       return;
     }
@@ -2683,6 +2711,7 @@
   document.addEventListener("change", function (e) {
     var t = e.target;
     if (!t || !t.id) return;
+    if (t.id === "pedGrupo") { pedEstado = "todos"; pedSel = {}; pintarPedidos(); return; }
     if (t.id === "filtroEstado") { pedEstado = t.value || "todos"; pedSel = {}; pintarPedidos(); return; }
     if (t.id === "filtroFecha") {
       pedFecha = t.value || "7";
@@ -2711,6 +2740,7 @@
     var b = e.target.closest && e.target.closest("[data-ped-limpiar]");
     if (!b) return;
     pedEstado = "todos";
+    $("#pedGrupo").value = "todos";
     pedFecha = "7";
     pedHora = "todas";
     pedRest = esAliado() ? perfil.restaurante_id : "";
@@ -2900,6 +2930,10 @@
       ["listo", "Listos"], ["en-camino", "En camino"], ["entregado", "Entregados"],
       ["cancelado", "Cancelados"],
     ];
+    var grupo = $("#pedGrupo").value;
+    ops = ops.filter(function (o) {
+      return o[0] === "todos" || grupo === "todos" || (grupo === "historial") === ["entregado", "cancelado"].includes(o[0]);
+    });
     sel.innerHTML = ops.map(function (o) {
       return '<option value="' + o[0] + '"' + (pedEstado === o[0] ? " selected" : "") + ">" +
         esc(o[1]) + " (" + (c[o[0]] || 0) + ")</option>";
@@ -2925,8 +2959,13 @@
     if (campoDia) campoDia.hidden = actual !== "dia";
   }
   function pedidosPorRestaurante() {
-    if (!pedRest) return pedidos;
-    return pedidos.filter(function (p) {
+    var grupo = $("#pedGrupo").value;
+    var lista = pedidos.filter(function (p) {
+      var terminado = p.estado === "entregado" || p.estado === "cancelado";
+      return grupo === "todos" || (grupo === "historial" ? terminado : !terminado);
+    });
+    if (!pedRest) return lista;
+    return lista.filter(function (p) {
       return (p.items || []).some(function (it) { return restDeItem(it) === pedRest; });
     });
   }
@@ -3036,6 +3075,7 @@
       cont.innerHTML = '<p class="muted">No hay pedidos ' + (pedFecha === "todos" ? "para mostrar." : "con este filtro.") + "</p>";
       return;
     }
+    var desplegados = new Set(Array.from(cont.querySelectorAll("details[data-pedido-detalle][open]"), function (d) { return d.dataset.pedidoDetalle; }));
     var html = "", dia = null;
     // Se ordenan por fecha (más reciente primero) para que los grupos por día
     // queden juntos aunque la consulta venga en otro orden.
@@ -3049,7 +3089,15 @@
         html += '<h3 class="ped-fecha">' + esc(etiquetaDia(k)) +
           (pedHora !== "todas" ? " · " + esc(horaEtiqueta(Number(pedHora))) : "") + "</h3>";
       }
-      html += pedidoHTML(p, pedRest);
+      var locales = Array.from(new Set((p.items || []).filter(function (it) {
+        return !pedRest || restDeItem(it) === pedRest;
+      }).map(function (it) { return it.restaurante || restDeItem(it); })));
+      var dom = (p.cliente || {}).domicilio;
+      var importe = money((Number(p.total) || 0) + (Number(dom) || 0)) + (dom == null ? " + dom." : "");
+      html += '<details class="pedido-ficha" data-pedido-detalle="' + esc(p.id) + '"' + (desplegados.has(p.id) ? " open" : "") + '><summary>' +
+        '<span><strong>' + esc(p.codigo || p.id.slice(0, 6)) + '</strong> · ' + esc(locales.join(", ")) +
+        '<small>' + esc(ESTADO_LABEL[p.estado] || p.estado) + ' · ' + esc(haceCuanto(p.creado_en) || fechaCorta(p.creado_en)) + '</small></span>' +
+        '<b>' + esc(importe) + '</b></summary>' + pedidoHTML(p, pedRest) + '</details>';
     });
     cont.innerHTML = html;
     pintarEnviosMap(lista);
@@ -3845,7 +3893,8 @@
       '<ol class="vit-cartas" id="vitCartas">' +
       ordenVitrina(v).map(function (r) {
         var marcado = v.activo ? (v.ids || []).includes(r.id) && (r.visible !== false || v.gestionarCartas) : r.visible !== false;
-        return '<li><label><input type="checkbox" data-vit-id value="' + esc(r.id) + '"' + (marcado ? ' checked' : '') + '> ' + esc(r.nombre) + '</label>' +
+        var marca = r.logo ? '<img class="vit-logo" alt="" src="' + esc(r.logo) + '">' : '<span class="vit-inicial">' + esc(iniciales(r.nombre)) + '</span>';
+        return '<li><label>' + marca + '<input type="checkbox" data-vit-id value="' + esc(r.id) + '"' + (marcado ? ' checked' : '') + '> ' + esc(r.nombre) + '</label>' +
           '<button type="button" data-vit-mover="-1" aria-label="Subir ' + esc(r.nombre) + '">↑</button>' +
           '<button type="button" data-vit-mover="1" aria-label="Bajar ' + esc(r.nombre) + '">↓</button></li>';
       }).join("") + '</ol>' +
@@ -3867,7 +3916,8 @@
         '<input class="field__input" id="ajVitMsg" maxlength="100" value="' + esc(v.mensaje) + '" placeholder="' + esc(VIT_MSG_DEF) + '" /></label>' +
       '<p class="muted plato-opc__ayuda">Hora de Colombia. Tú (con sesión en el panel) sigues viendo todo con “Ver cómo se ve”.</p>' +
       '</details><div class="inline-actions">' +
-        '<button type="button" class="btn-primary btn-sm" data-aj="guardar-vitrina">Guardar vitrina</button>' +
+        '<button type="button" class="btn-copy btn-sm" data-vit-previa>Vista previa</button>' +
+        '<button type="button" class="btn-primary btn-sm" data-aj="guardar-vitrina">Publicar cambios</button>' +
         '<button type="button" class="btn-copy btn-sm" data-aj="apagar-vitrina">Apagar ya</button>' +
         '<a class="btn-copy btn-sm" href="index.html" target="_blank" rel="noopener">👀 Abrir la tienda</a>' +
       "</div>" +
