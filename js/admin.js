@@ -200,12 +200,16 @@
   // Un aliado solo ve su restaurante y su almuerzo del día.
   function aplicarRol() {
     var aliado = esAliado();
+    var at = aliado && perfil.restaurante_id === "atemporal";
+    document.body.classList.toggle("at-panel", !!at);
+    var marca = document.querySelector("#logoPanel img"); if (marca) marca.src = "assets/inicio/ghost.webp";
+    document.querySelectorAll(".at-nav-extra,.at-brand-header,.at-sidebar-footer").forEach(function(el){el.hidden = !at;});
     var especialTab = document.querySelector("[data-tab=especial]"); if (especialTab) especialTab.hidden = !aliado || perfil.restaurante_id !== "atemporal";
     document.body.classList.toggle("modo-aliado", aliado);
     document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado && el.getAttribute("data-tab") !== "pedidos"; });
     var tag = document.querySelector(".admin-header .logo__tag"); if (tag) tag.textContent = aliado ? "Mi negocio" : "Admin";
     var tabP0 = document.querySelector("[data-tab=pedidos]"); if (tabP0) tabP0.hidden = false;
-    var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR) tabR.querySelector("span").textContent = aliado ? "Mi negocio" : "Establecimientos";
+    var tabR = document.querySelector("[data-tab=restaurantes]"); if (tabR) tabR.querySelector("span").textContent = at ? "Inicio · Mi negocio" : aliado ? "Mi negocio" : "Establecimientos";
     var titR = document.querySelector("#tabRestaurantes .panel__title"); if (titR) titR.textContent = aliado ? "Mi negocio" : "Establecimientos";
     ["#btnNuevo", "#btnNuevoLugarAlm"].forEach(function (s) { var el = $(s); if (el) el.hidden = aliado; });
   }
@@ -218,6 +222,14 @@
     }
     pintarLista();
     pintarAlmuerzos();
+    if (esAliado() && perfil.restaurante_id === "atemporal") {
+      var local = restPorId("atemporal");
+      var logo = document.querySelector("#logoPanel img");
+      if (logo && local?.logo) logo.src = local.logo;
+      var foto = (local?.carta || []).flatMap(function(sec){return sec.items || [];}).find(function(it){return it.foto && /ginger|latte|frapp/i.test(it.n);});
+      var sidebar = $("#atSidebarFoto"); if(sidebar){sidebar.hidden = !foto; if(foto) sidebar.src = foto.foto;}
+      if (tabActual() === "especial" && !$("#ajEspecialAtemporal")) pintarEspecialAliado();
+    }
     if (!esAliado() && $("#ajVitrina") && JSON.stringify(anterior) !== JSON.stringify(restaurantes.map(function (r) { return [r.id, r.nombre, r.visible]; }))) cargarVitrinaPrincipal();
   }
 
@@ -2655,7 +2667,7 @@
     if (!elEditorSheet.hidden) return "editor";
     return null;
   }
-  function inicioPanel() { return "restaurantes"; }
+  function inicioPanel() { return esAliado() && perfil.restaurante_id === "atemporal" ? "especial" : "restaurantes"; }
   function tabActual() {
     var t = document.querySelector(".tab.tab--active");
     return t ? t.getAttribute("data-tab") : inicioPanel();
@@ -2709,7 +2721,7 @@
       var el = document.getElementById(paneles[k]);
       if (el) el.hidden = k !== cual;
     });
-    if (cual === "especial") pintarEspecialAliado();
+    if (cual === "especial" && restPorId("atemporal")) pintarEspecialAliado();
     if (cual === "almuerzos") pintarAlmuerzos();
     if (["resumen","repartos","clientes"].includes(cual)) cargarOperacion(cual, $("#"+paneles[cual]));
     if (cual === "ventas") cargarVentas();
