@@ -194,6 +194,7 @@
     mostrar("panel");
     await recargarLista();
     if (!esAliado()) { cargarVitrinaPrincipal(); revisarSql(); }
+    else if (perfil.restaurante_id === "atemporal") cambiarTab("especial");
     iniciarAvisos();
   }
 
@@ -280,7 +281,7 @@
   function pintarLista() {
     if (esAliado()) {
       var r = restaurantes[0];
-      elListaRest.innerHTML = r ? tableroAliadoHTML(r) + bienvenidaAliadoHTML(r) : '<p class="muted">Aún no tienes un establecimiento asignado.</p>';
+      elListaRest.innerHTML = r ? (r.id === "atemporal" ? tableroAtemporalHTML(r) : tableroAliadoHTML(r) + bienvenidaAliadoHTML(r)) : '<p class="muted">Aún no tienes un establecimiento asignado.</p>';
     } else if (perfil) directorio.pintar();
   }
 
@@ -1756,6 +1757,21 @@
     return '<button type="button" class="tile' + (destacado ? " tile--on" : "") + '" ' + attr + '="' + esc(valor) + '">' +
       '<span class="tile__ico" aria-hidden="true">' + ico + "</span>" +
       "<strong>" + esc(titulo) + "</strong><small>" + esc(detalle) + "</small></button>";
+  }
+
+  function tableroAtemporalHTML(r) {
+    var items = (r.carta || []).flatMap(function(sec){return sec.items || [];});
+    var foto = items.find(function(it){return it.foto && /manzana.*ginger/i.test(it.n);}) || items.find(function(it){return it.foto && /ginger|latte/i.test(it.n);});
+    var abierto = r.abierto !== false, agotados = items.filter(function(it){return it.agotado;}).length;
+    return '<section class="at-home" style="grid-column:1/-1"><div class="at-home-hero"><div class="at-home-copy"><p>ATEMPORAL COFFEE · MI NEGOCIO</p><h1>Bienvenido a tu espacio</h1><p>Gestiona tu carta, tus pedidos y lo que tus clientes ven en Servicios Ghost.</p><button type="button" class="at-home-cta" data-tab-ir="especial">★ Personalizar especial de la semana</button></div>' +
+      (foto ? '<img class="at-home-image" src="' + esc(foto.foto) + '" alt="' + esc(foto.n) + '">' : '') + '</div>' +
+      '<div class="at-home-kpis"><div class="at-home-kpi"><small>Productos en carta</small><strong>' + items.length + '</strong></div><div class="at-home-kpi"><small>Productos agotados</small><strong>' + agotados + '</strong></div><div class="at-home-kpi"><small>Estado del negocio</small><strong>' + (abierto ? 'Abierto' : 'Cerrado') + '</strong></div></div>' +
+      '<div class="tablero__estado' + (abierto ? ' tablero__estado--on' : '') + '"><div><strong>' + (abierto ? 'Recibiendo pedidos' : 'Cerrado temporalmente') + '</strong><small>' + esc(horarioHoyTexto(r)) + '</small></div><button type="button" class="' + (abierto ? 'btn-danger' : 'btn-primary') + '" data-ali-abrir="' + esc(r.id) + '">' + (abierto ? 'Cerrar ahora' : 'Abrir ahora') + '</button></div>' +
+      '<h2>Pedidos y clientes</h2><div class="at-home-tools">' +
+      tile("☷","Pedidos","Gestiona tus pedidos en tiempo real","data-tab-ir","pedidos") + tileWa(r) + tile("↗","Compartir mi carta","Enlace y código QR","data-ali-compartir",r.id) + tile("▥","Mis ventas","Consulta pedidos y ventas","data-ali-ventas",r.id) +
+      '</div><h2>Tu carta y promociones</h2><div class="at-home-tools">' +
+      tile("◇","Disponibilidad rápida","Precios y productos agotados","data-ali-disp",r.id,agotados>0) + tarjetaEstado(r) + tile("☆","Mi promoción","Destaca una oferta","data-ali-promo",r.id) + tile("♨","Menú del día","Desayunos y almuerzos","data-tab-ir","almuerzos") + tile("✎","Editar mi carta","Fotos, precios y horarios","data-editar",r.id) + tile("★","Especial de la semana","Personaliza tu espacio en portada","data-tab-ir","especial") +
+      '</div><div class="inline-actions"><a class="btn-copy" href="' + esc(urlVistaPrevia(r.id)) + '" target="_blank" rel="noopener">Ver mi carta</a><button type="button" class="btn-copy" data-editar="' + esc(r.id) + '">Editar perfil y portada</button></div></section>';
   }
 
   function tableroAliadoHTML(r) {

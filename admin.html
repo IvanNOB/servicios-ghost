@@ -87,6 +87,68 @@ body.panel-activo.at-panel{--at-side:240px;padding-left:var(--at-side)}
 .at-panel .at-sidebar-footer a{border:1px solid #80642b;border-radius:99px;padding:10px;color:#f4c75d;text-decoration:none}
 }
 @media(max-width:899px){.at-panel #nombreSeccion{display:none}.at-panel .panel-nav__principal{display:flex;overflow-x:auto;flex-wrap:nowrap}.at-panel .panel-nav .tab{flex:none}.at-panel .admin-header .logo{min-width:0}.at-panel #ajEspecialAtemporal .at-controls{padding:12px}.at-panel #ajEspecialAtemporal .at-preview{min-height:250px}}
+</style><style>
+/* Atemporal: shell sin contenedores transformados y sin desbordamiento lateral. */
+body.panel-activo.at-panel{--at-side:248px;--at-header:76px}
+.at-panel .admin-header{backdrop-filter:none;-webkit-backdrop-filter:none;justify-content:space-between;gap:16px}
+.at-panel .admin-header__right{margin-left:auto;min-width:0;flex-wrap:wrap;justify-content:flex-end}
+.at-panel .admin-header .logo{box-sizing:border-box;text-decoration:none}
+.at-panel .admin-header .logo img{width:44px;height:44px;object-fit:contain;border-radius:50%;background:#17130e}
+.at-panel .at-brand-header{font-size:1.03rem}
+.at-panel .panel-nav{box-sizing:border-box}
+.at-panel .panel-nav__principal{min-width:0;width:100%}
+.at-panel .panel-nav .tab{width:100%;min-width:0;white-space:normal;line-height:1.2;justify-content:flex-start}
+.at-panel .panel-nav .tab span:not(.tab__badge){min-width:0;overflow-wrap:anywhere}
+.at-panel .panel-nav .tab__badge{margin-left:auto;flex:none}
+.at-panel .at-sidebar-footer img{object-fit:contain;background:#15110d;max-height:150px}
+.at-panel .admin-main,.at-panel .tab-panel{min-width:0;width:100%;box-sizing:border-box}
+.at-panel .at-home{display:grid;gap:22px}
+.at-panel .at-home-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(160px,32%);min-height:230px;border:1px solid #786032;border-radius:22px;overflow:hidden;background:radial-gradient(ellipse at right,#49301b,#17120e 60%,#101010)}
+.at-panel .at-home-copy{padding:clamp(18px,3vw,34px);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:12px}
+.at-panel .at-home-copy h1{font-size:clamp(1.7rem,3vw,2.7rem);line-height:1.08;margin:0}
+.at-panel .at-home-copy p{margin:0;color:#d6c9b8}
+.at-panel .at-home-image{width:100%;height:100%;min-height:210px;max-height:280px;object-fit:contain;background:#1b150f}
+.at-panel .at-home-cta{border-radius:99px;padding:12px 20px;background:linear-gradient(#ffe17a,#e6ae32);color:#17110a;border:0;font-weight:800}
+.at-panel .at-home-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.at-panel .at-home-kpi{border:1px solid #473a25;border-radius:16px;padding:18px;background:#161411;display:grid;gap:6px}
+.at-panel .at-home-kpi strong{font-size:clamp(1.2rem,2.5vw,2rem);color:#f6cd65;line-height:1.1}
+.at-panel .at-home-kpi small{color:#c4b9aa}
+.at-panel .at-home-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.at-panel .at-home-tools .tile{min-width:0;min-height:110px;padding:17px;text-align:left;display:grid;align-content:start;gap:7px}
+.at-panel .at-home-tools .tile strong{font-size:1rem}
+.at-panel .at-home-tools .tile small{font-size:.85rem;color:#c9c2b6}
+.at-panel .at-home h2{font-size:1.3rem;margin:0}
+.at-panel .at-home .tablero__estado{margin:0}
+.at-panel #ajEspecialAtemporal .at-editor{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+.at-panel #ajEspecialAtemporal .at-preview{min-height:350px}
+.at-panel #ajEspecialAtemporal .at-preview img{object-fit:contain;background:#21180f}
+.at-panel #ajEspecialAtemporal .at-tools{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
+.at-panel #ajEspecialAtemporal .at-tools>*{min-width:0;width:100%}
+.at-panel #ajEspecialAtemporal .at-products{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));max-height:440px}
+.at-panel #ajEspecialAtemporal .at-tile img{object-fit:contain;background:#201b15}
+@media(min-width:900px){
+body.panel-activo.at-panel{padding-left:var(--at-side)}
+.at-panel .admin-header{height:var(--at-header);min-height:var(--at-header);position:sticky;top:0}
+.at-panel .admin-header .logo{position:fixed;inset:0 auto auto 0;width:var(--at-side);height:var(--at-header);z-index:35;padding:14px 18px}
+.at-panel .panel-nav{inset:var(--at-header) auto 0 0;width:var(--at-side);padding:16px 12px;overflow-x:hidden}
+.at-panel .panel-nav__principal{display:flex;flex-direction:column;flex-wrap:nowrap;overflow:visible;gap:7px}
+.at-panel .admin-main{max-width:1600px;padding:28px clamp(20px,3vw,44px) 48px}
+}
+@media(max-width:899px){
+.at-panel .panel-nav .tab{width:auto;white-space:nowrap}
+.at-panel .at-home-tools{grid-template-columns:repeat(2,minmax(0,1fr))}
+.at-panel #ajEspecialAtemporal .at-editor{grid-template-columns:minmax(0,1fr)}
+.at-panel #ajEspecialAtemporal .at-preview{min-height:260px}
+}
+@media(max-width:540px){
+.at-panel .at-home-hero{grid-template-columns:1fr}
+.at-panel .at-home-image{max-height:160px;min-height:0}
+.at-panel .at-home-kpis{gap:6px}
+.at-panel .at-home-kpi{padding:10px}
+.at-panel .at-home-kpi small{font-size:.72rem}
+.at-panel #ajEspecialAtemporal .at-tools{grid-template-columns:1fr}
+.at-panel #ajEspecialAtemporal .at-products{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style></head>
 <body class="admin">
   <header class="admin-header">
