@@ -675,7 +675,8 @@
     var zona = document.getElementById("especialAtemporal");
     if (!zona) return;
     var r = DATA.find(function (local) { return local.id === "atemporal" && local.visible !== false; });
-    var config = AJUSTES.vitrina?.especialAtemporal || {};
+    var config = Object.assign({}, AJUSTES.vitrina?.especialAtemporal || {}, r?.promo?.especialAtemporal || {});
+    if (AJUSTES.vitrina?.especialAtemporal?.activo === false) config.activo = false;
     if (!r || enModoFiltro() || config.activo === false) { zona.hidden = true; return; }
     var items = productosDisponibles(r).filter(function (it) { return Number(it.p) > 0; });
     if (!items.length) { zona.hidden = true; return; }
@@ -709,6 +710,8 @@
           '<button type="button" class="at-cta"' + destino + ' data-ir-item="' + esc(it.id) + '">' + (abiertoAhora(r) ? "Pedir ahora" : "Ver producto") + '</button></div></article>';
       }).join("") + '</div>';
     if (config.recomendaciones === false || !elegidos.length) html = html.split('<h3 class="at-heading">')[0];
+    if (config.banner === false) html = html.includes('<h3 class="at-heading">') ? html.slice(html.indexOf('<h3 class="at-heading">')) : "";
+    if (!html) { zona.hidden = true; return; }
     if (zona._atHTML !== html) { zona.innerHTML = html; zona._atHTML = html; }
     zona.hidden = false;
   }
