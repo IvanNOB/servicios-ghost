@@ -149,6 +149,46 @@ body.panel-activo.at-panel{padding-left:var(--at-side)}
 .at-panel #ajEspecialAtemporal .at-tools{grid-template-columns:1fr}
 .at-panel #ajEspecialAtemporal .at-products{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+</style><style>
+/* Cabecera y barra lateral: un único ancho, sin logo fijo dentro del header. */
+.at-header-title[hidden]{display:none!important}
+body.panel-activo.at-panel{--at-side:248px;--at-header:76px}
+body.panel-activo.at-panel .admin-header{position:sticky;top:0;backdrop-filter:none!important;filter:none;transform:none;box-sizing:border-box;background:#11100e;min-width:0}
+body.panel-activo.at-panel .admin-header .logo{position:static;inset:auto;width:auto;height:auto;min-width:0;flex:none;border:0;background:transparent;padding:0;gap:12px}
+body.panel-activo.at-panel .admin-header .logo img{display:none}
+body.panel-activo.at-panel .at-brand-header{display:flex;flex-direction:column;justify-content:center;align-items:center;min-width:0;font-size:1.17rem;letter-spacing:.075em;line-height:1.12;text-align:center}
+body.panel-activo.at-panel .at-brand-header small{font-size:.7rem;letter-spacing:.38em;margin-top:5px;color:#eac572}
+body.panel-activo.at-panel #nombreSeccion{display:none!important}
+body.panel-activo.at-panel .at-header-title:not([hidden]){display:grid;gap:3px;font-size:1.1rem;line-height:1.2;color:#f6f2e9;min-width:0}
+body.panel-activo.at-panel .at-header-title small{font-size:.77rem;font-weight:400;color:#aaa49a}
+body.panel-activo.at-panel .admin-header__right{margin-left:auto;gap:10px;flex-wrap:nowrap;min-width:0}
+body.panel-activo.at-panel .admin-user{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+body.panel-activo.at-panel .panel-nav{border:0;border-right:1px solid #453a25;background:#10100f;box-sizing:border-box;overflow-x:hidden}
+body.panel-activo.at-panel .panel-nav__principal{box-sizing:border-box;min-width:0}
+body.panel-activo.at-panel .panel-nav .tab{box-sizing:border-box;min-width:0;max-width:100%;border:1px solid transparent;border-radius:11px;padding:11px 10px;gap:9px;font-size:.87rem}
+body.panel-activo.at-panel .panel-nav .tab--active{border-color:#9d7c36;background:#2a2317;box-shadow:none}
+body.panel-activo.at-panel .panel-nav .tab i{width:20px;flex:0 0 20px;text-align:center}
+body.panel-activo.at-panel .panel-nav .tab__badge{flex:0 0 auto;margin-left:auto}
+body.panel-activo.at-panel .at-sidebar-footer{box-sizing:border-box;min-width:0;width:100%;border-top:1px solid #413622;padding:16px 0 0;margin-top:22px}
+body.panel-activo.at-panel .at-sidebar-footer img{display:none!important}
+body.panel-activo.at-panel .at-sidebar-footer a{display:block;box-sizing:border-box;width:100%;border-radius:10px}
+@media(min-width:900px){
+body.panel-activo.at-panel{padding-left:0!important}
+body.panel-activo.at-panel .admin-header{height:var(--at-header);min-height:var(--at-header);padding:0 24px 0 0;gap:24px;display:flex}
+body.panel-activo.at-panel .admin-header .logo{width:var(--at-side);height:100%;justify-content:center;border-right:1px solid #453a25;flex:0 0 var(--at-side)}
+body.panel-activo.at-panel .panel-nav{position:fixed;left:0;top:var(--at-header);bottom:0;right:auto;width:var(--at-side);padding:16px 12px;margin:0}
+body.panel-activo.at-panel .admin-main{margin-left:var(--at-side);margin-right:0;width:calc(100% - var(--at-side));max-width:none;padding:24px 28px 48px}
+body.panel-activo.at-panel .panel-nav__principal{display:flex;flex-direction:column;flex-wrap:nowrap;overflow:visible}
+body.panel-activo.at-panel .panel-nav .tab{width:100%;white-space:normal}
+}
+@media(max-width:899px){
+body.panel-activo.at-panel .admin-header{padding:12px;flex-wrap:wrap}
+body.panel-activo.at-panel .at-header-title{display:none!important}
+body.panel-activo.at-panel .admin-user{display:none}
+body.panel-activo.at-panel .panel-nav{border:1px solid #453a25;border-radius:12px}
+body.panel-activo.at-panel .panel-nav .tab{width:auto;white-space:nowrap}
+body.panel-activo.at-panel .admin-main{margin:0 auto;width:100%}
+}
 </style></head>
 <body class="admin">
   <header class="admin-header">
@@ -157,6 +197,7 @@ body.panel-activo.at-panel{padding-left:var(--at-side)}
       <span class="logo__text">Servicios <span class="logo__accent">Ghost</span></span>
       <span class="logo__tag">Admin</span><span class="at-brand-header" hidden>ATEMPORAL <small>COFFEE</small></span>
     </a>
+    <strong class="at-header-title" hidden>Panel de administración <small>Gestión de tu establecimiento</small></strong>
     <strong id="nombreSeccion" data-solo-admin>Establecimientos</strong>
     <div class="admin-header__right" id="headerRight" hidden>
       <button type="button" class="btn-copy btn-avisos" id="btnAvisos" hidden title="Sonido y aviso cuando llegue un pedido nuevo">🔕 Activar avisos</button>
