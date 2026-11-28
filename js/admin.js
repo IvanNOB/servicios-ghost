@@ -2390,6 +2390,7 @@
     }
     if (aj) {
       var accion = aj.getAttribute("data-aj");
+      if (!esAliado() && accion === "guardar-especial-atemporal") { guardarEspecialAtemporal(aj); return; }
       if (!esAliado() && (accion === "guardar-vitrina" || accion === "apagar-vitrina")) {
         guardarVitrina(aj, accion === "apagar-vitrina"); return;
       }
@@ -3916,7 +3917,36 @@
       panel.textContent = "No se pudo cargar la vitrina. Recarga el panel para volver a intentar.";
       return;
     }
-    panel.innerHTML = vitrinaHTML(ajustes.vitrina || {});
+    panel.innerHTML = especialAtemporalAdminHTML(ajustes.vitrina?.especialAtemporal || {}) + vitrinaHTML(ajustes.vitrina || {});
+  }
+
+  function especialAtemporalAdminHTML(c) {
+    var local = restaurantes.find(function (r) { return r.id === "atemporal"; });
+    var items = (local?.carta || []).flatMap(function (sec) { return sec.items || []; });
+    return '<section class="aj-card" id="ajEspecialAtemporal"><h2 class="panel__title">Especial de la semana · Atemporal Coffee</h2>' +
+      '<p class="muted">Controla únicamente el espacio destacado de la portada.</p>' +
+      '<label class="vit-on"><input type="checkbox" id="atAdminActivo"' + (c.activo !== false ? " checked" : "") + '> Mostrar especial</label>' +
+      '<label class="vit-on"><input type="checkbox" id="atAdminRecomendaciones"' + (c.recomendaciones !== false ? " checked" : "") + '> Mostrar recomendaciones</label>' +
+      '<label class="vit-campo">Título<input class="field__input" id="atAdminTitulo" maxlength="70" value="' + esc(c.titulo || "Especial de la semana") + '"></label>' +
+      '<label class="vit-campo">Mensaje<input class="field__input" id="atAdminMensaje" maxlength="140" value="' + esc(c.mensaje || "") + '" placeholder="Refresca tu semana con nuestros Iced Ginger"></label>' +
+      '<label class="vit-campo">Foto principal<select class="field__input" id="atAdminPortada"><option value="">Automática</option>' +
+      items.filter(function (it) { return it.foto; }).map(function (it) { return '<option value="' + esc(it.id) + '"' + (c.portada === it.id ? " selected" : "") + '>' + esc(it.n) + '</option>'; }).join("") + '</select></label>' +
+      '<label class="vit-on"><input type="checkbox" id="atAdminAuto"' + (!Array.isArray(c.productos) ? " checked" : "") + '> Seleccionar recomendaciones automáticamente</label>' +
+      '<p class="muted">Para elegir manualmente, desmarca la selección automática y marca hasta tres productos.</p><div class="vit-rests">' +
+      items.map(function (it) { return '<label class="vit-rest"><input type="checkbox" data-at-producto value="' + esc(it.id) + '"' + (Array.isArray(c.productos) && c.productos.includes(it.id) ? " checked" : "") + '> ' + esc(it.n) + '</label>'; }).join("") +
+      '</div><div class="inline-actions"><button type="button" class="btn-primary btn-sm" data-aj="guardar-especial-atemporal">Guardar especial</button></div></section>';
+  }
+
+  async function guardarEspecialAtemporal(boton) {
+    var auto = $("#atAdminAuto").checked;
+    var ids = Array.from(document.querySelectorAll("#ajEspecialAtemporal [data-at-producto]:checked"), function (el) { return el.value; });
+    if (!auto && ids.length > 3) { toast("Selecciona máximo tres productos", true); return; }
+    var c = { activo: $("#atAdminActivo").checked, recomendaciones: $("#atAdminRecomendaciones").checked,
+      titulo: $("#atAdminTitulo").value.trim(), mensaje: $("#atAdminMensaje").value.trim(), portada: $("#atAdminPortada").value,
+      productos: auto ? null : ids };
+    var actual = await window.Store.leerAjustes(true);
+    if (!actual) { toast("No se pudo leer la configuración. Intenta de nuevo.", true); return; }
+    await guardarAj("vitrina", Object.assign({}, actual.vitrina || {}, {especialAtemporal:c}), boton, "Especial de Atemporal guardado ✓");
   }
 
   function ordenVitrina(v) {
@@ -4002,6 +4032,7 @@
   async function guardarVitrina(el, apagar) {
     var cartas = Array.from(document.querySelectorAll("#vitCartas [data-vit-id]"));
     var g = {
+      especialAtemporal: cacheAjustes().vitrina?.especialAtemporal || {},
       activo: !apagar && $("#ajVitOn").checked,
       gestionarCartas: true,
       ids: cartas.filter(function (campo) { return campo.checked; }).map(function (campo) { return campo.value; }),
