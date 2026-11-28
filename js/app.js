@@ -3987,8 +3987,6 @@
     sec.hidden = !lista.length;
     aviso.hidden = !!abiertos.length;
     var conFoto = [], sinFoto = [];
-    var verTodos = document.getElementById("sgVerRecomendados");
-    if (verTodos) { verTodos.hidden = lista.length <= (window.innerWidth <= 760 ? 2 : 4); verTodos.onclick = function () { var abierto = sec.classList.toggle("sg-recs-expandido"); verTodos.setAttribute("aria-expanded", String(abierto)); verTodos.textContent = abierto ? "Ver menos" : "Ver todos →"; }; }
     lista.forEach(function (x) {
       var r = x.r, it = x.it;
       var imagen = it.foto
@@ -4000,9 +3998,9 @@
         '<span class="recomendado-card__portada">' + imagen + "</span>" +
         '<span class="recomendado-card__info"><strong>' + esc(it.n).replace(/\//g, "/<wbr>") + "</strong>" +
         '<span class="recomendado-card__local">' + esc(r.nombre) + "</span>" +
-        (estado.abierto ? '<span class="state state--open"><span class="state__dot"></span>Disponible</span>' : '<span class="recomendado-card__local">' + esc(estado.detalle || estado.texto) + "</span>") +
+        (!estado.abierto ? '<span class="recomendado-card__local">' + esc(estado.detalle || estado.texto) + "</span>" : "") +
         '<span class="recomendado-card__pie"><span class="recomendado-card__precio">' + esc(precio) +
-        '</span><span class="recomendado-card__accion">' + (estado.abierto ? "+" : "›") +
+        '</span><span class="recomendado-card__accion">' + (estado.abierto ? "Ver plato" : "Ver carta") +
         "</span></span></span></button>";
       (it.foto ? conFoto : sinFoto).push(tarjeta);
     });
