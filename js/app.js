@@ -670,6 +670,46 @@
   // ¿El cliente está buscando o filtrando? Entonces mostramos solo resultados.
   function enModoFiltro() { return !!termino.trim() || filtroCategoria !== "todos"; }
 
+  // Espacio independiente de Atemporal: solo productos publicados y disponibles.
+  function renderEspecialAtemporal() {
+    var zona = document.getElementById("especialAtemporal");
+    if (!zona) return;
+    var r = DATA.find(function (local) { return local.id === "atemporal" && local.visible !== false; });
+    if (!r || enModoFiltro()) { zona.hidden = true; return; }
+    var items = productosDisponibles(r).filter(function (it) { return Number(it.p) > 0; });
+    if (!items.length) { zona.hidden = true; return; }
+    var patrones = [/manzana.*ginger|ginger.*manzana/i, /fresa.*kiwi|kiwi.*fresa/i, /panini/i];
+    var elegidos = [];
+    patrones.forEach(function (patron) {
+      var item = items.find(function (it) { return patron.test(it.n) && !elegidos.includes(it); });
+      if (item) elegidos.push(item);
+    });
+    items.slice().sort(function (a,b) { return Number(!!b.foto)-Number(!!a.foto); }).forEach(function (it) {
+      if (elegidos.length < 3 && !elegidos.includes(it)) elegidos.push(it);
+    });
+    var portada = elegidos.find(function (it) { return it.foto; }) || items.find(function (it) { return it.foto; });
+    var ginger = items.some(function (it) { return /ginger/i.test(it.n); });
+    var destino = ' data-ir-rest="' + esc(r.id) + '"';
+    var html = '<div class="at-hero">' +
+      (portada ? '<img class="at-hero-photo" src="' + esc(portada.foto) + '" alt="" loading="lazy" decoding="async">' : '') +
+      '<span class="at-tag">🔥 Especial de la semana</span><div class="at-brand">' +
+      (r.logo ? '<img class="at-logo" src="' + esc(r.logo) + '" alt="" loading="lazy" decoding="async">' : '') +
+      '<div><h2 class="at-name">Atemporal Coffee</h2><p class="at-sub">' + esc(r.cat || "Café y bebidas") + '</p></div></div>' +
+      '<p class="at-slogan">' + (ginger ? "Refresca tu semana con nuestros Iced Ginger" : "Sabor que cambia tu rutina") + '</p>' +
+      '<div class="at-actions"><button type="button" class="at-cta at-outline"' + destino + '>Ver carta</button><button type="button" class="at-cta"' + destino + '>' + (abiertoAhora(r) ? "Pedir ahora" : "Consultar carta") + '</button></div></div>' +
+      '<h3 class="at-heading">✦ Recomendaciones Atemporal</h3><div class="at-grid">' +
+      elegidos.map(function (it) {
+        return '<article class="at-product">' +
+          (it.foto ? '<img class="at-photo" src="' + esc(fotoMiniatura(it.foto)) + '" alt="' + esc(it.n) + '" loading="lazy" decoding="async">' : '<span class="at-photo at-placeholder" aria-hidden="true">☕</span>') +
+          '<div class="at-info"><strong>' + esc(it.n) + '</strong>' +
+          (it.d ? '<p class="at-desc">' + esc(it.d) + '</p>' : '') +
+          '<span class="at-price">' + esc((tieneOpciones(it) ? "Desde " : "") + money(it.p)) + '</span>' +
+          '<button type="button" class="at-cta"' + destino + ' data-ir-item="' + esc(it.id) + '">' + (abiertoAhora(r) ? "Pedir ahora" : "Ver producto") + '</button></div></article>';
+      }).join("") + '</div>';
+    if (zona._atHTML !== html) { zona.innerHTML = html; zona._atHTML = html; }
+    zona.hidden = false;
+  }
+
   function actualizarVista() {
     renderChips();
     var filtrando = enModoFiltro();
@@ -678,6 +718,7 @@
     $("#almuerzos").hidden = filtrando;
     if (!filtrando) { renderPromos(); renderPopulares(); }
     renderRecomendados();
+    renderEspecialAtemporal();
     renderResultadosPlatos();
     renderGrid();
     var n = restaurantesFiltrados().length;
