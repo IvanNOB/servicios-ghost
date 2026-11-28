@@ -675,7 +675,8 @@
     var zona = document.getElementById("especialAtemporal");
     if (!zona) return;
     var r = DATA.find(function (local) { return local.id === "atemporal" && local.visible !== false; });
-    if (!r || enModoFiltro()) { zona.hidden = true; return; }
+    var config = AJUSTES.vitrina?.especialAtemporal || {};
+    if (!r || enModoFiltro() || config.activo === false) { zona.hidden = true; return; }
     var items = productosDisponibles(r).filter(function (it) { return Number(it.p) > 0; });
     if (!items.length) { zona.hidden = true; return; }
     var patrones = [/manzana.*ginger|ginger.*manzana/i, /fresa.*kiwi|kiwi.*fresa/i, /panini/i];
@@ -687,15 +688,16 @@
     items.slice().sort(function (a,b) { return Number(!!b.foto)-Number(!!a.foto); }).forEach(function (it) {
       if (elegidos.length < 3 && !elegidos.includes(it)) elegidos.push(it);
     });
-    var portada = elegidos.find(function (it) { return it.foto; }) || items.find(function (it) { return it.foto; });
+    if (Array.isArray(config.productos)) elegidos = config.productos.map(function (id) { return items.find(function (it) { return it.id === id; }); }).filter(Boolean).slice(0, 3);
+    var portada = items.find(function (it) { return it.id === config.portada && it.foto; }) || elegidos.find(function (it) { return it.foto; }) || items.find(function (it) { return it.foto; });
     var ginger = items.some(function (it) { return /ginger/i.test(it.n); });
     var destino = ' data-ir-rest="' + esc(r.id) + '"';
     var html = '<div class="at-hero">' +
       (portada ? '<img class="at-hero-photo" src="' + esc(portada.foto) + '" alt="" loading="lazy" decoding="async">' : '') +
-      '<span class="at-tag">🔥 Especial de la semana</span><div class="at-brand">' +
+      '<span class="at-tag">🔥 ' + esc(config.titulo || "Especial de la semana") + '</span><div class="at-brand">' +
       (r.logo ? '<img class="at-logo" src="' + esc(r.logo) + '" alt="" loading="lazy" decoding="async">' : '') +
       '<div><h2 class="at-name">Atemporal Coffee</h2><p class="at-sub">' + esc(r.cat || "Café y bebidas") + '</p></div></div>' +
-      '<p class="at-slogan">' + (ginger ? "Refresca tu semana con nuestros Iced Ginger" : "Sabor que cambia tu rutina") + '</p>' +
+      '<p class="at-slogan">' + esc(config.mensaje || (ginger ? "Refresca tu semana con nuestros Iced Ginger" : "Sabor que cambia tu rutina")) + '</p>' +
       '<div class="at-actions"><button type="button" class="at-cta at-outline"' + destino + '>Ver carta</button><button type="button" class="at-cta"' + destino + '>' + (abiertoAhora(r) ? "Pedir ahora" : "Consultar carta") + '</button></div></div>' +
       '<h3 class="at-heading">✦ Recomendaciones Atemporal</h3><div class="at-grid">' +
       elegidos.map(function (it) {
@@ -706,6 +708,7 @@
           '<span class="at-price">' + esc((tieneOpciones(it) ? "Desde " : "") + money(it.p)) + '</span>' +
           '<button type="button" class="at-cta"' + destino + ' data-ir-item="' + esc(it.id) + '">' + (abiertoAhora(r) ? "Pedir ahora" : "Ver producto") + '</button></div></article>';
       }).join("") + '</div>';
+    if (config.recomendaciones === false || !elegidos.length) html = html.split('<h3 class="at-heading">')[0];
     if (zona._atHTML !== html) { zona.innerHTML = html; zona._atHTML = html; }
     zona.hidden = false;
   }
@@ -4208,6 +4211,7 @@
         renderPromos();
         renderPopulares();
         renderRecomendados();
+        renderEspecialAtemporal();
         if (!elSheet.hidden && !_mostrandoConfirmacion) repintarHojaConservando();
         nubeLista("aj");
       })
