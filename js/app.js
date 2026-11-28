@@ -690,7 +690,7 @@
       if (elegidos.length < 3 && !elegidos.includes(it)) elegidos.push(it);
     });
     if (Array.isArray(config.productos)) elegidos = config.productos.map(function (id) { return items.find(function (it) { return it.id === id; }); }).filter(Boolean).slice(0, 3);
-    var portada = items.find(function (it) { return it.id === config.portada && it.foto; }) || elegidos.find(function (it) { return it.foto; }) || items.find(function (it) { return it.foto; });
+    var portada = config.fotoPersonalizada && /^https:\/\//i.test(config.fotoPersonalizada) ? {foto:config.fotoPersonalizada} : items.find(function (it) { return it.id === config.portada && it.foto; }) || elegidos.find(function (it) { return it.foto; }) || items.find(function (it) { return it.foto; });
     var ginger = items.some(function (it) { return /ginger/i.test(it.n); });
     var destino = ' data-ir-rest="' + esc(r.id) + '"';
     var html = '<div class="at-hero">' +
