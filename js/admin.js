@@ -202,6 +202,7 @@
     var aliado = esAliado();
     var at = aliado && perfil.restaurante_id === "atemporal";
     document.body.classList.toggle("at-panel", !!at);
+    var marca = document.querySelector("#logoPanel img"); if (marca) marca.src = "assets/inicio/ghost.webp";
     document.querySelectorAll(".at-nav-extra,.at-brand-header,.at-sidebar-footer").forEach(function(el){el.hidden = !at;});
     var especialTab = document.querySelector("[data-tab=especial]"); if (especialTab) especialTab.hidden = !aliado || perfil.restaurante_id !== "atemporal";
     document.body.classList.toggle("modo-aliado", aliado);
@@ -2720,7 +2721,7 @@
       var el = document.getElementById(paneles[k]);
       if (el) el.hidden = k !== cual;
     });
-    if (cual === "especial") pintarEspecialAliado();
+    if (cual === "especial" && restPorId("atemporal")) pintarEspecialAliado();
     if (cual === "almuerzos") pintarAlmuerzos();
     if (["resumen","repartos","clientes"].includes(cual)) cargarOperacion(cual, $("#"+paneles[cual]));
     if (cual === "ventas") cargarVentas();
