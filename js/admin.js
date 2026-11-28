@@ -200,6 +200,7 @@
   // Un aliado solo ve su restaurante y su almuerzo del día.
   function aplicarRol() {
     var aliado = esAliado();
+    var especialTab = document.querySelector("[data-tab=especial]"); if (especialTab) especialTab.hidden = !aliado || perfil.restaurante_id !== "atemporal";
     document.body.classList.toggle("modo-aliado", aliado);
     document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado && el.getAttribute("data-tab") !== "pedidos"; });
     var tag = document.querySelector(".admin-header .logo__tag"); if (tag) tag.textContent = aliado ? "Mi negocio" : "Admin";
@@ -2390,7 +2391,8 @@
     }
     if (aj) {
       var accion = aj.getAttribute("data-aj");
-      if (!esAliado() && accion === "guardar-especial-atemporal") { guardarEspecialAtemporal(aj); return; }
+      if (accion === "guardar-especial-atemporal") { if (!esAliado() || perfil.restaurante_id === "atemporal") guardarEspecialAtemporal(aj); return; }
+      if (accion === "restablecer-especial-atemporal") { if (esAliado()) pintarEspecialAliado(); else cargarVitrinaPrincipal(); return; }
       if (!esAliado() && (accion === "guardar-vitrina" || accion === "apagar-vitrina")) {
         guardarVitrina(aj, accion === "apagar-vitrina"); return;
       }
@@ -2701,12 +2703,13 @@
       else t.removeAttribute("aria-current");
     });
     $("#nombreSeccion").textContent = activo.querySelector("span").textContent;
-    var paneles = { resumen:"tabResumen", repartos:"tabRepartos", clientes:"tabClientes", vitrina: "tabVitrina", restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
+    var paneles = { resumen:"tabResumen", repartos:"tabRepartos", clientes:"tabClientes", vitrina: "tabVitrina", especial: "tabEspecial", restaurantes: "tabRestaurantes", almuerzos: "tabAlmuerzos", pedidos: "tabPedidos",
       ventas: "tabVentas", visitas: "tabVisitas", ajustes: "tabAjustes" };
     Object.keys(paneles).forEach(function (k) {
       var el = document.getElementById(paneles[k]);
       if (el) el.hidden = k !== cual;
     });
+    if (cual === "especial") pintarEspecialAliado();
     if (cual === "almuerzos") pintarAlmuerzos();
     if (["resumen","repartos","clientes"].includes(cual)) cargarOperacion(cual, $("#"+paneles[cual]));
     if (cual === "ventas") cargarVentas();
@@ -3917,36 +3920,85 @@
       panel.textContent = "No se pudo cargar la vitrina. Recarga el panel para volver a intentar.";
       return;
     }
-    panel.innerHTML = especialAtemporalAdminHTML(ajustes.vitrina?.especialAtemporal || {}) + vitrinaHTML(ajustes.vitrina || {});
+    panel.innerHTML = especialAtemporalAdminHTML(Object.assign({}, ajustes.vitrina?.especialAtemporal || {}, restPorId("atemporal")?.promo?.especialAtemporal || {}, {activo: ajustes.vitrina?.especialAtemporal?.activo !== false && restPorId("atemporal")?.promo?.especialAtemporal?.activo !== false})) + vitrinaHTML(ajustes.vitrina || {});
+    conectarEspecial();
+  }
+
+  async function pintarEspecialAliado() {
+    if (!esAliado() || perfil.restaurante_id !== "atemporal") return;
+    var zona = $("#tabEspecial");
+    var local = restPorId("atemporal");
+    if (!local) { zona.textContent = "Cargando tu carta…"; return; }
+    var a = await window.Store.leerAjustes();
+    zona.innerHTML = especialAtemporalAdminHTML(Object.assign({}, a?.vitrina?.especialAtemporal || {}, local.promo?.especialAtemporal || {}));
+    conectarEspecial();
   }
 
   function especialAtemporalAdminHTML(c) {
-    var local = restaurantes.find(function (r) { return r.id === "atemporal"; });
-    var items = (local?.carta || []).flatMap(function (sec) { return sec.items || []; });
-    return '<section class="aj-card" id="ajEspecialAtemporal"><h2 class="panel__title">Especial de la semana · Atemporal Coffee</h2>' +
-      '<p class="muted">Controla únicamente el espacio destacado de la portada.</p>' +
-      '<label class="vit-on"><input type="checkbox" id="atAdminActivo"' + (c.activo !== false ? " checked" : "") + '> Mostrar especial</label>' +
-      '<label class="vit-on"><input type="checkbox" id="atAdminRecomendaciones"' + (c.recomendaciones !== false ? " checked" : "") + '> Mostrar recomendaciones</label>' +
-      '<label class="vit-campo">Título<input class="field__input" id="atAdminTitulo" maxlength="70" value="' + esc(c.titulo || "Especial de la semana") + '"></label>' +
-      '<label class="vit-campo">Mensaje<input class="field__input" id="atAdminMensaje" maxlength="140" value="' + esc(c.mensaje || "") + '" placeholder="Refresca tu semana con nuestros Iced Ginger"></label>' +
-      '<label class="vit-campo">Foto principal<select class="field__input" id="atAdminPortada"><option value="">Automática</option>' +
-      items.filter(function (it) { return it.foto; }).map(function (it) { return '<option value="' + esc(it.id) + '"' + (c.portada === it.id ? " selected" : "") + '>' + esc(it.n) + '</option>'; }).join("") + '</select></label>' +
-      '<label class="vit-on"><input type="checkbox" id="atAdminAuto"' + (!Array.isArray(c.productos) ? " checked" : "") + '> Seleccionar recomendaciones automáticamente</label>' +
-      '<p class="muted">Para elegir manualmente, desmarca la selección automática y marca hasta tres productos.</p><div class="vit-rests">' +
-      items.map(function (it) { return '<label class="vit-rest"><input type="checkbox" data-at-producto value="' + esc(it.id) + '"' + (Array.isArray(c.productos) && c.productos.includes(it.id) ? " checked" : "") + '> ' + esc(it.n) + '</label>'; }).join("") +
-      '</div><div class="inline-actions"><button type="button" class="btn-primary btn-sm" data-aj="guardar-especial-atemporal">Guardar especial</button></div></section>';
+    var local = restPorId("atemporal");
+    var items = (local?.carta || []).flatMap(function (sec) {
+      return (sec.items || []).filter(function(it){return it.n && Number(it.p)>0 && !it.agotado;}).map(function(it){return Object.assign({},it,{categoria:sec.sec});});
+    });
+    var categorias = Array.from(new Set(items.map(function(it){return it.categoria;})));
+    var seleccion = Array.isArray(c.productos) ? c.productos : [];
+    return '<section class="aj-card" id="ajEspecialAtemporal"><h2 class="panel__title">★ Especial de la semana · Atemporal Coffee</h2>' +
+      '<p class="muted">Personaliza el espacio de Atemporal en la portada de Servicios Ghost.</p><div class="at-editor"><div class="at-controls">' +
+      '<label class="vit-on"><span><input type="checkbox" id="atAdminActivo"' + (c.activo !== false ? " checked" : "") + '> Mostrar mi especial en Servicios Ghost</span></label>' +
+      '<div class="at-switches"><label><span><input type="checkbox" id="atAdminBanner"' + (c.banner !== false ? " checked" : "") + '> Mostrar banner</span></label>' +
+      '<label><span><input type="checkbox" id="atAdminRecomendaciones"' + (c.recomendaciones !== false ? " checked" : "") + '> Mostrar recomendaciones</span></label></div>' +
+      '<label>Título<input class="field__input" id="atAdminTitulo" maxlength="70" value="' + esc(c.titulo || "Especial de la semana") + '"></label>' +
+      '<label>Mensaje promocional<input class="field__input" id="atAdminMensaje" maxlength="140" value="' + esc(c.mensaje || "") + '" placeholder="Refresca tu semana con nuestros Iced Ginger"></label>' +
+      '<label>Imagen principal<select class="field__input" id="atAdminPortada"><option value="">Automática</option>' +
+      items.filter(function(it){return it.foto;}).map(function(it){return '<option value="' + esc(it.id) + '" data-foto="' + esc(it.foto) + '"' + (c.portada === it.id ? " selected" : "") + '>' + esc(it.n) + '</option>';}).join("") + '</select></label>' +
+      '<label><span><input type="checkbox" id="atAdminAuto"' + (!Array.isArray(c.productos) ? " checked" : "") + '> Selección automática de recomendaciones</span></label></div>' +
+      '<div><p class="muted">Vista previa del banner</p><div class="at-preview" id="atPreview"><img id="atPreviewFoto" alt="" hidden><span class="at-preview-tag" id="atPreviewTitulo"></span><h2>ATEMPORAL COFFEE</h2><p id="atPreviewMensaje"></p><div class="at-preview-actions"><span>Ver carta</span><span>Pedir ahora</span></div></div><p class="muted" id="atPreviewEstado"></p></div></div>' +
+      '<h3>Productos recomendados (máximo 3)</h3><div class="at-tools"><input type="search" class="field__input" id="atBuscar" placeholder="Buscar producto…"><select class="field__input" id="atCategoria" aria-label="Categoría"><option value="">Todas las categorías</option>' +
+      categorias.map(function(cat){return '<option value="' + esc(cat) + '">' + esc(cat) + '</option>';}).join("") + '</select><strong id="atContador"></strong></div><div class="at-products">' +
+      items.map(function(it){return '<label class="at-tile" data-at-nombre="' + esc(it.n.toLowerCase()) + '" data-at-categoria="' + esc(it.categoria) + '"><input type="checkbox" data-at-producto value="' + esc(it.id) + '" data-foto="' + esc(it.foto || "") + '"' + (seleccion.includes(it.id) ? " checked" : "") + '>' +
+      (it.foto ? '<img src="' + esc(it.foto) + '" alt="" loading="lazy">' : '<span class="at-no-photo">☕</span>') + '<b>' + esc(it.n) + '</b><small>' + esc(money(it.p)) + '</small></label>';}).join("") +
+      '</div><div class="inline-actions" style="margin-top:18px"><button type="button" class="btn-copy btn-sm" data-aj="restablecer-especial-atemporal">Restablecer</button><button type="button" class="btn-primary btn-sm" data-aj="guardar-especial-atemporal">Guardar cambios</button></div></section>';
+  }
+
+  function conectarEspecial() {
+    var zona = $("#ajEspecialAtemporal");
+    if (!zona) return;
+    function actualizar(ev) {
+      var checks = Array.from(zona.querySelectorAll("[data-at-producto]:checked"));
+      if (ev?.target?.matches("[data-at-producto]")) {
+        $("#atAdminAuto").checked = false;
+        if (checks.length > 3) { ev.target.checked = false; checks = checks.filter(function(x){return x !== ev.target;}); toast("Máximo tres productos",true); }
+      }
+      $("#atContador").textContent = $("#atAdminAuto").checked ? "Automático" : checks.length + " de 3 seleccionados";
+      var bus = $("#atBuscar").value.toLowerCase(), cat = $("#atCategoria").value;
+      zona.querySelectorAll(".at-tile").forEach(function(tile){tile.hidden = !tile.dataset.atNombre.includes(bus) || (!!cat && tile.dataset.atCategoria !== cat);});
+      $("#atPreviewTitulo").textContent = $("#atAdminTitulo").value || "Especial de la semana";
+      $("#atPreviewMensaje").textContent = $("#atAdminMensaje").value || "Refresca tu semana con nuestros Iced Ginger";
+      var select = $("#atAdminPortada"), foto = select.selectedOptions[0]?.dataset.foto || checks.find(function(x){return x.dataset.foto;})?.dataset.foto || select.options[1]?.dataset.foto;
+      var img = $("#atPreviewFoto"); img.hidden = !foto; if(foto && img.getAttribute("src") !== foto) img.src = foto;
+      $("#atPreviewEstado").textContent = !$("#atAdminActivo").checked ? "Especial oculto" : !$("#atAdminBanner").checked ? "Banner oculto" : "Banner visible";
+    }
+    zona.addEventListener("input",actualizar); zona.addEventListener("change",actualizar); actualizar();
   }
 
   async function guardarEspecialAtemporal(boton) {
+    if (esAliado() && perfil.restaurante_id !== "atemporal") return;
     var auto = $("#atAdminAuto").checked;
-    var ids = Array.from(document.querySelectorAll("#ajEspecialAtemporal [data-at-producto]:checked"), function (el) { return el.value; });
-    if (!auto && ids.length > 3) { toast("Selecciona máximo tres productos", true); return; }
-    var c = { activo: $("#atAdminActivo").checked, recomendaciones: $("#atAdminRecomendaciones").checked,
-      titulo: $("#atAdminTitulo").value.trim(), mensaje: $("#atAdminMensaje").value.trim(), portada: $("#atAdminPortada").value,
-      productos: auto ? null : ids };
-    var actual = await window.Store.leerAjustes(true);
-    if (!actual) { toast("No se pudo leer la configuración. Intenta de nuevo.", true); return; }
-    await guardarAj("vitrina", Object.assign({}, actual.vitrina || {}, {especialAtemporal:c}), boton, "Especial de Atemporal guardado ✓");
+    var ids = Array.from(document.querySelectorAll("#ajEspecialAtemporal [data-at-producto]:checked"),function(el){return el.value;});
+    if (!auto && ids.length > 3) { toast("Selecciona máximo tres productos",true); return; }
+    var c = {activo:$("#atAdminActivo").checked,banner:$("#atAdminBanner").checked,recomendaciones:$("#atAdminRecomendaciones").checked,titulo:$("#atAdminTitulo").value.trim(),mensaje:$("#atAdminMensaje").value.trim(),portada:$("#atAdminPortada").value,productos:auto ? null : ids};
+    var local = restPorId("atemporal");
+    if (!local) {toast("No se encontró Atemporal",true);return;}
+    boton.disabled = true;
+    try {
+      var promo = await window.Store.actualizarPromoParcial(local.id,{especialAtemporal:c});
+      reemplazarEnMemoria(Object.assign({},local,{promo:promo}));
+      if (!esAliado()) {
+        var actual = await window.Store.leerAjustes(true);
+        if (!actual) throw new Error("No se pudo actualizar el permiso general");
+        await window.Store.guardarAjuste("vitrina",Object.assign({},actual.vitrina || {},{especialAtemporal:c}));
+      }
+      toast("Especial de Atemporal guardado ✓");
+    } catch(ex){toast(mensajeErrorGuardar(ex),true);} finally {boton.disabled=false;}
   }
 
   function ordenVitrina(v) {

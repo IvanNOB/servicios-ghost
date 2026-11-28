@@ -279,9 +279,12 @@
       return { id: estado.id || estado.hasta + "|" + estado.foto, foto: estado.foto,
         texto: String(estado.texto || "").trim().slice(0, 120), hasta: estado.hasta };
     });
-    if (!texto && !estados.length) return null;
+    var e = p.especialAtemporal;
+    var especial = e && typeof e === "object" ? {activo:e.activo !== false,recomendaciones:e.recomendaciones !== false,banner:e.banner !== false,titulo:String(e.titulo || "").slice(0,70),mensaje:String(e.mensaje || "").slice(0,140),portada:String(e.portada || "").slice(0,160),productos:Array.isArray(e.productos) ? e.productos.filter(function(id){return typeof id === "string";}).slice(0,3) : null} : null;
+    if (!texto && !estados.length && !especial) return null;
     var promo = { texto: texto, hasta: /^\d{4}-\d{2}-\d{2}$/.test(p.hasta || "") ? p.hasta : "" };
     if (estados.length) promo.estados = estados;
+    if (especial) promo.especialAtemporal = especial;
     return promo;
   }
 
