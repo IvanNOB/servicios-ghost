@@ -3978,6 +3978,7 @@
       '<label>Mensaje promocional<input class="field__input" id="atAdminMensaje" maxlength="140" value="' + esc(c.mensaje || "") + '" placeholder="Refresca tu semana con nuestros Iced Ginger"></label>' +
       '<label>Imagen principal<select class="field__input" id="atAdminPortada"><option value="">Automática</option>' +
       items.filter(function(it){return it.foto;}).map(function(it){return '<option value="' + esc(it.id) + '" data-foto="' + esc(it.foto) + '"' + (c.portada === it.id ? " selected" : "") + '>' + esc(it.n) + '</option>';}).join("") + '</select></label>' +
+      '<div class="at-upload"><input type="hidden" id="atFotoPersonalizada" value="' + esc(c.fotoPersonalizada || "") + '"><label for="atFotoArchivo">Subir foto personalizada del banner</label><input class="field__input" type="file" id="atFotoArchivo" accept="image/jpeg,image/png,image/webp"><div class="inline-actions"><button type="button" class="btn-copy btn-sm" id="atQuitarFoto">Quitar foto personalizada</button><small id="atFotoEstado" role="status">' + (c.fotoPersonalizada ? "Foto personalizada seleccionada" : "JPG, PNG o WebP · máximo 10 MB") + '</small></div></div>' +
       '<label><span><input type="checkbox" id="atAdminAuto"' + (!Array.isArray(c.productos) ? " checked" : "") + '> Selección automática de recomendaciones</span></label></div>' +
       '<div><p class="muted">Vista previa del banner</p><div class="at-preview" id="atPreview"><img id="atPreviewFoto" alt="" hidden><span class="at-preview-tag" id="atPreviewTitulo"></span><h2>ATEMPORAL COFFEE</h2><p id="atPreviewMensaje"></p><div class="at-preview-actions"><span>Ver carta</span><span>Pedir ahora</span></div></div><p class="muted" id="atPreviewEstado"></p></div></div>' +
       '<h3>Productos recomendados (máximo 3)</h3><div class="at-tools"><input type="search" class="field__input" id="atBuscar" placeholder="Buscar producto…"><select class="field__input" id="atCategoria" aria-label="Categoría"><option value="">Todas las categorías</option>' +
@@ -4001,10 +4002,25 @@
       zona.querySelectorAll(".at-tile").forEach(function(tile){tile.hidden = !tile.dataset.atNombre.includes(bus) || (!!cat && tile.dataset.atCategoria !== cat);});
       $("#atPreviewTitulo").textContent = $("#atAdminTitulo").value || "Especial de la semana";
       $("#atPreviewMensaje").textContent = $("#atAdminMensaje").value || "Refresca tu semana con nuestros Iced Ginger";
-      var select = $("#atAdminPortada"), foto = select.selectedOptions[0]?.dataset.foto || checks.find(function(x){return x.dataset.foto;})?.dataset.foto || select.options[1]?.dataset.foto;
+      var select = $("#atAdminPortada"), foto = $("#atFotoPersonalizada").value || select.selectedOptions[0]?.dataset.foto || checks.find(function(x){return x.dataset.foto;})?.dataset.foto || Array.from(select.options).find(function(o){return /manzana.*ginger/i.test(o.textContent);})?.dataset.foto || Array.from(select.options).find(function(o){return /ginger|latte/i.test(o.textContent);})?.dataset.foto || select.options[1]?.dataset.foto;
       var img = $("#atPreviewFoto"); img.hidden = !foto; if(foto && img.getAttribute("src") !== foto) img.src = foto;
       $("#atPreviewEstado").textContent = !$("#atAdminActivo").checked ? "Especial oculto" : !$("#atAdminBanner").checked ? "Banner oculto" : "Banner visible";
     }
+    var archivo = $("#atFotoArchivo"), estadoFoto = $("#atFotoEstado"), quitar = $("#atQuitarFoto"), guardar = zona.querySelector('[data-aj="guardar-especial-atemporal"]');
+    archivo.addEventListener("change", async function () {
+      var file = archivo.files && archivo.files[0]; if (!file) return;
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 10*1024*1024) { estadoFoto.textContent = "Elige JPG, PNG o WebP de máximo 10 MB."; archivo.value = ""; return; }
+      archivo.disabled = quitar.disabled = guardar.disabled = true; estadoFoto.textContent = "Subiendo fotografía…";
+      try {
+        var url = await subirFotoComprimida(file,"especial-atemporal",1600);
+        if (!/^https:\/\//i.test(url || "")) throw new Error("No se obtuvo la URL de la foto");
+        zona.querySelector("#atFotoPersonalizada").value = url;
+        estadoFoto.textContent = "Foto lista. Guarda los cambios para publicarla.";
+        if (zona.isConnected) actualizar();
+      } catch(ex) { estadoFoto.textContent = mensajeErrorGuardar(ex); }
+      finally { archivo.disabled = quitar.disabled = guardar.disabled = false; archivo.value = ""; }
+    });
+    quitar.addEventListener("click",function(){ $("#atFotoPersonalizada").value = ""; estadoFoto.textContent = "Se usará una foto de la carta al guardar."; actualizar(); });
     zona.addEventListener("input",actualizar); zona.addEventListener("change",actualizar); actualizar();
   }
 
@@ -4013,7 +4029,7 @@
     var auto = $("#atAdminAuto").checked;
     var ids = Array.from(document.querySelectorAll("#ajEspecialAtemporal [data-at-producto]:checked"),function(el){return el.value;});
     if (!auto && ids.length > 3) { toast("Selecciona máximo tres productos",true); return; }
-    var c = {activo:$("#atAdminActivo").checked,banner:$("#atAdminBanner").checked,recomendaciones:$("#atAdminRecomendaciones").checked,titulo:$("#atAdminTitulo").value.trim(),mensaje:$("#atAdminMensaje").value.trim(),portada:$("#atAdminPortada").value,productos:auto ? null : ids};
+    var c = {activo:$("#atAdminActivo").checked,banner:$("#atAdminBanner").checked,recomendaciones:$("#atAdminRecomendaciones").checked,titulo:$("#atAdminTitulo").value.trim(),mensaje:$("#atAdminMensaje").value.trim(),portada:$("#atAdminPortada").value,fotoPersonalizada:$("#atFotoPersonalizada").value,productos:auto ? null : ids};
     var local = restPorId("atemporal");
     if (!local) {toast("No se encontró Atemporal",true);return;}
     boton.disabled = true;
