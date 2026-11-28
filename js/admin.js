@@ -204,7 +204,7 @@
     var at = aliado && perfil.restaurante_id === "atemporal";
     document.body.classList.toggle("at-panel", !!at);
     var marca = document.querySelector("#logoPanel img"); if (marca) marca.src = "assets/inicio/ghost.webp";
-    document.querySelectorAll(".at-nav-extra,.at-brand-header,.at-sidebar-footer").forEach(function(el){el.hidden = !at;});
+    document.querySelectorAll(".at-nav-extra,.at-brand-header,.at-sidebar-footer,.at-header-title").forEach(function(el){el.hidden = !at;});
     var especialTab = document.querySelector("[data-tab=especial]"); if (especialTab) especialTab.hidden = !aliado || perfil.restaurante_id !== "atemporal";
     document.body.classList.toggle("modo-aliado", aliado);
     document.querySelectorAll("[data-solo-admin]").forEach(function (el) { el.hidden = aliado && el.getAttribute("data-tab") !== "pedidos"; });
