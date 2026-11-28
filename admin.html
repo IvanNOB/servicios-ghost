@@ -47,13 +47,53 @@
 #ajEspecialAtemporal .at-tools input{flex:1;min-width:150px}
 #ajEspecialAtemporal [hidden]{display:none!important}
 @media(max-width:800px){#ajEspecialAtemporal .at-editor{grid-template-columns:1fr}#ajEspecialAtemporal .at-preview{min-height:240px}}
+</style><style>
+body.panel-activo.at-panel{--at-gold:#f1c044;background:#0b0b0b;color:#f6f4ef}
+.at-panel .admin-header{background:#0d0c0a;border-bottom:1px solid #6b5429}
+.at-panel .admin-header .logo__text,.at-panel .admin-header .logo__tag{display:none}
+.at-panel .at-brand-header:not([hidden]){display:block;font-weight:900;letter-spacing:.05em;line-height:1.1;color:#fff}
+.at-panel .at-brand-header small{display:block;color:#e7c571;letter-spacing:.28em;font-size:.65em}
+.at-panel #nombreSeccion{display:block;font-weight:800;font-size:1.2rem;margin-right:auto}
+.at-panel .admin-main{max-width:1800px}
+.at-panel .panel-nav .tab{min-height:46px;gap:12px;padding:12px;text-align:left;color:#eee;border-radius:12px}
+.at-panel .panel-nav .tab i{color:#efc55d}
+.at-panel .panel-nav .tab--active{color:#ffe9ab;background:linear-gradient(110deg,#594014,#211a10);border-color:#d5a83c;box-shadow:inset 0 0 12px #d7a52930}
+.at-panel .panel-nav [hidden]{display:none!important}
+.at-panel .at-sidebar-footer{display:none}
+.at-panel #ajEspecialAtemporal{border:0;padding:0;background:transparent}
+.at-panel #ajEspecialAtemporal>.panel__title{font-size:clamp(1.6rem,2.6vw,2.5rem);margin:0 0 8px;color:#fff}
+.at-panel #ajEspecialAtemporal .at-controls{padding:20px;border:1px solid #4a3c24;border-radius:17px;background:linear-gradient(135deg,#191610,#101010);gap:14px}
+.at-panel #ajEspecialAtemporal .at-controls>label{font-weight:700}
+.at-panel #ajEspecialAtemporal .at-controls>label:has(input[type=checkbox]),.at-panel #ajEspecialAtemporal .at-switches label{padding:10px;border:1px solid #403824;border-radius:10px;background:#121211}
+.at-panel #ajEspecialAtemporal .at-controls .field__input{background:#101010;border:1px solid #3a3429;border-radius:10px}
+.at-panel #ajEspecialAtemporal .at-preview{min-height:330px;border-color:#bd923c;box-shadow:0 10px 35px #0006}
+.at-panel #ajEspecialAtemporal .at-preview-actions span:last-child{background:#f3c448;color:#15100a;font-weight:800}
+.at-panel #ajEspecialAtemporal .at-products{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));max-height:360px}
+.at-panel #ajEspecialAtemporal .at-tile{padding:8px;background:linear-gradient(150deg,#201910,#101010)}
+.at-panel #ajEspecialAtemporal .at-tile:has(input:checked){box-shadow:0 0 8px #cfa33866;border-color:#ffce49}
+.at-panel #ajEspecialAtemporal .inline-actions{justify-content:flex-end;padding:14px 0;border-top:1px solid #47381f}
+.at-panel #ajEspecialAtemporal [data-aj=guardar-especial-atemporal]{background:linear-gradient(#ffe27c,#e5ad29);color:#14100a;border-radius:99px;padding:12px 28px;font-weight:900}
+.at-panel .tablero .tile{background:linear-gradient(145deg,#201b13,#111);border-color:#443824;border-radius:16px}
+@media(min-width:900px){
+body.panel-activo.at-panel{--at-side:240px;padding-left:var(--at-side)}
+.at-panel .admin-header{min-height:70px;padding:12px 24px}
+.at-panel .admin-header .logo{position:fixed;left:0;top:0;width:var(--at-side);height:70px;padding:12px;background:#10100e;border-right:1px solid #6b5429;gap:9px}
+.at-panel .admin-main{padding:24px clamp(18px,2vw,36px) 40px}
+.at-panel .panel-nav{position:fixed;inset:70px auto 0 0;width:var(--at-side);display:flex;flex-direction:column;align-items:stretch;justify-content:space-between;overflow:auto;z-index:20;margin:0;padding:14px 10px;background:linear-gradient(155deg,#17130d,#0b0b0b 55%);border:0;border-right:1px solid #6b5429;border-radius:0}
+.at-panel .panel-nav__principal{display:grid;grid-template-columns:1fr;gap:5px;flex:0}
+.at-panel .at-sidebar-footer:not([hidden]){display:grid;gap:10px;text-align:center;color:#eacb85;padding:10px 5px}
+.at-panel .at-sidebar-footer img{width:100%;max-height:200px;object-fit:cover;border-radius:14px}
+.at-panel .at-sidebar-footer small{color:#aaa}
+.at-panel .at-sidebar-footer a{border:1px solid #80642b;border-radius:99px;padding:10px;color:#f4c75d;text-decoration:none}
+}
+@media(max-width:899px){.at-panel #nombreSeccion{display:none}.at-panel .panel-nav__principal{display:flex;overflow-x:auto;flex-wrap:nowrap}.at-panel .panel-nav .tab{flex:none}.at-panel .admin-header .logo{min-width:0}.at-panel #ajEspecialAtemporal .at-controls{padding:12px}.at-panel #ajEspecialAtemporal .at-preview{min-height:250px}}
 </style></head>
 <body class="admin">
   <header class="admin-header">
     <a class="logo" href="admin.html" id="logoPanel" aria-label="Inicio del panel">
       <img src="assets/inicio/ghost.webp" width="46" height="36" alt="">
       <span class="logo__text">Servicios <span class="logo__accent">Ghost</span></span>
-      <span class="logo__tag">Admin</span>
+      <span class="logo__tag">Admin</span><span class="at-brand-header" hidden>ATEMPORAL <small>COFFEE</small></span>
     </a>
     <strong id="nombreSeccion" data-solo-admin>Establecimientos</strong>
     <div class="admin-header__right" id="headerRight" hidden>
@@ -104,6 +144,10 @@
 <button type="button" class="tab" data-tab="vitrina" data-solo-admin><i aria-hidden="true">▦</i><span>Vitrina</span></button>
 <button type="button" class="tab" data-tab="pedidos"><i aria-hidden="true">☷</i><span>Pedidos en tiempo real</span> <span class="tab__badge" id="badgePedidos" hidden>0</span></button>
 <button type="button" class="tab" data-tab="restaurantes"><i aria-hidden="true">▤</i><span>Establecimientos</span></button>
+<button type="button" class="tab at-nav-extra" data-ali-disp="atemporal" hidden><i aria-hidden="true">◇</i><span>Carta / Productos</span></button>
+<button type="button" class="tab at-nav-extra" data-ali-estado="atemporal" hidden><i aria-hidden="true">◉</i><span>Estados</span></button>
+<button type="button" class="tab at-nav-extra" data-ali-promo="atemporal" hidden><i aria-hidden="true">☆</i><span>Promociones</span></button>
+<button type="button" class="tab at-nav-extra" data-ali-ventas="atemporal" hidden><i aria-hidden="true">▥</i><span>Mis ventas</span></button>
 <button type="button" class="tab" data-tab="almuerzos"><i aria-hidden="true">♨</i><span>Corrientazos y menús</span></button>
 <button type="button" class="tab" data-acceso="disp" data-solo-admin><i aria-hidden="true">◇</i><span>Productos y precios</span></button>
 <button type="button" class="tab" data-acceso="estado" data-solo-admin><i aria-hidden="true">◉</i><span>Estados e historias</span></button>
@@ -113,7 +157,7 @@
 <button type="button" class="tab" data-tab="ventas" data-solo-admin><i aria-hidden="true">▥</i><span>Estadísticas</span></button>
 <button type="button" class="tab" data-tab="visitas" data-solo-admin><i aria-hidden="true">◎</i><span>Visitas</span></button>
 <button type="button" class="tab" data-tab="ajustes" data-solo-admin><i aria-hidden="true">⚙</i><span>Configuración</span></button>
-        </div><div class="sede" data-solo-admin><img src="assets/panel/chaira.webp" alt=""><strong>Cartagena del Chairá</strong><small>Caquetá</small></div></nav>
+        </div><div class="at-sidebar-footer" hidden><img alt="" id="atSidebarFoto" hidden><strong>Tu negocio, a otro nivel.</strong><small>Powered by Servicios Ghost</small><a href="index.html#r=atemporal" target="_blank" rel="noopener">Ver mi carta ↗</a></div><div class="sede" data-solo-admin><img src="assets/panel/chaira.webp" alt=""><strong>Cartagena del Chairá</strong><small>Caquetá</small></div></nav>
       <section class="tab-panel" id="tabResumen" hidden></section>
       <section class="tab-panel" id="tabRepartos" hidden></section>
       <section class="tab-panel" id="tabClientes" hidden></section>
