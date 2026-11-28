@@ -253,3 +253,36 @@ body:has(.carta-tamanos[open]) {overflow:hidden}
 #vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas .opciones-tarjetas__opciones {gap:9px}
 #vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas legend {margin-bottom:9px}
 #vistaCarta .dish--opciones-tarjetas > .opciones-tarjetas label > span {min-height:52px;padding:8px}
+
+
+/* Tarjetas horizontales: carta de productos Servicios Ghost. */
+#vistaCarta .carta-grupo > .dishes {grid-template-columns:minmax(0,1fr);gap:12px}
+#vistaCarta .dishes > .dish:not(.vaso-dbarrio):not(.dish--compacto) {
+  grid-template-columns:clamp(88px,29vw,144px) minmax(0,1fr);
+  grid-template-areas:"foto info" "foto pie";
+  grid-template-rows:auto auto;gap:8px 12px;
+  padding:12px;border:1px solid var(--border);border-radius:16px;
+  background:var(--surface);align-content:start;
+}
+#vistaCarta .dishes > .dish--opciones:not(.vaso-dbarrio):not(.dish--compacto) {
+  grid-template-areas:"foto info" "opc opc";
+}
+#vistaCarta .dishes > .dish:not(.vaso-dbarrio):not(.dish--compacto):focus-within {border-color:var(--primary)}
+#vistaCarta .dishes > .dish:not(.dish--compacto) > .dish__foto {
+  width:100%;height:auto;aspect-ratio:1;object-fit:cover;border-radius:12px;align-self:start;
+}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__name {font-size:1.05rem;line-height:1.25;font-weight:800}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__desc {font-size:.88rem;line-height:1.4}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__price {font-size:1.08rem;font-weight:800;color:var(--primary)}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__pie {display:flex;justify-content:space-between;align-items:center;gap:8px}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__action .add-btn,
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish-opc__add {width:auto;max-width:100%;min-height:44px;padding:8px 16px;border-radius:999px;font-size:.9rem;font-weight:800}
+#vistaCarta .dishes > .dish:not(.dish--compacto) > .dish-opc:not(.opciones-tarjetas) {display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#vistaCarta .dishes > .dish:not(.dish--compacto) > .dish-opc:not(.opciones-tarjetas) .dish-opc__select {flex:1 1 130px;width:auto;min-height:44px;border-radius:12px}
+#vistaCarta .dishes > .dish:not(.dish--compacto) > .dish-opc:not(.opciones-tarjetas) .dish-opc__label {flex:0 0 100%}
+#vistaCarta .dishes > .dish:not(.dish--compacto) > .dish-opc:not(.opciones-tarjetas) .dish-opc__add {flex:0 0 auto;margin-left:auto}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__action .add-btn[data-add] {width:auto;padding-inline:16px}
+@media(min-width:850px){#vistaCarta .carta-grupo > .dishes {grid-template-columns:repeat(2,minmax(0,1fr))}}
+#vistaCarta .carta-grupo > .dishes:has(>.dish--compacto) {grid-template-columns:repeat(2,minmax(0,1fr))}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__action .add-btn[data-add] {font-size:0}
+#vistaCarta .dishes > .dish:not(.dish--compacto) .dish__action .add-btn[data-add]::after {content:"Agregar";font-size:.9rem}
